@@ -1,0 +1,706 @@
+% Pré-projeto HIJACK — arquivo LaTeX editável
+\documentclass[12pt,a4paper]{article}
+
+% ---------- Idioma e codificação ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{lmodern}
+
+% ---------- Layout (próximo da ABNT) ----------
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0.2cm}
+
+% ---------- Pacotes gerais ----------
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+
+% ---------- Estilo dos títulos ----------
+\titleformat{\section}{\normalfont\large\bfseries\MakeUppercase}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalfont\normalsize\itshape}{\thesubsubsection}{1em}{}
+
+% ---------- Metadados do documento (EDITAR) ----------
+\newcommand{\instituicao}{Universidade Federal do Rio Grande do Norte (UFRN)}
+\newcommand{\disciplina}{Fundamentos de Circuitos e Sistemas Controlados}
+\newcommand{\titulo}{HIJACK: demonstração de segurança em carrinhos controlados remotamente}
+\newcommand{\orientador}{Alexandre Magnus Fernandes Guimarães}
+\newcommand{\cidade}{Natal -- RN}
+\newcommand{\ano}{2026}
+
+
+\begin{document}
+\begin{titlepage}
+\centering
+{\large\bfseries \instituicao}\\[0.3cm]
+{\large \disciplina}
+\vfill
+{\normalsize
+Matheus Felipe Duarte Dionísio\\
+João Gonçalves de Souza Neto\\
+Élisson Rian Félix Simas\\
+Carlos Roberto de Miranda Gomes Neto\\
+Gustavo Henrique Assunção Paiva\\
+Pedro Nascimento de Paiva Fernandes Neto\\
+Marcelo Jorge Oliveira de Albuquerque Melo}
+\vfill
+{\Large\bfseries \MakeUppercase{\titulo}}\\[0.6cm]
+{\large Pré-projeto}
+\vfill
+\begin{flushright}
+\begin{minipage}{0.55\textwidth}
+\singlespacing
+Pré-projeto apresentado à disciplina de \disciplina{},
+na \instituicao.\\[0.3cm]
+Professor: \orientador
+\end{minipage}
+\end{flushright}
+\vfill
+{\large \cidade\\ \ano}
+\end{titlepage}
+
+\section*{Resumo}
+\addcontentsline{toc}{section}{Resumo}
+Este pré-projeto apresenta o desenvolvimento do HIJACK, uma atividade prática de
+cibersegurança que utiliza carrinhos controlados por uma rede
+local. A proposta é dividir os participantes em duas equipes, cada uma com um
+piloto e um responsável pelos ataques e pelas defesas. Enquanto o piloto
+controla o carrinho pelo celular, o outro integrante utiliza um painel no
+notebook para tentar interferir nos comandos do adversário e proteger os da
+própria equipe. A demonstração começa com um sistema intencionalmente
+vulnerável: uma alteração na interpretação dos comandos pode fazer o carrinho
+andar para trás quando o piloto tenta avançar, por exemplo. Depois, a equipe demonstrará a troca da senha padrão por uma senha mais forte e o bloqueio simulado das alterações de comando.
+A intenção é mostrar, por meio do comportamento físico dos carrinhos, por que
+não basta que um dispositivo conectado receba comandos: ele também precisa
+verificar sua origem e sua validade. O trabalho relaciona essa experiência a
+incidentes de segurança em sistemas conectados e ao uso recente de inteligência
+artificial na identificação e exploração de vulnerabilidades.
+
+\noindent\textbf{Palavras-chave:} cibersegurança; sistemas ciberfísicos;
+controle remoto; integridade de comandos; ensino prático.
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introdução}
+É comum associar ataques cibernéticos ao roubo de informações ou à interrupção
+de serviços digitais. Quando um programa controla um equipamento físico, porém,
+os efeitos podem aparecer fora da tela. Um comando recebido ou interpretado de
+forma incorreta pode mudar o comportamento de um robô, de um veículo ou de
+outro dispositivo conectado.
+
+Em 2015, pesquisadores demonstraram que era possível interferir remotamente
+em funções de um Jeep Cherokee explorando falhas no sistema conectado do
+veículo. O episódio levou a um recall de aproximadamente 1,4 milhão de
+unidades \cite{wired2015jeep}. Esse caso ajuda a entender por que autenticação,
+controle de acesso e integridade de mensagens também são relevantes em
+sistemas que atuam no mundo físico.
+
+A ideia do projeto surgiu da possibilidade de transformar essa discussão em
+uma demonstração observável. Em vez de apenas apresentar um exemplo de
+comando adulterado, queremos que o público veja o efeito no carrinho. Se o
+piloto mandar seguir em frente e o veículo recuar, fica mais fácil discutir
+onde a comunicação falhou e o que poderia ter evitado o problema.
+
+O HIJACK será desenvolvido a partir de um protótipo simples, com motores DC,
+microcontrolador e interface web. A proposta inclui uma etapa vulnerável e
+outra com medidas de proteção, para permitir a comparação entre os dois
+comportamentos.
+
+A montagem também permite relacionar os conceitos de circuitos e sistemas
+controlados com situações práticas. O acionamento dos motores pela ponte H, o posicionamento da direção por
+servo motor, a alimentação do ESP32 e o envio de sinais mostram como decisões
+de software interferem diretamente no funcionamento de um circuito elétrico.
+
+\section{Fundamentação e Justificativa}
+\subsection{O tempo disponível para corrigir falhas}
+A divulgação de uma vulnerabilidade nem sempre é seguida imediatamente pela
+correção dos sistemas afetados. Entre a descoberta da falha, a publicação de
+uma atualização e sua instalação, pode existir um período em que os usuários
+continuam expostos. Relatórios publicados em 2026 destacam a rapidez com que
+algumas falhas passaram a ser exploradas \cite{synack2026,thn2026bas}.
+
+Uma análise divulgada pela CrowdStrike também aponta exploração de falhas
+pouco tempo depois de surgirem provas de conceito públicas
+\cite{crowdstrike2026}. Em outro exemplo, a Cloud Security Alliance descreveu
+um caso envolvendo o framework PraisonAI no qual uma exploração funcional foi
+produzida em poucas horas \cite{csa2026praison}. Os números variam conforme o
+levantamento e o tipo de vulnerabilidade, mas apontam para a mesma preocupação:
+não é prudente depender apenas da aplicação posterior de correções.
+
+No carrinho, esse problema será representado por um sistema que inicialmente
+aceita comandos sem checar adequadamente quem os enviou. A atividade permitirá
+discutir o impacto dessa decisão e avaliar como o comportamento muda depois da
+inclusão de verificações.
+
+\subsection{Inteligência artificial em ataques cibernéticos}
+O uso de modelos de IA em atividades ofensivas tornou a discussão sobre
+segurança ainda mais atual. Em novembro de 2025, a Anthropic relatou uma
+campanha identificada como GTG-1002, na qual agentes de IA foram empregados
+para executar uma parcela significativa das etapas operacionais de uma
+intrusão, enquanto humanos continuavam responsáveis por decisões importantes
+\cite{thn2025gtg1002}.
+
+Segundo os relatos publicados sobre o caso, a automação abrangeu tarefas como
+reconhecimento de alvos, investigação de falhas e coleta de informações
+\cite{bdtech2025,aimag2025}. Em 2026, a Check Point também discutiu o uso de IA
+na execução de etapas de ataques \cite{checkpoint2026}. Isso não significa que
+todo ataque seja autônomo, mas mostra como ferramentas de automação podem
+reduzir o trabalho necessário para certas atividades.
+
+A dinâmica proposta não depende de utilizar IA para invadir os carrinhos.
+A relação com esses casos está na sequência das ações: identificar o alvo,
+localizar uma fraqueza, tentar explorá-la e observar se a proteção existente
+é suficiente.
+
+\subsection{O comprometimento do LiteLLM}
+Outro aspecto importante é a confiança em componentes de software. Em março
+de 2026, versões distribuídas do pacote LiteLLM no PyPI foram comprometidas,
+permitindo a execução de código malicioso e a tentativa de obtenção de
+credenciais \cite{arthur2026litellm,infoq2026litellm}.
+
+O caso foi associado ao comprometimento anterior de uma ferramenta utilizada
+em processos de desenvolvimento, o Trivy. A partir desse acesso, os atacantes
+conseguiram interferir na publicação do pacote \cite{netenrich2026litellm,
+hackernoon2026litellm}. Algumas análises destacaram ainda o uso de um arquivo
+\texttt{.pth}, capaz de executar instruções durante a inicialização do Python
+\cite{bastion2026litellm}.
+
+Esse incidente interessa ao projeto porque evidencia um problema de confiança:
+mesmo quando o usuário acredita estar utilizando um componente legítimo, algo
+no caminho pode ter sido alterado. No HIJACK, essa ideia será apresentada de
+forma simplificada pela adulteração da relação entre um comando recebido e
+a ação executada pelo motor. Não se trata de reproduzir o ataque ao LiteLLM,
+mas de usar o caso como referência para explicar a importância da integridade.
+
+\subsection{Inteligência artificial como ferramenta de defesa}
+A IA também tem sido utilizada na análise de código e na descoberta de
+vulnerabilidades. Entre os exemplos recentes estão as falhas apelidadas de
+PHP2Shell, divulgadas em 2026, identificadas com auxílio de ferramentas de IA
+\cite{wiz2026php2shell,fortune2026php}. Outro caso é o Node2Shell, uma
+vulnerabilidade relacionada ao processamento Brotli no Node.js, para a qual
+foram publicados alertas e correções de segurança
+\cite{socprime2026node,akamai2026node2shell}.
+
+Há ainda experiências mais amplas, como o AI Cyber Challenge, voltado ao uso
+de sistemas automatizados para encontrar e corrigir problemas de segurança
+em software \cite{drishti2026}. Esses exemplos reforçam que ferramentas de IA
+podem ser úteis nos dois lados do problema: tanto na identificação de pontos
+fracos quanto no trabalho de corrigi-los.
+
+No nosso projeto, o foco principal não será construir um agente de IA. O
+objetivo é demonstrar um princípio de segurança que continua válido
+independentemente de quem realiza o ataque: um dispositivo não deve confiar
+em comandos apenas porque eles chegaram ao seu canal de comunicação.
+
+\subsection{Relação dos casos com a proposta}
+\begin{table}[H]
+\centering\small\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Situação discutida} & \textbf{Exemplo na demonstração} \\
+\midrule
+Controle remoto de equipamentos & O movimento do carrinho muda após um comando indevido \\
+Confiança em componentes intermediários & A interpretação dos comandos pode ser modificada \\
+Reconhecimento e exploração de falhas & O painel do hacker organiza as tentativas de ataque por etapas \\
+Verificação de integridade e origem & A plataforma simula o bloqueio de adulterações e autentica o acesso por senha \\
+\bottomrule
+\end{tabularx}
+\caption{Relação entre os conceitos estudados e a demonstração do HIJACK.}
+\label{tab:relacao}
+\end{table}
+
+\section{Objetivos}
+\subsection{Objetivo geral}
+Construir e apresentar um sistema de carrinhos controlados remotamente que
+permita demonstrar, em um ambiente de testes, os efeitos de comandos
+adulterados e a importância de mecanismos de proteção na comunicação com
+dispositivos físicos.
+
+\subsection{Objetivos específicos}
+\begin{itemize}[leftmargin=*]
+\item Adaptar a estrutura do carrinho com motores DC para tração e um servo motor para esterçamento das rodas;
+\item Programar o microcontrolador para receber e executar os comandos enviados pela interface de controle;
+\item Desenvolver uma aplicação web com telas específicas para o piloto e para o responsável pelo ataque e defesa;
+\item Criar uma versão propositalmente vulnerável, restrita ao ambiente de testes do grupo;
+\item Demonstrar a alteração de comandos e observar seus efeitos no movimento do carrinho;
+\item Implementar autenticação por senha e demonstrar, de forma simulada, as proteções de integridade e contra repetição;
+\item Realizar uma demonstração interativa e livre, com duas equipes atuando simultaneamente, e avaliar o comportamento do sistema.
+\end{itemize}
+
+\section{Descrição do Projeto}
+\subsection{Funcionamento geral}
+O projeto recebeu o nome \textbf{HIJACK}. Ele será composto por dois
+carrinhos controlados por placas ESP32 e por uma aplicação web executada
+localmente em um notebook. Os celulares dos pilotos, os notebooks dos
+participantes e os microcontroladores serão conectados à mesma rede Wi-Fi.
+A troca de comandos entre o servidor e os ESP32 ocorrerá por WebSocket.
+
+Cada equipe contará com um piloto, que dirige seu carrinho pelo celular,
+e um hacker, que usa o painel web para interferir no carrinho adversário e
+proteger o próprio equipamento. As duas equipes atuarão simultaneamente.
+Não haverá pontuação, classificação ou vencedores; a atividade ficará
+disponível enquanto houver participantes interessados.
+
+A Figura~\ref{fig:arquitetura} apresenta o fluxo previsto de comunicação.
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\small,>=stealth]
+\node[draw,rounded corners,align=center,minimum width=3.7cm,minimum height=1cm] (piloto) at (-3,2) {Celular do piloto\\Interface de controle};
+\node[draw,rounded corners,align=center,minimum width=3.7cm,minimum height=1cm] (hacker) at (3,2) {Notebook do hacker\\Painel de ataque e defesa};
+\node[draw,rounded corners,align=center,minimum width=4.6cm,minimum height=1cm] (servidor) at (0,0) {Servidor web HIJACK\\Notebook na rede local};
+\node[draw,rounded corners,align=center,minimum width=3.8cm,minimum height=1cm] (a) at (-3,-2) {ESP32 + L298N\\Carrinho A};
+\node[draw,rounded corners,align=center,minimum width=3.8cm,minimum height=1cm] (b) at (3,-2) {ESP32 + L298N\\Carrinho B};
+\draw[<->] (piloto.south) -- (servidor.north west);
+\draw[<->] (hacker.south) -- (servidor.north east);
+\draw[<->] (servidor.south west) -- node[left,font=\scriptsize] {WebSocket} (a.north);
+\draw[<->] (servidor.south east) -- node[right,font=\scriptsize] {WebSocket} (b.north);
+\end{tikzpicture}
+\caption{Arquitetura de comunicação prevista para a plataforma HIJACK.}
+\label{fig:arquitetura}
+\small Fonte: elaborado pelos autores (2026).
+\end{figure}
+
+\subsection{Montagem do protótipo}
+A primeira montagem foi feita com uma base de papelão, utilizada para prender
+os motores, as rodas e os demais componentes. Essa estrutura é provisória e será substituída por um chassi fabricado
+por impressão 3D, para facilitar a fixação e a organização dos componentes. A Figura~\ref{fig:carrinho} apresenta o estado atual do protótipo.
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=0.53\textheight]{figuras/prototipo_carrinho.jpg}
+\caption{Montagem inicial do carrinho sobre uma base provisória de papelão.}
+\label{fig:carrinho}
+\small Fonte: acervo do grupo (2026).
+\end{figure}
+
+A montagem inicial utiliza dois motores DC com redução, uma ponte H para controlar o
+sentido de rotação, fios de ligação e um suporte para baterias. Na versão
+planejada, será acrescentado um servo motor com ligação mecânica ao conjunto
+de direção, conforme o esquema apresentado pelo grupo. O grupo informou que as ligações dos GPIOs já foram conferidas. O
+esquema elétrico é apresentado como preliminar porque a estabilidade da
+alimentação ainda precisa ser testada sob carga.
+
+\begin{table}[H]
+\centering\small\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{l >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Componente} & \textbf{Descrição} \\
+\midrule
+Microcontrolador & ESP32, responsável pela comunicação via Wi-Fi, tração e direção \\
+Controle dos motores & Ponte H L298N \\
+Tração & Dois motores DC com caixa de redução e rodas \\ 
+Direção & Servo motor e mecanismo de ligação às rodas direcionais (previstos) \\
+Alimentação & Duas células 18650 de 3,7\,V, ligadas em série (7,4\,V nominais) \\
+Estrutura & Base provisória de papelão; chassi definitivo impresso em 3D \\
+Comunicação & Wi-Fi em rede local, com troca de mensagens via WebSocket \\
+\bottomrule
+\end{tabularx}
+\caption{Componentes previstos e utilizados na montagem inicial.}
+\label{tab:componentes}
+\end{table}
+
+\subsection{Circuito, tração e direção}
+O ESP32 enviará sinais digitais à ponte H L298N, que controlará o sentido
+de rotação dos dois motores DC responsáveis pela tração. A velocidade
+será fixa. O movimento para frente e para trás dependerá do sentido
+selecionado na ponte H.
+
+Para realizar curvas, o projeto prevê uma direção por servo motor.
+O servo será acoplado mecanicamente ao conjunto de rodas direcionais,
+alterando seu ângulo em relação ao chassi. Assim, ao solicitar uma curva,
+o ESP32 comandará a posição do servo, enquanto os motores DC continuarão
+responsáveis pelo deslocamento. Ao contrário da proposta inicial de
+tração diferencial, as curvas não serão obtidas fazendo os motores
+girarem em sentidos opostos. O desenho mecânico ainda será detalhado
+na montagem do chassi impresso em 3D.
+
+O conjunto será alimentado por duas baterias 18650 de 3,7\,V em série,
+com tensão nominal de 7,4\,V e tensão máxima de aproximadamente 8,4\,V
+quando completamente carregadas. Na montagem informada, o ESP32 recebe
+alimentação da saída de 5\,V do módulo L298N. Essa ligação exige validação:
+a disponibilidade de 5\,V regulados pode variar conforme o módulo e a
+tensão de entrada, e picos de corrente dos motores podem causar quedas
+de tensão. Se necessário, será utilizado um regulador separado para
+alimentar o microcontrolador com segurança. A alimentação do servo motor
+também deverá ser dimensionada e verificada, considerando sua corrente
+de partida e de travamento. O servo não deve ser alimentado diretamente
+por um GPIO do ESP32. Todas as partes devem compartilhar uma referência
+de terra comum.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\small,>=stealth,
+  every node/.style={align=center}]
+\node[draw,rounded corners,minimum width=3cm,minimum height=0.9cm] (bat) at (0,2.7) {2 baterias 18650\\7,4\,V nominais};
+\node[draw,rounded corners,minimum width=2.7cm,minimum height=0.9cm] (ponte) at (0,0.7) {Ponte H L298N};
+\node[draw,rounded corners,minimum width=2.5cm,minimum height=0.9cm] (esp) at (-4.1,0.7) {ESP32\\Wi-Fi / WebSocket};
+\node[draw,rounded corners,minimum width=1.7cm,minimum height=0.75cm] (ma) at (3.8,1.5) {Motor A};
+\node[draw,rounded corners,minimum width=1.7cm,minimum height=0.75cm] (mb) at (3.8,-0.1) {Motor B};
+\node[draw,rounded corners,minimum width=2.2cm,minimum height=0.75cm] (servo) at (-4.1,-1.7) {Servo motor\\(direção)};
+\node[draw,rounded corners,minimum width=3cm,minimum height=0.75cm] (rodas) at (0,-2.1) {Mecanismo de direção\\e rodas direcionais};
+\draw[->] (bat) -- node[right,font=\scriptsize] {via chave} (ponte);
+\draw[->] (esp) -- node[above,font=\scriptsize] {sinais de controle} (ponte);
+\draw[->] (ponte.east) -- ++(.55,0) |- (ma.west);
+\draw[->] (ponte.east) -- ++(.55,0) |- (mb.west);
+\draw[->] (esp.south) -- node[left,font=\scriptsize] {sinal PWM de posição} (servo.north);
+\draw[->] (servo.east) -- (rodas.west);
+\node[font=\scriptsize] at (-1.95,-2.78) {ligação mecânica};
+\draw[->,dashed] (bat.west) -| node[pos=.85,left,font=\scriptsize] {alimentação\\a validar} (esp.north);
+\node[font=\scriptsize] at (0,-3.55) {GND comum; alimentação do servo e do ESP32 a verificar};
+\end{tikzpicture}
+\caption{Diagrama funcional preliminar da tração e da direção por servo motor. Não representa a pinagem definitiva nem a disposição mecânica das rodas.}
+\label{fig:circuito}
+\small Fonte: elaborado pelos autores (2026).
+\end{figure}
+
+O grupo informou que os GPIOs da montagem de tração já foram conferidos.
+A tabela registra essas ligações; o pino de sinal do novo servo motor
+ainda será definido e testado, assim como sua alimentação. O diagrama
+funcional não substitui a conferência física da montagem.
+
+\begin{table}[H]
+\centering\small\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Sinal do ESP32} & \textbf{Ligação na L298N} & \textbf{Finalidade} \\
+\midrule
+GPIO14 & ENA & Habilitação do motor A \\
+GPIO27 / GPIO26 & IN1 / IN2 & Sentido de rotação do motor A \\
+GPIO25 / GPIO33 & IN3 / IN4 & Sentido de rotação do motor B \\
+GPIO32 & ENB & Habilitação do motor B \\
+GND & GND & Referência comum \\
+\bottomrule
+\end{tabular}
+\caption{Ligações de sinais informadas pelo grupo.}
+\label{tab:ligacoes}
+\end{table}
+
+\subsubsection{Comandos de movimento}
+A lógica de controle será dividida entre tração e direção. Os comandos
+\texttt{FRENTE} e \texttt{RE} definirão o sentido de rotação dos motores DC
+pela ponte H. Já os comandos \texttt{ESQUERDA} e \texttt{DIREITA} ajustarão
+a posição do servo motor. Na posição central, as rodas permanecerão
+alinhadas para seguir em linha reta. Os ângulos efetivos do servo serão
+ajustados durante a montagem, conforme os limites mecânicos do conjunto.
+
+\begin{table}[H]
+\centering\small\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{l >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Comando} & \textbf{Resposta prevista} \\
+\midrule
+Frente & Acionar os motores DC para avançar \\
+Ré & Acionar os motores DC para recuar \\
+Esquerda & Posicionar o servo para esterçar as rodas à esquerda \\
+Direita & Posicionar o servo para esterçar as rodas à direita \\
+Centro & Retornar o servo à posição central \\
+Parar & Desligar a tração; centralização da direção conforme a lógica do controle \\
+\bottomrule
+\end{tabularx}
+\caption{Funções previstas para tração e direção, sujeitas aos testes do protótipo.}
+\label{tab:movimentos}
+\end{table}
+
+Os comandos de deslocamento e direção poderão ser combinados durante o uso
+do analógico virtual. A adulteração simulada na plataforma poderá trocar
+frente por ré ou esquerda por direita. No segundo caso, o efeito observado
+será o esterçamento para o lado oposto ao solicitado, e não a inversão do
+sentido de rotação dos motores de tração.
+
+\subsection{Interfaces web}
+A plataforma terá uma tela de entrada e dois painéis separados. Essa divisão
+foi escolhida porque o piloto precisa de controles simples e rápidos,
+enquanto o hacker precisa acompanhar as condições da partida e as opções de
+ataque e defesa.
+
+\subsubsection{Entrada na partida}
+Na tela inicial, o participante informa o nome, escolhe a função e seleciona
+o carrinho da equipe. Também há um campo de senha, que poderá fazer parte da
+demonstração sobre autenticação. No modo simulado, a aplicação utiliza a senha
+\texttt{1234}; isso não representa uma configuração segura para uso real.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.60\textwidth]{figuras/tela_login.jpg}
+\caption{Tela de entrada da aplicação HIJACK.}
+\label{fig:login}
+\small Fonte: acervo do grupo (2026).
+\end{figure}
+
+\subsubsection{Painel do piloto}
+O painel do piloto apresenta um controle analógico virtual e dois botões de
+ação, identificados como A e B. A interface também exibe um estado de espera antes do início da demonstração. Os botões A e B aparecem como elementos visuais da interface,
+sem função de controle definida nesta etapa. A velocidade dos motores
+será fixa e o carrinho parará quando o piloto soltar o controle.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{figuras/controle_piloto.jpg}
+\caption{Interface de controle utilizada pelo piloto.}
+\label{fig:piloto}
+\small Fonte: acervo do grupo (2026).
+\end{figure}
+
+\subsubsection{Painel do hacker}
+O painel do hacker possui abas de Ataque e Defesa, informações de conexão
+e um indicador visual dos mecanismos de proteção. O ataque será simulado
+pelo servidor, com etapas guiadas: escanear a rede, identificar o carrinho
+adversário, explorar uma falha simulada e modificar os comandos.
+
+Depois de concluir essas etapas, o participante poderá escolher quais
+movimentos deseja inverter: frente e ré, esquerda e direita. A inversão
+será aplicada pelo próprio servidor antes de encaminhar os comandos ao
+ESP32. Não haverá interceptação real de tráfego nem exploração de redes
+ou equipamentos externos.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figuras/painel_hacker.jpg}
+\caption{Painel do hacker antes do início da demonstração.}
+\label{fig:hacker}
+\small Fonte: acervo do grupo (2026).
+\end{figure}
+
+\subsection{Dinâmica da apresentação}
+A atividade será realizada simultaneamente por duas equipes. Cada piloto
+controlará seu carrinho pelo celular enquanto seu colega utilizará o painel
+para atacar o equipamento adversário e defender o próprio. A interação
+ocorrerá livremente, sem duração fixa, pontuação, corrida ou vencedores.
+
+O público poderá observar a resposta do carrinho às mudanças simuladas
+de comando e, em seguida, o bloqueio dessas mudanças após a ativação da
+defesa correspondente. A apresentação se concentrará na diferença entre
+o comando solicitado e o executado pelos motores.
+
+\subsection{Vulnerabilidade planejada}
+O sistema de testes começará com a senha padrão \texttt{1234} para ambos
+os carrinhos. Essa credencial fraca será utilizada propositalmente para
+discutir os riscos de senhas previsíveis. O servidor também oferecerá
+uma simulação de adulteração dos comandos: quando a opção estiver ativa,
+poderá trocar individualmente frente por ré ou esquerda por direita.
+A simulação não pressupõe que o participante tenha comprometido a rede.
+
+\subsection{Medidas de proteção}
+O mecanismo real de autenticação será demonstrado por meio da substituição
+da senha padrão por uma senha mais forte. O servidor passará a exigir a
+nova credencial para permitir o acesso ao controle. Isso ilustra a
+importância de impedir o uso de senhas padrão, mas não impede por si só
+alterações nos comandos feitas por um componente autorizado.
+
+As camadas de integridade e proteção contra repetição serão apresentadas
+como \textbf{simulações didáticas} na interface. Ao ativar a defesa de
+integridade, o servidor deixará de aplicar as inversões solicitadas pelo
+hacker. A proteção contra repetição exibirá o conceito de recusar comandos
+antigos, sem implementar ainda validação criptográfica ou contadores no
+firmware. A adoção de mecanismos como HMAC e números de sequência poderá
+ser considerada em versões futuras.
+
+Como proteção física, o ESP32 deverá interromper os motores quando o
+piloto soltar o controle e também quando a conexão com o servidor for
+perdida. Para isso, será previsto um tempo limite sem comandos válidos.
+Esse comportamento deve funcionar independentemente da simulação de ataques.
+
+\section{Metodologia}
+O desenvolvimento começará pela organização do protótipo, pelo projeto
+do mecanismo de direção acionado por servo motor e pela montagem
+do chassi definitivo em impressão 3D. Serão avaliadas a alimentação com
+duas baterias 18650, a estabilidade do ESP32 e a resposta da ponte H L298N
+aos comandos de sentido de rotação, além do esterçamento produzido pelo servo.
+
+Em seguida, a equipe implementará a comunicação local por Wi-Fi e
+WebSocket entre o servidor HIJACK e os carrinhos. O controle terá velocidade
+fixa, comandos de frente e ré para a tração e ajuste da direção pelo servo. Será verificado
+o desligamento dos motores tanto ao soltar o controle quanto ao perder
+a comunicação com o servidor.
+
+Na plataforma web, será implementada a sequência guiada de ataque simulado
+com inversões escolhidas individualmente. Depois, serão adicionadas a
+troca de senha e as simulações de bloqueio por integridade e de proteção
+contra repetição.
+
+Os testes terão uma parte funcional, que verificará o movimento, a
+conexão e a resposta às ações do painel, e uma parte quantitativa. Serão
+registrados o tempo de resposta de comandos, as tentativas de alteração
+bem-sucedidas e bloqueadas, as falhas de conexão e a estabilidade durante
+o uso. Como se trata de um pré-projeto, esses resultados ainda serão
+obtidos nas etapas de implementação e ensaio.
+
+\section{Resultados Esperados}
+Espera-se obter dois carrinhos controlados pela plataforma HIJACK, com
+comunicação local estável, tração para frente e para trás e curvas
+por esterçamento das rodas.
+O sistema deverá permitir observar a inversão simulada de comandos
+antes da ativação da defesa e a restauração do comportamento esperado
+após o bloqueio da alteração no servidor.
+
+Também se espera que a troca da senha padrão mostre, de forma prática,
+a diferença entre uma credencial previsível e uma credencial mais forte.
+As medidas de integridade e proteção contra repetição serão identificadas
+como demonstrações simuladas, sem atribuir a elas garantias de segurança
+que não tenham sido implementadas. Os testes deverão produzir registros
+que ajudem a avaliar o funcionamento da comunicação e do controle físico.
+
+\section{Considerações Éticas e de Segurança}
+Todos os testes de interferência serão realizados exclusivamente com os
+carrinhos e a infraestrutura controlados pelo grupo. A rede local será dedicada à atividade, de modo a evitar interferência
+em dispositivos que não fazem parte da demonstração. O propósito é estudar vulnerabilidades em um ambiente
+autorizado e mostrar como preveni-las, sem interferir em redes ou
+equipamentos de terceiros.
+
+\newpage
+\renewcommand{\refname}{Referências}
+\begin{thebibliography}{99}
+\addcontentsline{toc}{section}{Referências}
+\small\sloppy
+
+\bibitem{wired2015jeep}
+GREENBERG, A. Hackers remotely kill a Jeep on the highway --- with me in it.
+\emph{Wired}, 21 jul.\ 2015. Disponível em:
+\url{https://www.wired.com/2015/07/hackers-remotely-kill-jeep-highway/}.
+
+\bibitem{synack2026}
+HELP NET SECURITY. AI shrinks vulnerability exploitation window to hours.
+18 maio 2026. Disponível em:
+\url{https://www.helpnetsecurity.com/2026/05/18/synack-2025-ai-driven-vulnerability-trends-report/}.
+
+\bibitem{thn2026bas}
+THE HACKER NEWS. AI broke vulnerability management. That's why CISOs are
+moving budget to BAS. jun.\ 2026. Disponível em:
+\url{https://thehackernews.com/2026/06/ai-broke-vulnerability-management-thats.html}.
+
+\bibitem{crowdstrike2026}
+TECH INSIDER. AI weaponizes bugs in 48 hours, breaches hit \$6.04M. out.\ 2026.
+Disponível em:
+\url{https://tech-insider.org/ai-cyberattacks-48-hour-exploit-crowdstrike-2026/}.
+
+\bibitem{csa2026praison}
+CLOUD SECURITY ALLIANCE. Sub-4-hour weaponization of agentic AI frameworks.
+15 maio 2026. Disponível em:
+\url{https://labs.cloudsecurityalliance.org/research/csa-research-note-agentic-framework-rapid-exploitation-20260/}.
+
+\bibitem{thn2025gtg1002}
+THE HACKER NEWS. Chinese hackers use Anthropic's AI to launch automated cyber
+espionage campaign. nov.\ 2025. Disponível em:
+\url{https://thehackernews.com/2025/11/chinese-hackers-use-anthropics-ai-to.html}.
+
+\bibitem{bdtech2025}
+TECHTALKS. How hackers turned Claude Code into a semi-autonomous cyber-weapon.
+nov.\ 2025. Disponível em:
+\url{https://bdtechtalks.substack.com/p/how-hackers-turned-claude-code-into}.
+
+\bibitem{aimag2025}
+AI MAGAZINE. Anthropic uncovers landmark AI-led cyberattack campaign. nov.\ 2025.
+Disponível em:
+\url{https://aimagazine.com/news/anthropic-disrupts-first-ai-orchestrated-cyber-espionage}.
+
+\bibitem{checkpoint2026}
+HELP NET SECURITY. AI used to help plan the break-in, now it's doing the
+break-in. 15 jul.\ 2026. Disponível em:
+\url{https://www.helpnetsecurity.com/2026/07/15/check-point-ai-security-report-2026/}.
+
+\bibitem{lmmc2026litellm}
+LM MARKET CAP. LiteLLM PyPI supply chain attack: what happened and what to do.
+24 mar.\ 2026. Disponível em:
+\url{https://lmmarketcap.com/zh/litellm-supply-chain-attack}.
+
+\bibitem{arthur2026litellm}
+ARTHUR AI. The LiteLLM supply chain attack: what happened and why it matters.
+1 abr.\ 2026. Disponível em:
+\url{https://www.arthur.ai/column/litellm-supply-chain-attack-pypi-compromise-2026}.
+
+\bibitem{netenrich2026litellm}
+NETENRICH. LiteLLM PyPI supply chain attack: what happened \& how to fix it.
+2026. Disponível em:
+\url{https://netenrich.com/blog/litellm-pypi-supply-chain-attack}.
+
+\bibitem{hackernoon2026litellm}
+HACKERNOON. I spent 48 hours responding to the LiteLLM supply chain attack.
+mar.\ 2026. Disponível em:
+\url{https://hackernoon.com/i-spent-48-hours-responding-to-the-litellm-supply-chain-attack-here-is-everything-i-know}.
+
+\bibitem{bastion2026litellm}
+BASTION. LiteLLM PyPI supply chain attack: what happened and how to protect
+your organization. 2026. Disponível em:
+\url{https://bastion.tech/blog/litellm-pypi-supply-chain-attack}.
+
+\bibitem{infoq2026litellm}
+INFOQ. PyPI supply chain attack compromises LiteLLM, enabling the exfiltration
+of sensitive information. mar.\ 2026. Disponível em:
+\url{https://infoq.com/news/2026/03/litellm-supply-chain-attack/}.
+
+\bibitem{wiki2026php2shell}
+WIKIPEDIA. PHP2Shell. Disponível em:
+\url{https://en.wikipedia.org/wiki/PHP2Shell}. Acesso em: 1 nov.\ 2026.
+
+\bibitem{fortune2026php}
+FORLINI, E. AI tools discovered the PHP vulnerability that could take down 70\%
+of the internet. \emph{Fortune}, 21 out.\ 2026. Disponível em:
+\url{https://fortune.com/2026/10/21/ai-tools-discovered-the-php-vulnerability-that-could-take-down-70-of-the-internet-now-the-race-is-on-to-patch-it-before-ai-powered-hackers-attack/}.
+
+\bibitem{wiz2026php2shell}
+WIZ RESEARCH. PHP2Shell: AI uncovers critical RCE vulnerabilities affecting 70\%
+of the Internet. 21 out.\ 2026. Disponível em:
+\url{https://www.wiz.io/blog/php2shell-php-rce}.
+
+\bibitem{techxplore2026php}
+TECHXPLORE. AI-assisted discovery exposes decade-old PHP flaw that could put
+millions of websites at risk. out.\ 2026. Disponível em:
+\url{https://techxplore.com/news/2026-10-ai-discovery-exposes-decade-php.html}.
+
+\bibitem{axios2026php}
+AXIOS. The internet's hidden security nightmare --- and how AI exposed it.
+22 out.\ 2026. Disponível em:
+\url{https://www.axios.com/2026/10/22/php-vulnerability-security-update-websites}.
+
+\bibitem{socprime2026node}
+SOC PRIME. CVE-2026-111497: Node.js Brotli decoder flaw enables remote code
+execution. 23 out.\ 2026. Disponível em:
+\url{https://socprime.com/blog/cve-2026-111497-node-js-brotli-decoder-flaw-enables-remote-code-execution/}.
+
+\bibitem{akamai2026node2shell}
+AKAMAI. Inside Node2Shell: a closer look at CVE-2026-111497. out.\ 2026.
+Disponível em:
+\url{https://www.akamai.com/blog/security-research/inside-node2shell-closer-look-cve-2026-111497}.
+
+\bibitem{explainx2026node}
+EXPLAINX. Node.js security updates, October 2026: what was fixed, who should
+update, and how. out.\ 2026. Disponível em:
+\url{https://explainx.ai/blog/nodejs-security-release-october-2026-brotli-rce-tls-hostname-bypass-emudhra-2026}.
+
+\bibitem{sysdig2026node2shell}
+SYSDIG. Node2Shell (CVE-2026-111497): detecting the Node.js Brotli RCE.
+28 out.\ 2026. Disponível em:
+\url{https://www.sysdig.com/blog/node2shell-cve-2026-111497-detecting-the-node-js-brotli-rce}.
+
+\bibitem{rapid72026node}
+RAPID7. CVE-2026-111497: critical out-of-bounds write in the Node.js Brotli
+decoder. 26 out.\ 2026. Disponível em:
+\url{https://www.rapid7.com/blog/post/etr-cve-2026-111497-critical-out-of-bounds-write-in-the-node-js-brotli-decoder/}.
+
+\bibitem{cloudflare_mirai}
+KAN, M. Chinese firm admits its hacked products were behind Friday's massive
+DDoS attack. \emph{PCWorld}, out.\ 2016. Disponível em:
+\url{https://www.pcworld.com/article/3134039/chinese-firm-admits-its-hacked-products-were-behind-fridays-massive-ddos-attack.html}.
+
+\bibitem{drishti2026}
+DRISHTI: AI-led human-directed vulnerability auditing for 5G cores.
+\emph{arXiv}, 2026. Disponível em:
+\url{https://arxiv.org/pdf/2608.30112}.
+
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,39 @@
+# Premissas e decisões
+
+Distingue **fatos/decisões do grupo**, **decisões técnicas do agente** e **pendências**. Atualizar sempre que uma escolha não especificada for feita.
+
+## 1. Decisões do grupo (pré-projeto + plano mestre)
+
+- Dois carrinhos (A e B), ESP32 + L298N + 2 motores DC + servo de direção; velocidade fixa; curva só pelo servo.
+- Dois times, cada um com piloto (celular) e hacker (notebook); sem pontuação, vencedor ou tempo limite.
+- Servidor local no notebook; navegadores e ESP32 na mesma Wi-Fi; servidor↔ESP32 por WebSocket.
+- Ataque em 4 etapas guiadas simuladas; inversões independentes frente↔ré e esquerda↔direita.
+- Defesa: troca **real** de senha; integridade e repetição **simuladas**.
+- Botões A/B do piloto visíveis, sem função.
+
+## 2. Decisões tomadas com o usuário nesta implementação (05/11/2026)
+
+| Tema | Decisão |
+|---|---|
+| Pastas | `projeto_fcsc/web/` (este repo) e `projeto_fcsc/esp32/` (firmware) |
+| Git | Um repositório por pasta; commit a cada passo verificado; sem push |
+| Firmware | Linguagem Arduino com PlatformIO; placa ESP32-WROOM DevKit (`esp32dev`) |
+| Senha | Uma senha **por carrinho**, ambas começam em `1234` |
+| Troca de senha | Revoga a sessão do **piloto** daquele carrinho e para o carro; o hacker que trocou continua logado |
+
+## 3. Decisões técnicas do agente
+
+- **Lint/format:** Biome (uma ferramenta só). **Testes:** `bun:test` (server e protocol), Vitest (web), Playwright (E2E).
+- **Login por HTTP + cookie:** `POST /api/session` → cookie `HttpOnly; SameSite=Strict`. O upgrade do WebSocket valida cookie e `Origin`; a autorização é refeita em cada mensagem. Os tipos `session.*` continuam no protocolo, mas o login inicial usa HTTP para permitir cookie HttpOnly (evita token em `localStorage`).
+- **Dev em mesma origem:** Vite faz proxy de `/api` e `/ws` para o servidor.
+- **Hash de senha:** `Bun.password` (argon2id). Persistência em `apps/server/data/state.json` (gitignored, permissão 600). Estado da partida só em memória.
+- **Admin:** login separado em `/admin` com `ADMIN_SECRET` do `.env`.
+- **ESP32:** WebSocket em `/device`; `device.hello {deviceId, secret}` comparado com `DEVICE_SECRET_A/B` via `timingSafeEqual`.
+- **Piloto não vê** sinalização de comando alterado pelo ataque (padrão do plano 6.2).
+
+## 4. Pendências físicas (não resolvidas por software)
+
+- Pino de sinal do servo e pulsos esquerda/centro/direita (µs).
+- Alimentação do ESP32 e do servo (5 V da L298N não validado; provável buck externo).
+- Geometria mecânica da direção; polaridade real dos motores.
+- Timeout de 300 ms é valor inicial, sujeito a medição.

@@ -1,0 +1,32 @@
+# HIJACK web — instruções para agentes
+
+Monorepo Bun da aplicação HIJACK (demonstração acadêmica de segurança em sistemas ciberfísicos, LAN isolada).
+
+## Antes de codificar
+
+1. Leia `docs/PLANO_IMPLEMENTACAO_HIJACK.md` (fonte de verdade: escopo, protocolo, segurança, UX, testes).
+2. Leia `docs/progress.md` (fase atual, o que foi verificado, próximo passo).
+3. Leia `docs/assumptions.md` (decisões do grupo × decisões técnicas × pendências).
+4. Firmware fica no repositório irmão `../esp32/`.
+
+## Estrutura
+
+- `apps/web` — React + Vite + TypeScript + Tailwind + shadcn/ui.
+- `apps/server` — Bun + Express + `ws`. Autoridade única de sessões, times, ataques, defesas e carros.
+- `packages/protocol` — schemas Zod e tipos compartilhados do protocolo WebSocket (versão 1).
+- `docs/` — documentação; `referencias/` — telas e pré-projeto do grupo.
+
+## Regras inegociáveis
+
+- Ataques são **simulações internas no servidor**: nenhum scan, sniffing ou exploração real de rede.
+- Integridade e repetição na UI são **demonstrações didáticas** (não HMAC, não validação no firmware).
+- Troca de senha tem efeito **real** (hash argon2id). Senha `1234` é vulnerabilidade proposital.
+- `STOP` e watchdog nunca são invertidos nem desligados por ataque. Na dúvida, parar.
+- Navegador nunca é autoridade de time/papel/carro; autorizar **cada mensagem** no servidor.
+- Botões A/B do piloto são visuais e desabilitados.
+- Nunca registrar senhas/segredos em logs, telemetria ou erros. Nunca commitar `.env` ou `data/`.
+
+## Fluxo de trabalho
+
+- A cada passo: `bun run lint && bun run typecheck && bun run test && bun run build`; atualizar `docs/progress.md`; commit (sem push).
+- Escolhas não especificadas: decidir pelo mais simples e registrar em `docs/assumptions.md`.
