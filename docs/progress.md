@@ -10,7 +10,7 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 | 3. Sessões e login | ✅ | Login HTTP + cookie, vagas, autorização por mensagem, troca de senha real com revogação do piloto, admin, rate limit; telas `/`, `/hacker` (esqueleto + Defesa/Autenticação), `/pilot` (provisória), `/admin` |
 | 4. Piloto | ✅ | Joystick pointer/touch com dead zone ajustável, WASD/setas, refresh 100 ms, STOP em soltar/blur/aba oculta/desmontar/sem WS, manopla volta ao centro em parada forçada, A/B desabilitados, estados visuais |
 | 5. Ataque guiado | ✅ | `AttackManager` (4 etapas, alvo só adversário, inversões independentes), eventos de comando alterado sem repetição, ocultação para o piloto, aba Ataque com etapas progressivas e registro |
-| 6. Defesa | ⏳ | Pausa: fluxo simulado completo |
+| 6. Defesa | ✅ | `DefenseManager` (integridade bloqueia a inversão no servidor; repetição gera evento didático sem movimento), indicador 0–3, cartões com rótulos permanentes de simulação, simulador compara solicitado × confirmado e destaca "comando alterado". Aguardando teste do fluxo completo pelo usuário |
 | 7. Firmware + Esp32Adapter | ⏳ | Pausa: checklist físico |
 | 8. Robustez e apresentação | ⏳ | |
 | 9. Revisão final | ⏳ | |
@@ -33,10 +33,13 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 - Fase 5: verificação manual no Chrome — 4 etapas pela UI; piloto B (script) pediu frente e o carrinho B executou ré; registro mostrou "Comando alterado: frente → ré".
 - Correção na Fase 5: o servidor envia o `state.snapshot` atualizado ao autor **antes** do `action.ok`, evitando que a UI use estado antigo logo após uma ação.
 
+- Fase 6 (05/11/2026): typecheck ✅, lint ✅, `bun run test` ✅ 117 (protocolo 18, servidor 84, web 15), build ✅, Playwright ✅ 27 + 1 pulado.
+- Fase 6: verificação manual no Chrome — aba Defesa com os três cartões, integridade e repetição ligadas, indicador 2/3, exemplo de repetição no registro.
+
 ## Bloqueios reais
 
 _(nenhum)_
 
 ## Próximo passo
 
-Fase 6: defesa didática — cartões de integridade (bloqueia a inversão no servidor, rótulo "Simulação, não HMAC") e repetição (evento didático de comando antigo recusado, rótulo "Simulação, não validação no firmware"), indicador 0–3, comparação desejado × aplicado. Depois pausar para o fluxo completo com 2 pilotos + 2 hackers.
+Pausa: o usuário testa o fluxo simulado completo (2 pilotos + 2 hackers + `/simulator` + `/admin`). Depois, Fase 7: firmware ESP32 (PlatformIO + Arduino) e `Esp32Adapter`.

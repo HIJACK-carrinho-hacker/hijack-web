@@ -3,6 +3,7 @@ import { SecurityPills } from "@/components/hijack/security-pills";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventList } from "@/components/hijack/event-list";
 import { AttackSteps } from "@/features/hacker/attack-steps";
+import { IntegrityCard, ReplayCard } from "@/features/hacker/defense-cards";
 import { PasswordCard } from "@/features/hacker/password-card";
 import { useHijack } from "@/hooks/use-hijack";
 
@@ -43,6 +44,18 @@ export function HackerPage() {
         </TabsContent>
         <TabsContent value="defense" className="flex flex-col gap-4">
           <PasswordCard defense={defense} />
+          <IntegrityCard defense={defense} />
+          <ReplayCard defense={defense} />
+          <p className="text-xs text-muted-foreground">
+            O indicador de segurança conta as camadas demonstradas (0 a 3). Ele não mede o nível real de segurança do
+            sistema.
+          </p>
+          {log.length > 0 && (
+            <section className="flex flex-col gap-2 rounded-xl border bg-card p-4">
+              <h3 className="text-sm font-semibold">Registro</h3>
+              <EventList events={log} />
+            </section>
+          )}
         </TabsContent>
       </Tabs>
     </main>

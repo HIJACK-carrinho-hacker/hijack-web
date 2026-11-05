@@ -7,6 +7,7 @@ const car = (over: Partial<CarView> = {}): CarView => ({
   teamId: "A",
   displayName: "Carrinho A",
   mode: "simulated",
+  requested: { throttle: 0, steering: 0 },
   desired: { throttle: 0, steering: 0 },
   confirmed: { throttle: 0, steering: 0 },
   moving: false,

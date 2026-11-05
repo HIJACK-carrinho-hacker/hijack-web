@@ -72,3 +72,14 @@ export async function holdJoystick(page: Page, dx: number, dy: number) {
   await page.mouse.down()
   await page.mouse.move(cx + dx * box.width * 0.3, cy + dy * box.height * 0.3, { steps: 4 })
 }
+
+export async function completeAttack(hacker: Page, target: 'Carrinho A' | 'Carrinho B', switches: ('Frente ↔ Ré' | 'Esquerda ↔ Direita')[]) {
+  await hacker.getByRole('button', { name: 'Escanear rede' }).click()
+  await hacker.getByRole('button', { name: new RegExp(target) }).click()
+  await hacker.getByRole('button', { name: 'Explorar vulnerabilidade' }).click()
+  await hacker.getByText(/Relatório simulado/).waitFor()
+  for (const s of switches) {
+    await hacker.getByRole('switch', { name: s }).click()
+    await hacker.getByRole('switch', { name: s, checked: true }).waitFor()
+  }
+}

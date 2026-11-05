@@ -127,6 +127,7 @@ export const carViewSchema = z.strictObject({
   teamId: teamIdSchema,
   displayName: z.string(),
   mode: carModeSchema,
+  requested: driveVectorSchema,
   desired: driveVectorSchema,
   confirmed: driveVectorSchema,
   moving: z.boolean(),

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { type Harness, type TestClient, connectAs, login, startServer } from "./helpers.ts";
+import { type Harness, type TestClient, adminLogin, connectAs, login, startServer } from "./helpers.ts";
 
 let h: Harness;
 let hackerA: TestClient;
@@ -143,5 +143,91 @@ describe("ataque guiado", () => {
     expect(await act(hackerA, "attack.exploitDemo", {})).toEqual({ ok: false, code: "demo_not_running" });
     h.server.engine.setDemoState("running");
     expect((await act(hackerA, "attack.exploitDemo", {})).ok).toBe(true);
+  });
+});
+
+describe("defesa didática", () => {
+  test("integridade bloqueia a inversão sem bloquear o piloto", async () => {
+    run();
+    await fullAttack(hackerA, "car-b", true, true);
+    expect((await act(hackerB, "defense.setIntegrityDemo", { enabled: true })).ok).toBe(true);
+    pilotB.send("pilot.drive", { throttle: 1, steering: -1, pressed: true });
+    await sleep(30);
+    expect(confirmed("car-b")).toEqual({ throttle: 1, steering: -1 });
+    const m = h.server.engine.snapshot({ role: "admin" }).metrics.find((x) => x.carId === "car-b");
+    expect(m?.blocked).toBeGreaterThan(0);
+    expect(m?.transformed).toBe(0);
+    const ev = h.server.engine.snapshot({ role: "admin" }).events.find((e) => e.kind === "defense.blocked");
+    expect(ev?.message).toContain("bloqueada");
+  });
+
+  test("desligar a integridade volta a permitir a inversão", async () => {
+    run();
+    await fullAttack(hackerA, "car-b", true, false);
+    await act(hackerB, "defense.setIntegrityDemo", { enabled: true });
+    await act(hackerB, "defense.setIntegrityDemo", { enabled: false });
+    pilotB.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await sleep(30);
+    expect(confirmed("car-b")).toEqual({ throttle: -1, steering: 0 });
+  });
+
+  test("defesa só vale para o próprio carrinho", async () => {
+    run();
+    await fullAttack(hackerA, "car-b", true, false);
+    await act(hackerA, "defense.setIntegrityDemo", { enabled: true });
+    pilotB.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await sleep(30);
+    expect(confirmed("car-b")).toEqual({ throttle: -1, steering: 0 });
+  });
+
+  test("repetição gera evento didático e não move o carrinho", async () => {
+    run();
+    expect((await act(hackerB, "defense.setReplayDemo", { enabled: true })).ok).toBe(true);
+    await sleep(30);
+    expect(h.server.engine.car("car-b").controller.moving).toBe(false);
+    expect(confirmed("car-b")).toEqual({ throttle: 0, steering: 0 });
+    const ev = h.server.engine.snapshot({ role: "admin" }).events.find((e) => e.kind === "defense.replay");
+    expect(ev?.message).toContain("recusado");
+    expect(ev?.message).toContain("Nenhum movimento");
+  });
+
+  test("indicador conta as camadas demonstradas", async () => {
+    await act(hackerB, "defense.setIntegrityDemo", { enabled: true });
+    await act(hackerB, "defense.setReplayDemo", { enabled: true });
+    await act(hackerB, "auth.changePassword", { currentPassword: "1234", nextPassword: "Carrinho2026" });
+    const snap = await hackerB.waitFor("state.snapshot", (m) => m.payload.state.defenses[0]?.level === 3);
+    expect(snap.payload.state.defenses).toEqual([
+      { carId: "car-b", strongPasswordEnabled: true, integrityDemoEnabled: true, replayDemoEnabled: true, level: 3 },
+    ]);
+  });
+
+  test("piloto não pode ligar defesa", async () => {
+    expect(await act(pilotB, "defense.setIntegrityDemo", { enabled: true })).toEqual({ ok: false, code: "forbidden" });
+  });
+
+  test("reset do operador desliga defesas didáticas e ataques", async () => {
+    run();
+    await fullAttack(hackerA, "car-b", true, false);
+    await act(hackerB, "defense.setIntegrityDemo", { enabled: true });
+    h.server.engine.setDemoState("paused");
+    const admin = await connectAs(h, (await adminLogin(h.base)).cookie);
+    expect((await act(admin, "admin.resetDemo", { resetAttacks: true, resetDefenses: true, resetPasswords: false })).ok).toBe(true);
+    expect(h.server.service.defenses.integrity("car-b")).toBe(false);
+    expect(h.server.service.attacks.view("A").step).toBe("locked");
+    admin.close();
+  });
+});
+
+describe("solicitado × confirmado", () => {
+  test("espectador vê o pedido do piloto e o executado", async () => {
+    run();
+    await fullAttack(hackerA, "car-b", true, false);
+    pilotB.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await sleep(30);
+    const car = h.server.engine.snapshot({ role: "spectator" }).cars.find((c) => c.id === "car-b");
+    expect(car?.requested).toEqual({ throttle: 1, steering: 0 });
+    expect(car?.confirmed).toEqual({ throttle: -1, steering: 0 });
+    const pilotView = h.server.engine.snapshot({ role: "pilot", displayName: "PB", teamId: "B", carId: "car-b" });
+    expect(pilotView.cars.find((c) => c.id === "car-b")?.requested).toEqual({ throttle: 0, steering: 0 });
   });
 });

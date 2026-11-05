@@ -78,9 +78,22 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 
 Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria equipe). Pausar preserva o progresso. A troca de senha **não** bloqueia a inversão (pré-projeto: a senha forte "não impede por si só alterações nos comandos feitas por um componente autorizado"); só a integridade didática bloqueia.
 
+## Defesa didática
+
+| Mensagem | Quem | Efeito |
+|---|---|---|
+| `defense.setIntegrityDemo {enabled}` | hacker, no próprio carrinho | liga/desliga o bloqueio das inversões no servidor (`applyAttack` devolve o comando original e conta `blocked`) |
+| `defense.setReplayDemo {enabled}` | hacker, no próprio carrinho | liga/desliga; cada `enabled: true` registra um exemplo didático de comando antigo recusado; nunca move o carrinho |
+
+`level` = número de camadas demonstradas entre senha forte, integridade e repetição. Funciona em qualquer estado da demonstração. O reset do operador com `resetDefenses` desliga integridade e repetição (a senha só volta com `resetPasswords`).
+
+## Solicitado × confirmado
+
+`cars[].requested` é o comando que o piloto pediu (zerado quando parado). O simulador mostra `requested` ao lado de `confirmed` e destaca "comando alterado no caminho" quando diferem.
+
 ## Visibilidade
 
-- Piloto: `desired`/`confirmed` sempre zerados, `attacks` vazio, só eventos públicos.
+- Piloto: `requested`/`desired`/`confirmed` sempre zerados, `attacks` vazio, só eventos públicos.
 - Hacker: o próprio ataque, a defesa do próprio carrinho, eventos públicos, de "staff" (comando alterado/bloqueado, ataque ativado) e da própria equipe.
 - Espectador (`/simulator`) e operador: todos os ataques e defesas; eventos marcados só para o operador não aparecem ao espectador.
 - Depois de uma ação aceita, o autor recebe o `state.snapshot` atualizado antes do `action.ok`.

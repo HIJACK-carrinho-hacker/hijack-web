@@ -33,6 +33,12 @@ apps/server
 | `devices/types.ts` | contrato `DeviceAdapter` e eventos do dispositivo |
 | `adapters/simulator/` | simulador de carrinho com a mesma semântica do firmware |
 | `telemetry/` | log de eventos em anel e métricas (contadores, latência de ack p50/p95) |
+| `hijack-service.ts` | sessões, autorização por mensagem, ataques, defesas, troca de senha, ações do operador, snapshot por visualizador |
+| `auth/` | `PasswordStore` (argon2id em arquivo), `SessionStore` (tokens, vagas), leitura de cookie |
+| `attacks/attack-manager.ts` | etapas do ataque por equipe e efeito (`effectOn`) sobre o carro alvo |
+| `defenses/defense-manager.ts` | integridade e repetição didáticas por carrinho, nível 0–3, texto do exemplo de repetição |
+| `safety/throttle.ts` | bloqueio progressivo por falhas |
+| `http/api.ts` | rotas `/api` com checagem de Origin |
 
 ## Regras de segurança implementadas
 

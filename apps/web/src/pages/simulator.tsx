@@ -39,7 +39,7 @@ export function SimulatorPage() {
             </div>
             <div className="flex flex-col gap-4">
               {state.cars.map((car) => (
-                <CarPanel key={car.id} car={car}>
+                <CarPanel key={car.id} car={car} defense={state.defenses.find((d) => d.carId === car.id)}>
                   {isAdmin && car.mode === "simulated" && (
                     <ManualPad carId={car.id} disabled={state.demoState === "running" || !car.telemetry.online} />
                   )}

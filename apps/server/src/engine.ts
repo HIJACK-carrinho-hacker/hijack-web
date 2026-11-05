@@ -59,6 +59,8 @@ interface CarRuntime {
   lastSeq: number;
   watchdogTrips: number;
   lastTransformKey: string | null;
+  requested: DriveVector;
+  lastMove: { vector: DriveVector; at: number } | null;
 }
 
 const SIM_START: Record<CarId, { x: number; y: number; heading: number }> = {
@@ -185,6 +187,7 @@ export class HijackEngine {
     if (this.demo === "running") return fail("forbidden", "teste manual indisponível durante a demonstração");
     if (!car.online) return fail("car_offline", "carrinho offline");
     this.metrics.inc(carId, car.mode, "received");
+    this.trackRequest(car, vec);
     car.controller.command(vec);
     return ok;
   }
@@ -212,6 +215,7 @@ export class HijackEngine {
     if (result.transformed) this.metrics.inc(carId, car.mode, "transformed");
     if (result.blocked) this.metrics.inc(carId, car.mode, "blocked");
     this.logTransform(car, requested, result);
+    this.trackRequest(car, requested);
     car.controller.command(result.output);
     return ok;
   }
@@ -270,6 +274,7 @@ export class HijackEngine {
       teamId: c.teamId,
       displayName: c.displayName,
       mode: c.mode,
+      requested: redact || !c.controller.moving ? { ...hidden } : { ...c.requested },
       desired: redact ? { ...hidden } : c.controller.desired,
       confirmed: redact ? { ...hidden } : { ...c.confirmed },
       moving: c.controller.moving,
@@ -310,6 +315,8 @@ export class HijackEngine {
       lastSeq: 0,
       watchdogTrips: 0,
       lastTransformKey: null,
+      requested: { throttle: 0, steering: 0 },
+      lastMove: null,
       unsubscribe: () => {},
     } as Omit<CarRuntime, "controller"> as CarRuntime;
     runtime.controller = new CarController(
@@ -383,6 +390,16 @@ export class HijackEngine {
         break;
     }
     this.changed();
+  }
+
+  lastMove(carId: CarId): { vector: DriveVector; at: number } | null {
+    const m = this.mustCar(carId).lastMove;
+    return m ? { vector: { ...m.vector }, at: m.at } : null;
+  }
+
+  private trackRequest(car: CarRuntime, vec: DriveVector): void {
+    car.requested = { throttle: vec.throttle, steering: vec.steering };
+    if (!isNeutral(vec)) car.lastMove = { vector: { ...car.requested }, at: this.clock.now() };
   }
 
   private logTransform(car: CarRuntime, requested: DriveVector, result: PipelineResult): void {

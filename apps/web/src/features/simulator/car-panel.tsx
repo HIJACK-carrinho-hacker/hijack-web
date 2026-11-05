@@ -1,4 +1,4 @@
-import type { CarView } from "@hijack/protocol";
+import type { CarView, DefenseView } from "@hijack/protocol";
 import { DriveIndicator } from "@/components/hijack/drive-indicator";
 import { ModeBadge } from "@/components/hijack/mode-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +7,12 @@ import { cn } from "@/lib/utils";
 
 const fmtUptime = (ms: number | null) => (ms === null ? "—" : `${Math.floor(ms / 1000)} s`);
 
-export function CarPanel({ car, children }: { car: CarView; children?: React.ReactNode }) {
+export function CarPanel({ car, defense, children }: { car: CarView; defense?: DefenseView; children?: React.ReactNode }) {
   const color = TEAM_COLOR_CLASS[car.teamId];
+  const altered =
+    car.moving &&
+    (car.requested.throttle !== car.confirmed.throttle || car.requested.steering !== car.confirmed.steering) &&
+    (car.confirmed.throttle !== 0 || car.confirmed.steering !== 0);
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
@@ -26,9 +30,19 @@ export function CarPanel({ car, children }: { car: CarView; children?: React.Rea
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-start justify-around gap-4">
-          <DriveIndicator label="Desejado" vector={car.desired} tone="muted" />
+          <DriveIndicator label="Solicitado" vector={car.requested} tone="muted" />
           <DriveIndicator label="Confirmado" vector={car.confirmed} />
         </div>
+        {altered && (
+          <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-center font-mono text-xs text-destructive">
+            COMANDO ALTERADO NO CAMINHO
+          </p>
+        )}
+        {defense && (defense.integrityDemoEnabled || defense.replayDemoEnabled || defense.strongPasswordEnabled) && (
+          <p className="font-mono text-xs text-primary">
+            Defesas: {[defense.strongPasswordEnabled && "senha forte", defense.integrityDemoEnabled && "integridade", defense.replayDemoEnabled && "repetição"].filter(Boolean).join(" · ")}
+          </p>
+        )}
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-xs">
           <dt className="text-muted-foreground">Parada</dt>
           <dd className={cn(car.stopReason === "watchdog" && "text-warning")}>
