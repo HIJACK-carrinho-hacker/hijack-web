@@ -111,3 +111,4 @@ Para os E2E pela primeira vez: `cd apps/web && bunx playwright install chromium`
 | `docs/design.md` | paleta e padrões visuais das referências |
 | `docs/testing.md` | estratégia e matriz de testes |
 | `docs/demo-script.md` | roteiro da apresentação |
+| `docs/acceptance.md` | checklist de aceitação (Definition of Done) com evidências e pendências |

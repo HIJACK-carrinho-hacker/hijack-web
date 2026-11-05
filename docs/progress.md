@@ -13,7 +13,7 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 | 6. Defesa | ✅ | `DefenseManager` (integridade bloqueia a inversão no servidor; repetição gera evento didático sem movimento), indicador 0–3, cartões com rótulos permanentes de simulação, simulador compara solicitado × confirmado e destaca "comando alterado" |
 | 7. Firmware + Esp32Adapter | ✅ software | Firmware em `../esp32` compila e passa 13 testes nativos; pinos descritivos em `include/pins.h` (DevKit 38 pinos) com checagem em compilação; `DeviceHub` + `Esp32Adapter` testados com ESP32 falso. **Hardware não testado** — aguardando checklist físico do grupo |
 | 8. Robustez e apresentação | ✅ | Exportação CSV/JSON (só operador, sem segredos, anti-fórmula), `bun run demo` (servidor entrega o build), QR code e endereços da LAN no `/admin`, auditoria axe sem violações sérias, README com LAN/firewall/solução de problemas/checklist, `testing.md`, `demo-script.md` |
-| 9. Revisão final | ⏳ | |
+| 9. Revisão final | ✅ | Clone limpo dos dois repositórios verificado; `docs/acceptance.md` com a Definition of Done item a item e pendências físicas |
 
 ## Testes executados
 
@@ -42,10 +42,12 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 - Fase 8: verificação manual no Chrome do `/admin` (QR code, endereços, exportação).
 - Correções de acessibilidade: contraste das legendas `[J]`/`[K]`, horários do registro e "vago"; selo "Vulnerável" em contorno; STOP ALL sólido; lista de eventos focável.
 
+- Fase 9 (05/11/2026): clone limpo do `web` — `bun install` (428 pacotes), `lint` ✅, `typecheck` ✅ (5 projetos), `test` ✅ 134, `build` ✅. Clone limpo do `esp32` — `pio run` ✅ (RAM 14,8%, flash 38,9%), `pio test -e native` ✅ 13. E2E na cópia de trabalho: 29 ✅ + 1 pulado.
+
 ## Bloqueios reais
 
 _(nenhum)_
 
 ## Próximo passo
 
-Fase 9: revisão integrada (rodar tudo de uma instalação limpa, conferir a Definition of Done da seção 14 do plano mestre, listar pendências). Testes físicos seguem com o grupo.
+Software simulado concluído. Próximo marco: testes físicos com o grupo seguindo `../esp32/docs/testing-hardware.md`, preenchendo `esp32/include/pins.h` (servo) e `esp32/include/calibracao.h`, e registrando medições reais em `docs/acceptance.md`.
