@@ -23,7 +23,11 @@ Distingue **fatos/decisões do grupo**, **decisões técnicas do agente** e **pe
 
 ## 3. Decisões técnicas do agente
 
-- **Lint/format:** Biome (uma ferramenta só). **Testes:** `bun:test` (server e protocol), Vitest (web), Playwright (E2E).
+- **Scaffolding com geradores oficiais** (pedido do usuário): `bun init` (raiz, server, protocol), `bun create vite --template react-ts` (web), `shadcn init -t vite -b radix -p nova` + `shadcn add`.
+- **Backend Express 5 + `ws`** (usuário preferiu seguir o plano em vez de `Bun.serve`).
+- **Ferramentas (usuário aprovou):** lint com **oxlint** (veio no template do Vite), formatação com `bun fmt`, typecheck com `bun check` (Bun 1.4.4, compatível com `tsc`), testes com `bun test` (inclusive lógica pura do frontend) e Playwright para E2E. Biome e Vitest descartados.
+- **Sem comentários no código** (pedido do usuário). Explicações vão para `docs/`.
+- **TypeScript 7** (vindo dos geradores): sem `baseUrl` e sem parameter properties (`erasableSyntaxOnly` no web).
 - **Login por HTTP + cookie:** `POST /api/session` → cookie `HttpOnly; SameSite=Strict`. O upgrade do WebSocket valida cookie e `Origin`; a autorização é refeita em cada mensagem. Os tipos `session.*` continuam no protocolo, mas o login inicial usa HTTP para permitir cookie HttpOnly (evita token em `localStorage`).
 - **Dev em mesma origem:** Vite faz proxy de `/api` e `/ws` para o servidor.
 - **Hash de senha:** `Bun.password` (argon2id). Persistência em `apps/server/data/state.json` (gitignored, permissão 600). Estado da partida só em memória.

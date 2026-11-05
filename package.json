@@ -1,0 +1,25 @@
+{
+  "name": "hijack",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --parallel --filter '@hijack/server' --filter '@hijack/web' dev",
+    "build": "bun run --filter '@hijack/web' build",
+    "start": "bun run --filter '@hijack/server' start",
+    "test": "bun test packages apps/server apps/web/src",
+    "test:e2e": "bun run --filter '@hijack/web' test:e2e",
+    "lint": "oxlint",
+    "fmt": "bun fmt",
+    "fmt:check": "bun fmt --check",
+    "typecheck": "bun check -p packages/protocol && bun check -p apps/server && bun check -p apps/web/tsconfig.app.json"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^7.0.2",
+    "oxlint": "^1.90.0"
+  }
+}

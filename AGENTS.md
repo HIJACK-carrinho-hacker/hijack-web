@@ -30,3 +30,9 @@ Monorepo Bun da aplicação HIJACK (demonstração acadêmica de segurança em s
 
 - A cada passo: `bun run lint && bun run typecheck && bun run test && bun run build`; atualizar `docs/progress.md`; commit (sem push).
 - Escolhas não especificadas: decidir pelo mais simples e registrar em `docs/assumptions.md`.
+
+## Convenções do usuário
+
+- **Sem comentários no código.** Explicações necessárias vão para `docs/`; comentários desnecessários não devem existir.
+- **Usar o gerador oficial** de cada ferramenta para iniciar projetos/pacotes (`bun init`, `bun create vite`, `shadcn init/add`, `pio project init`...). Nunca criar a estrutura inteira à mão.
+- **Seguir a paleta e o padrão visual das referências** (`referencias/*.jpg`), documentados em `docs/design.md`. Usar apenas os tokens do tema; não inventar cores.
