@@ -42,6 +42,9 @@ Distingue **fatos/decisões do grupo**, **decisões técnicas do agente** e **pe
 - **Política de senha forte:** ≥ 8 caracteres, letras e números, diferente de `1234` e da atual.
 - **Limites de força bruta:** ver `security-model.md`.
 - **Shadcn customizado:** `Input` e `SelectTrigger` usam `dark:bg-card` (#18181b) para bater com a referência.
+- **Zona morta** do analógico padrão 30%, ajustável de 10% a 60% no ícone de ajustes; guardada no `localStorage` do aparelho (conveniência local).
+- **Parada forçada** (blur, aba oculta, perda de conexão, demonstração fora de `running`) recentraliza a manopla; é preciso tocar de novo para voltar a dirigir.
+- **Teclado** (WASD/setas) e analógico compartilham o mesmo envio; vale a última entrada.
 - **Piloto não vê** sinalização de comando alterado pelo ataque (padrão do plano 6.2).
 
 ## 4. Pendências físicas (não resolvidas por software)

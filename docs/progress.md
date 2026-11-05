@@ -8,7 +8,7 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 | 1. Monorepo e contratos | ✅ | Workspaces Bun, protocol Zod, Express+ws com `/health` e `/ws`, Vite+shadcn tema escuro, proxy dev |
 | 2. Simulador | ✅ | `HijackEngine`, `CarController`, `SimulatorAdapter`, pipeline, métricas, eventos, `/simulator`. Revisado pelo usuário |
 | 3. Sessões e login | ✅ | Login HTTP + cookie, vagas, autorização por mensagem, troca de senha real com revogação do piloto, admin, rate limit; telas `/`, `/hacker` (esqueleto + Defesa/Autenticação), `/pilot` (provisória), `/admin` |
-| 4. Piloto | ⏳ | Pausa para teste no celular |
+| 4. Piloto | ✅ | Joystick pointer/touch com dead zone ajustável, WASD/setas, refresh 100 ms, STOP em soltar/blur/aba oculta/desmontar/sem WS, manopla volta ao centro em parada forçada, A/B desabilitados, estados visuais. Aguardando teste no celular |
 | 5. Ataque guiado | ⏳ | |
 | 6. Defesa | ⏳ | Pausa: fluxo simulado completo |
 | 7. Firmware + Esp32Adapter | ⏳ | Pausa: checklist físico |
@@ -26,10 +26,13 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 - Fase 3 (05/11/2026): typecheck ✅, lint ✅, `bun run test` ✅ 79 testes (protocolo 18, servidor 61), build ✅, Playwright ✅ 12 (desktop + mobile: entrada, vaga ocupada, troca de senha revogando o piloto, simulador público × operador).
 - Fase 3: verificação manual no Chrome — erro neutro de senha, login de piloto e hacker, abas no estilo da referência, troca de senha (selo e indicador 1/3), `/admin` com reset de senhas.
 
+- Fase 4 (05/11/2026): typecheck ✅ (5 projetos), lint ✅, `bun run test` ✅ 94 (protocolo 18, servidor 61, web 15), build ✅, Playwright ✅ 19 + 1 pulado (teclado no perfil mobile).
+- Fase 4: verificação manual no Chrome — analógico em diagonal manteve o carrinho A em movimento por > 2 s com `seq` subindo (refresh), B parado; `blur` da janela parou o carrinho na hora; layout retrato em 412 px ok.
+
 ## Bloqueios reais
 
 _(nenhum)_
 
 ## Próximo passo
 
-Fase 4: tela do piloto com joystick virtual (pointer/touch), eixos -1/0/1 com dead zone, WASD/setas, refresh 100 ms, STOP ao soltar/perder foco/aba oculta/desmontar/perder WS, botões A/B desabilitados, estados visuais (aguardando largada, em demonstração, pausado, sem conexão, parada de segurança). Depois pausar para teste no celular.
+Teste do piloto em celular real pelo usuário. Depois, Fase 5: ataque guiado (scan → alvo → exploração → manipulação) com inversões independentes, ocultando a transformação do piloto.

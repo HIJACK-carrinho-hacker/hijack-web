@@ -61,4 +61,7 @@ Permite mover um carrinho **simulado** na página `/simulator` fora do estado `r
 | `hooks/use-hold-repeat.ts` | repete um comando a cada 100 ms enquanto pressionado e envia a liberação ao soltar |
 | `components/hijack/` | componentes do domínio (marca, status, indicador de eixos, eventos, controles da demo) |
 | `features/simulator/` | arena SVG, painel do carro, pad de teste manual |
+| `features/pilot/` | `joystick-math` (eixos discretos, zona morta, teclas), `Joystick`, `usePilotDrive` (envio imediato + refresh 100 ms + paradas), `useDriveKeys`, `pilotStatus` |
+| `features/hacker/`, `features/admin/` | cartões e diálogos do hacker e do operador |
+| `lib/api.ts` | chamadas HTTP de sessão e informação pública |
 | `pages/` | uma página por rota |
