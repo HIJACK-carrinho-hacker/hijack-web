@@ -64,6 +64,12 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 
 `locked` (não iniciado) → `scan` → `target` → `exploit` → `manipulate` (inversões liberadas). Tudo é simulado no servidor; `scan` lista apenas os carrinhos cadastrados.
 
+## Mensagens de operação
+
+- `sim.manualDrive {carId, throttle, steering}`: teste manual de um carro **simulado** fora de `running` (admin).
+- `admin.setCarMode {carId, mode}`, `admin.releaseSlot {carId, role}`, `admin.setDemoState`, `admin.stopAll`, `admin.resetDemo`.
+- O servidor responde `action.ok {type}` (com `requestId`) quando a ação é aceita, ou `system.error`.
+
 ## Servidor ↔ ESP32
 
 Servidor → dispositivo: `device.welcome`, `device.drive` (`seq` positivo, `speedMode: "fixed"`, `commandTtlMs`), `device.stop`, `device.heartbeat`.

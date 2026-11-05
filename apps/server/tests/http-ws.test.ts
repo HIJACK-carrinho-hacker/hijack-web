@@ -36,7 +36,8 @@ describe("HTTP", () => {
 describe("WebSocket", () => {
   test("conecta com Origin da mesma origem", async () => {
     const c = await TestClient.connect(h.port);
-    await c.waitFor("action.ok");
+    const snap = await c.waitFor("state.snapshot");
+    expect(snap.payload.state.cars.map((car) => car.id)).toEqual(["car-a", "car-b"]);
     c.close();
   });
 

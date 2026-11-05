@@ -87,6 +87,10 @@ export class BrowserHub {
     conn.socket.send(JSON.stringify(msg));
   }
 
+  broadcast<T extends ServerMessageType>(type: T, payload: PayloadOf<T>, filter: (c: BrowserConn) => boolean = () => true): void {
+    for (const c of this.conns) if (filter(c)) this.send(c, type, payload);
+  }
+
   sendError(conn: BrowserConn, code: ErrorCode, message: string, requestId?: string): void {
     this.send(conn, "system.error", { code, message }, requestId);
   }

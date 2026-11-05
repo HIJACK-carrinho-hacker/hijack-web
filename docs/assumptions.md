@@ -33,6 +33,10 @@ Distingue **fatos/decisões do grupo**, **decisões técnicas do agente** e **pe
 - **Hash de senha:** `Bun.password` (argon2id). Persistência em `apps/server/data/state.json` (gitignored, permissão 600). Estado da partida só em memória.
 - **Admin:** login separado em `/admin` com `ADMIN_SECRET` do `.env`.
 - **ESP32:** WebSocket em `/device`; `device.hello {deviceId, secret}` comparado com `DEVICE_SECRET_A/B` via `timingSafeEqual`.
+- **Playwright sem gerador:** o `create-playwright` só usa npm/yarn/pnpm e falha com dependências `workspace:*`. Exceção à regra dos geradores: `bun add -d @playwright/test@1.64.1` + `bunx playwright install chromium` + `playwright.config.ts` mínimo. A versão 1.64.1 foi fixada porque a 1.65.0 publicada referencia um `playwright-core` ainda indisponível no registro.
+- **Teste manual do operador** (`sim.manualDrive`): só para carros simulados e fora de `running`. Na Fase 2 ainda não há autenticação; a partir da Fase 3 fica restrito ao admin.
+- **STOP não conta no limite de taxa** de 20 cmd/s; só comandos de movimento são coalescidos.
+- **Cor da equipe B:** token `chart-4` (`#2b7fff`); a equipe A usa `primary`. As referências não definem cor por equipe.
 - **Piloto não vê** sinalização de comando alterado pelo ataque (padrão do plano 6.2).
 
 ## 4. Pendências físicas (não resolvidas por software)
