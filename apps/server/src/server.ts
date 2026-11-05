@@ -2,12 +2,14 @@ import { type Server, createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { SESSION_COOKIE, parseCookies } from "./auth/sessions.ts";
 import type { Config } from "./config/env.ts";
-import { type AdapterFactory, HijackEngine } from "./engine.ts";
+import { SimulatorAdapter } from "./adapters/simulator/simulator-adapter.ts";
+import { type AdapterFactory, HijackEngine, SIM_START } from "./engine.ts";
 import { HijackService } from "./hijack-service.ts";
 import { createApiRouter } from "./http/api.ts";
 import { createHttpApp } from "./http/app.ts";
 import { BrowserHub } from "./ws/browser-hub.ts";
 import { SnapshotBroadcaster } from "./ws/broadcaster.ts";
+import { DeviceHub } from "./ws/device-hub.ts";
 import { isOriginAllowed } from "./ws/origin.ts";
 
 export interface HijackServer {
@@ -15,6 +17,7 @@ export interface HijackServer {
   readonly browserHub: BrowserHub;
   readonly engine: HijackEngine;
   readonly service: HijackService;
+  readonly deviceHub: DeviceHub;
   listen(port?: number, host?: string): Promise<number>;
   close(): Promise<void>;
 }
@@ -25,7 +28,31 @@ export interface ServerOptions {
 }
 
 export function createHijackServer(config: Config, opts: ServerOptions = {}): HijackServer {
-  const engine = new HijackEngine({ config, adapterFactory: opts.adapterFactory });
+  const deviceHub = new DeviceHub(config);
+  const adapterFactory: AdapterFactory =
+    opts.adapterFactory ??
+    ((carId, mode) =>
+      mode === "simulated" ? new SimulatorAdapter(carId, { start: SIM_START[carId] }) : deviceHub.adapterFor(carId));
+  const engine = new HijackEngine({ config, adapterFactory });
+  deviceHub.setEvents({
+    onAuthFailed: () =>
+      engine.log({ kind: "device.authFailed", visibility: "admin", message: "Conexão de dispositivo recusada (credencial inválida)" }),
+    onConnected: (carId) => {
+      const car = engine.car(carId);
+      engine.log({
+        kind: "device.connected",
+        carId,
+        mode: "hardware",
+        visibility: "admin",
+        message:
+          car.mode === "hardware"
+            ? `ESP32 de ${car.displayName} autenticado`
+            : `ESP32 de ${car.displayName} autenticado; o carrinho está em modo simulado`,
+      });
+    },
+    onDisconnected: (carId) =>
+      engine.log({ kind: "device.disconnected", carId, mode: "hardware", visibility: "admin", message: "ESP32 desconectado" }),
+  });
   const browserHub = new BrowserHub(() => engine.revision);
   const service = new HijackService({ config, engine, hub: browserHub });
 
@@ -60,6 +87,7 @@ export function createHijackServer(config: Config, opts: ServerOptions = {}): Hi
     health: () => ({
       env: config.NODE_ENV,
       browsers: browserHub.connections().size,
+      devices: deviceHub.connectedCount(),
       demoState: engine.demoState,
     }),
     api: createApiRouter(service, config),
@@ -82,6 +110,10 @@ export function createHijackServer(config: Config, opts: ServerOptions = {}): Hi
       });
       return;
     }
+    if (url.pathname === "/device") {
+      deviceHub.wss.handleUpgrade(req, socket, head, (ws) => deviceHub.accept(ws, req));
+      return;
+    }
     socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
     socket.destroy();
   });
@@ -91,6 +123,7 @@ export function createHijackServer(config: Config, opts: ServerOptions = {}): Hi
     browserHub,
     engine,
     service,
+    deviceHub,
     listen(port = config.SERVER_PORT, host = config.SERVER_HOST) {
       return new Promise((resolve) => {
         httpServer.listen(port, host, () => resolve((httpServer.address() as AddressInfo).port));
@@ -100,6 +133,7 @@ export function createHijackServer(config: Config, opts: ServerOptions = {}): Hi
       broadcaster.dispose();
       service.dispose();
       engine.dispose();
+      deviceHub.dispose();
       browserHub.closeAll();
       return new Promise((resolve) => httpServer.close(() => resolve()));
     },

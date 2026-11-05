@@ -10,8 +10,8 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 | 3. Sessões e login | ✅ | Login HTTP + cookie, vagas, autorização por mensagem, troca de senha real com revogação do piloto, admin, rate limit; telas `/`, `/hacker` (esqueleto + Defesa/Autenticação), `/pilot` (provisória), `/admin` |
 | 4. Piloto | ✅ | Joystick pointer/touch com dead zone ajustável, WASD/setas, refresh 100 ms, STOP em soltar/blur/aba oculta/desmontar/sem WS, manopla volta ao centro em parada forçada, A/B desabilitados, estados visuais |
 | 5. Ataque guiado | ✅ | `AttackManager` (4 etapas, alvo só adversário, inversões independentes), eventos de comando alterado sem repetição, ocultação para o piloto, aba Ataque com etapas progressivas e registro |
-| 6. Defesa | ✅ | `DefenseManager` (integridade bloqueia a inversão no servidor; repetição gera evento didático sem movimento), indicador 0–3, cartões com rótulos permanentes de simulação, simulador compara solicitado × confirmado e destaca "comando alterado". Aguardando teste do fluxo completo pelo usuário |
-| 7. Firmware + Esp32Adapter | ⏳ | Pausa: checklist físico |
+| 6. Defesa | ✅ | `DefenseManager` (integridade bloqueia a inversão no servidor; repetição gera evento didático sem movimento), indicador 0–3, cartões com rótulos permanentes de simulação, simulador compara solicitado × confirmado e destaca "comando alterado" |
+| 7. Firmware + Esp32Adapter | ✅ software | Firmware em `../esp32` compila e passa 13 testes nativos; `DeviceHub` + `Esp32Adapter` testados com ESP32 falso. **Hardware não testado** — aguardando checklist físico do grupo |
 | 8. Robustez e apresentação | ⏳ | |
 | 9. Revisão final | ⏳ | |
 
@@ -36,10 +36,12 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 - Fase 6 (05/11/2026): typecheck ✅, lint ✅, `bun run test` ✅ 117 (protocolo 18, servidor 84, web 15), build ✅, Playwright ✅ 27 + 1 pulado.
 - Fase 6: verificação manual no Chrome — aba Defesa com os três cartões, integridade e repetição ligadas, indicador 2/3, exemplo de repetição no registro.
 
+- Fase 7 (05/11/2026): web — typecheck ✅, lint ✅, `bun run test` ✅ 128 (servidor 95, incluindo 11 com ESP32 falso), build ✅, Playwright ✅ 27 + 1 pulado. esp32 — `pio run` ✅, `pio test -e native` ✅ 13, `esp32dev_hw` bloqueia sem `secrets.h` e sem servo (verificado) e compila com valores fictícios de teste (não versionados).
+
 ## Bloqueios reais
 
 _(nenhum)_
 
 ## Próximo passo
 
-Pausa: o usuário testa o fluxo simulado completo (2 pilotos + 2 hackers + `/simulator` + `/admin`). Depois, Fase 7: firmware ESP32 (PlatformIO + Arduino) e `Esp32Adapter`.
+Pausa: checklist físico com o grupo (`../esp32/docs/testing-hardware.md`), começando com saídas desligadas. Em paralelo pode seguir a Fase 8 (robustez, exportação de métricas, modo apresentação com o build servido pelo backend, instruções de LAN/firewall, `demo-script.md`).

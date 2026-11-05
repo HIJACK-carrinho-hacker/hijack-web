@@ -13,7 +13,7 @@ Fonte de verdade em código: `packages/protocol/src/schema.ts` (schemas Zod) e `
 | `DELETE /api/session` | navegador | sai, libera a vaga e apaga o cookie |
 | `POST /api/admin/session` | operador | `{secret}` → mesmo cookie, sessão de operador |
 | `WS /ws` | navegador | `Origin` igual ao `Host` ou listado em `ALLOWED_ORIGINS`; cookie de sessão; autorização por mensagem |
-| `WS /device` | ESP32 | `device.hello` com `deviceId` + segredo do dispositivo (Fase 7) |
+| `WS /device` | ESP32 | `device.hello` em até 3 s com `deviceId` + segredo (`DEVICE_SECRET_CAR_A/B`, comparação em tempo constante); fecha com 4401/4408/4429; nova conexão do mesmo carrinho fecha a anterior com 4409 |
 
 ## Envelope
 
@@ -122,6 +122,8 @@ Ao abrir a conexão, o servidor envia `session.accepted` (se houver sessão) e u
 Servidor → dispositivo: `device.welcome`, `device.drive` (`seq` positivo, `speedMode: "fixed"`, `commandTtlMs`), `device.stop`, `device.heartbeat`.
 Dispositivo → servidor: `device.hello`, `device.ack`, `device.telemetry`, `device.fault`, `device.stopped`.
 
+- `device.welcome {carId, commandTtlMs}` é enviado após o `hello` válido; o firmware só aceita `device.drive` depois dele e zera `lastSeq` a cada conexão.
+- O servidor envia `device.heartbeat` a cada 1 s e ping WebSocket a cada 2 s (encerra conexões sem pong).
 - `seq <= lastSeq` é descartado pelo firmware.
 - A TTL conta a partir do recebimento, no relógio monotônico do ESP32.
 - `device.heartbeat` não prolonga o watchdog de movimento.

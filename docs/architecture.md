@@ -14,7 +14,7 @@ apps/server
    CarController (seq crescente, coalescência ≤ 20 cmd/s, STOP prioritário, watchdog do servidor)
       ▼
    DeviceAdapter ── SimulatorAdapter (imita o firmware)
-                 └─ Esp32Adapter (Fase 7)  /  OfflineHardwareAdapter (hardware ainda não conectado)
+                 └─ Esp32Adapter ◄── DeviceHub (WS /device, autenticação do ESP32)
 ```
 
 ## Módulos do servidor (`apps/server/src`)
@@ -32,6 +32,8 @@ apps/server
 | `demo/demo-state.ts` | transições válidas da demonstração |
 | `devices/types.ts` | contrato `DeviceAdapter` e eventos do dispositivo |
 | `adapters/simulator/` | simulador de carrinho com a mesma semântica do firmware |
+| `adapters/esp32/esp32-adapter.ts` | envia `device.drive`/`device.stop`/`device.heartbeat` ao ESP32 e converte `ack`/`telemetry`/`stopped`/`fault` em eventos do `DeviceAdapter` |
+| `ws/device-hub.ts` | endpoint `/device`: `hello` com segredo, `welcome`, substituição de conexão, ping, liga o socket ao `Esp32Adapter` do carrinho quando ele está em modo hardware |
 | `telemetry/` | log de eventos em anel e métricas (contadores, latência de ack p50/p95) |
 | `hijack-service.ts` | sessões, autorização por mensagem, ataques, defesas, troca de senha, ações do operador, snapshot por visualizador |
 | `auth/` | `PasswordStore` (argon2id em arquivo), `SessionStore` (tokens, vagas), leitura de cookie |

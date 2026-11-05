@@ -63,7 +63,7 @@ interface CarRuntime {
   lastMove: { vector: DriveVector; at: number } | null;
 }
 
-const SIM_START: Record<CarId, { x: number; y: number; heading: number }> = {
+export const SIM_START: Record<CarId, { x: number; y: number; heading: number }> = {
   "car-a": { x: 0.3, y: 0.7, heading: -Math.PI / 2 },
   "car-b": { x: 0.7, y: 0.7, heading: -Math.PI / 2 },
 };
