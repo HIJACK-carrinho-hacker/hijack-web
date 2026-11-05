@@ -47,6 +47,11 @@ Distingue **fatos/decisões do grupo**, **decisões técnicas do agente** e **pe
 - **Teclado** (WASD/setas) e analógico compartilham o mesmo envio; vale a última entrada.
 - **Piloto não vê** sinalização de comando alterado pelo ataque (padrão do plano 6.2).
 
+## 3.1 Repositórios e infraestrutura (05/11/2026)
+
+- Repositórios privados na organização `HIJACK-carrinho-hacker`: `hijack` (documentação geral, raiz), `hijack-web` (este) e `hijack-esp32`.
+- O usuário liberou o uso de PostgreSQL, Redis etc. **se necessário**. Hoje não é: o estado da partida fica em memória de propósito (reinício sempre volta parado), só os hashes das senhas persistem em arquivo, e a escala é de dois carrinhos numa LAN. Candidato a usar PostgreSQL no futuro: histórico de várias apresentações (eventos e métricas por sessão).
+
 ## 4. Pendências físicas (não resolvidas por software)
 
 - Pino de sinal do servo e pulsos esquerda/centro/direita (µs).
