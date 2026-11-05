@@ -15,7 +15,7 @@ export function ActionButtons() {
             >
               {b.label}
             </button>
-            <span className="font-mono text-[10px] text-subtle">[{b.key}]</span>
+            <span className="font-mono text-[10px] text-muted-foreground">[{b.key}]</span>
           </div>
         ))}
       </div>

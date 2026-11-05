@@ -32,7 +32,7 @@ export function DemoControls({ demoState }: { demoState: DemoState }) {
           {n.label}
         </Button>
       ))}
-      <Button variant="destructive" size="lg" onClick={() => send("admin.stopAll", { reason: "operador" })} className="font-bold">
+      <Button variant="destructive" size="lg" onClick={() => send("admin.stopAll", { reason: "operador" })} className="bg-destructive font-bold text-primary-foreground hover:bg-destructive/90 dark:bg-destructive dark:hover:bg-destructive/90">
         <OctagonX /> STOP ALL
       </Button>
     </div>

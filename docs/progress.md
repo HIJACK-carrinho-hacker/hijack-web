@@ -11,8 +11,8 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 | 4. Piloto | ✅ | Joystick pointer/touch com dead zone ajustável, WASD/setas, refresh 100 ms, STOP em soltar/blur/aba oculta/desmontar/sem WS, manopla volta ao centro em parada forçada, A/B desabilitados, estados visuais |
 | 5. Ataque guiado | ✅ | `AttackManager` (4 etapas, alvo só adversário, inversões independentes), eventos de comando alterado sem repetição, ocultação para o piloto, aba Ataque com etapas progressivas e registro |
 | 6. Defesa | ✅ | `DefenseManager` (integridade bloqueia a inversão no servidor; repetição gera evento didático sem movimento), indicador 0–3, cartões com rótulos permanentes de simulação, simulador compara solicitado × confirmado e destaca "comando alterado" |
-| 7. Firmware + Esp32Adapter | ✅ software | Firmware em `../esp32` compila e passa 13 testes nativos; `DeviceHub` + `Esp32Adapter` testados com ESP32 falso. **Hardware não testado** — aguardando checklist físico do grupo |
-| 8. Robustez e apresentação | ⏳ | |
+| 7. Firmware + Esp32Adapter | ✅ software | Firmware em `../esp32` compila e passa 13 testes nativos; pinos descritivos em `include/pins.h` (DevKit 38 pinos) com checagem em compilação; `DeviceHub` + `Esp32Adapter` testados com ESP32 falso. **Hardware não testado** — aguardando checklist físico do grupo |
+| 8. Robustez e apresentação | ✅ | Exportação CSV/JSON (só operador, sem segredos, anti-fórmula), `bun run demo` (servidor entrega o build), QR code e endereços da LAN no `/admin`, auditoria axe sem violações sérias, README com LAN/firewall/solução de problemas/checklist, `testing.md`, `demo-script.md` |
 | 9. Revisão final | ⏳ | |
 
 ## Testes executados
@@ -38,10 +38,14 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 
 - Fase 7 (05/11/2026): web — typecheck ✅, lint ✅, `bun run test` ✅ 128 (servidor 95, incluindo 11 com ESP32 falso), build ✅, Playwright ✅ 27 + 1 pulado. esp32 — `pio run` ✅, `pio test -e native` ✅ 13, `esp32dev_hw` bloqueia sem `secrets.h` e sem servo (verificado) e compila com valores fictícios de teste (não versionados).
 
+- Fase 8 (05/11/2026): typecheck ✅, lint ✅, `bun run test` ✅ 134, build ✅, Playwright ✅ 29 + 1 pulado (inclui acessibilidade em desktop e mobile). Modo produção verificado: `/`, `/pilot`, assets, `/api/public` e `/health` respondendo pelo servidor na porta alternativa 3100.
+- Fase 8: verificação manual no Chrome do `/admin` (QR code, endereços, exportação).
+- Correções de acessibilidade: contraste das legendas `[J]`/`[K]`, horários do registro e "vago"; selo "Vulnerável" em contorno; STOP ALL sólido; lista de eventos focável.
+
 ## Bloqueios reais
 
 _(nenhum)_
 
 ## Próximo passo
 
-Pausa: checklist físico com o grupo (`../esp32/docs/testing-hardware.md`), começando com saídas desligadas. Em paralelo pode seguir a Fase 8 (robustez, exportação de métricas, modo apresentação com o build servido pelo backend, instruções de LAN/firewall, `demo-script.md`).
+Fase 9: revisão integrada (rodar tudo de uma instalação limpa, conferir a Definition of Done da seção 14 do plano mestre, listar pendências). Testes físicos seguem com o grupo.

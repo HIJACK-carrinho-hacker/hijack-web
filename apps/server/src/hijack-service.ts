@@ -66,6 +66,14 @@ export class HijackService {
     clearInterval(this.sweepTimer);
   }
 
+  exportEvents() {
+    return this.engine.events.all();
+  }
+
+  exportMetrics() {
+    return this.engine.metrics.all();
+  }
+
   publicInfo(): PublicInfo {
     return {
       adminAvailable: !!this.config.ADMIN_SECRET,

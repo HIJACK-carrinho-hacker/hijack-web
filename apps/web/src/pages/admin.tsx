@@ -1,5 +1,5 @@
 import type { CarMode } from "@hijack/protocol";
-import { LogOut } from "lucide-react";
+import { Download, LogOut } from "lucide-react";
 import { Brand } from "@/components/hijack/brand";
 import { ConnectionBadge } from "@/components/hijack/connection-badge";
 import { DemoControls } from "@/components/hijack/demo-controls";
@@ -8,6 +8,7 @@ import { ModeBadge } from "@/components/hijack/mode-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminLogin } from "@/features/admin/admin-login";
+import { LanAccessCard } from "@/features/admin/lan-access";
 import { ResetDialog } from "@/features/admin/reset-dialog";
 import { useHijack } from "@/hooks/use-hijack";
 import { DEMO_STATE_LABEL, STOP_REASON_LABEL } from "@/lib/labels";
@@ -76,7 +77,7 @@ export function AdminPage() {
                         <div key={role} className="flex items-center justify-between gap-2">
                           <span>
                             <span className="text-muted-foreground">{role === "pilot" ? "Piloto" : "Hacker"}:</span>{" "}
-                            {holder ?? <span className="text-subtle">vago</span>}
+                            {holder ?? <span className="text-muted-foreground">vago</span>}
                           </span>
                           {holder && (
                             <Button size="sm" variant="ghost" onClick={() => send("admin.releaseSlot", { carId: car.id, role })}>
@@ -91,6 +92,8 @@ export function AdminPage() {
               );
             })}
           </div>
+
+          <LanAccessCard />
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
@@ -131,6 +134,22 @@ export function AdminPage() {
                 <p className="mt-2 text-xs text-muted-foreground">
                   Latência de ack = envio do servidor até a confirmação do dispositivo; não é o tempo até a roda girar.
                 </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(
+                    [
+                      ["metrics", "csv", "Métricas CSV"],
+                      ["metrics", "json", "Métricas JSON"],
+                      ["events", "csv", "Eventos CSV"],
+                      ["events", "json", "Eventos JSON"],
+                    ] as const
+                  ).map(([name, format, label]) => (
+                    <Button key={`${name}.${format}`} asChild size="sm" variant="secondary">
+                      <a href={`/api/admin/export/${name}.${format}`} download>
+                        <Download /> {label}
+                      </a>
+                    </Button>
+                  ))}
+                </div>
               </CardContent>
             </Card>
             <Card>

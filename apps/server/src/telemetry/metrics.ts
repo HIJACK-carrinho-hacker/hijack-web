@@ -79,6 +79,13 @@ export class MetricsRegistry {
     };
   }
 
+  all(): Metrics[] {
+    return [...this.cars.keys()].map((k) => {
+      const [carId, mode] = k.split(":") as [CarId, CarMode];
+      return this.snapshot(carId, mode);
+    });
+  }
+
   reset(): void {
     this.cars.clear();
   }

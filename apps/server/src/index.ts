@@ -20,5 +20,9 @@ const shutdown = async () => {
   await server.close();
   process.exit(0);
 };
+process.on("unhandledRejection", (err) => {
+  console.error("[hijack] erro não tratado:", err);
+  server.engine.stopAll("fault", false);
+});
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);

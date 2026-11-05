@@ -15,7 +15,8 @@
     "lint": "oxlint",
     "fmt": "bun fmt",
     "fmt:check": "bun fmt --check",
-    "typecheck": "bun check -p packages/protocol && bun check -p apps/server && bun check -p apps/web/tsconfig.app.json && bun check -p apps/web/tsconfig.node.json && bun check -p apps/web/tsconfig.test.json"
+    "typecheck": "bun check -p packages/protocol && bun check -p apps/server && bun check -p apps/web/tsconfig.app.json && bun check -p apps/web/tsconfig.node.json && bun check -p apps/web/tsconfig.test.json",
+    "demo": "bun run build && bun run start"
   },
   "devDependencies": {
     "@types/bun": "latest",

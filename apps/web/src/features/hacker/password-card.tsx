@@ -44,7 +44,7 @@ export function PasswordCard({ defense }: { defense: DefenseView | undefined }) 
           {strong ? (
             <Badge>Senha forte ativa</Badge>
           ) : (
-            <Badge variant="destructive">Vulnerável: senha padrão 1234</Badge>
+            <Badge variant="outline" className="border-destructive/60 text-destructive">Vulnerável: senha padrão 1234</Badge>
           )}
         </CardTitle>
         <CardDescription>
