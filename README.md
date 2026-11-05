@@ -51,6 +51,18 @@ Ao iniciar, o servidor imprime os endereços da LAN (`[hijack] na LAN: http://19
 
 Cada navegador guarda **uma** sessão. Para testar vários papéis num computador, use navegadores diferentes ou janelas anônimas.
 
+## Ligando os carrinhos reais (ESP32)
+
+O passo a passo de montagem, pinagem e gravação está em [`../esp32/README.md`](../esp32/README.md). Do lado do servidor:
+
+1. Em `apps/server/.env`, defina `DEVICE_SECRET_CAR_A` e `DEVICE_SECRET_CAR_B` (mín. 8 caracteres) e **reinicie** o servidor.
+2. Use os mesmos valores em `DEVICE_SECRET` no `esp32/include/secrets.h` de cada carrinho, com `DEVICE_ID` `car-a` ou `car-b`, e o IP do notebook em `SERVER_HOST`.
+3. Com o servidor rodando, ligue o ESP32: ele se conecta em `ws://<IP>:3000/device` e se autentica.
+4. No `/admin`, troque o carrinho para **Hardware** (com a partida fora de "Em demonstração"). O cartão mostra **online** quando o ESP32 está conectado; os eventos do operador mostram "ESP32 de Carrinho A autenticado" ou "Conexão de dispositivo recusada".
+5. Para voltar ao simulador a qualquer momento: pausar e trocar para **Simulado**.
+
+Também é possível iniciar já em hardware com `CAR_A_MODE=hardware` / `CAR_B_MODE=hardware` no `.env`.
+
 ## Rede e firewall
 
 1. Conecte o notebook servidor, os celulares, os notebooks e os ESP32 na **mesma** Wi-Fi isolada.
