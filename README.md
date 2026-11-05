@@ -56,7 +56,7 @@ Cada navegador guarda **uma** sessão. Para testar vários papéis num computado
 O passo a passo de montagem, pinagem e gravação está em [`../esp32/README.md`](../esp32/README.md). Do lado do servidor:
 
 1. Em `apps/server/.env`, defina `DEVICE_SECRET_CAR_A` e `DEVICE_SECRET_CAR_B` (mín. 8 caracteres) e **reinicie** o servidor.
-2. Use os mesmos valores em `DEVICE_SECRET` no `esp32/include/secrets.h` de cada carrinho, com `DEVICE_ID` `car-a` ou `car-b`, e o IP do notebook em `SERVER_HOST`.
+2. No portal Wi-Fi de cada carrinho (rede `HIJACK-…` criada pelo ESP32; segurar BOOT 3 s para reabrir), informe o IP do notebook, a porta, `car-a` ou `car-b` e o mesmo segredo do `.env`.
 3. Com o servidor rodando, ligue o ESP32: ele se conecta em `ws://<IP>:3000/device` e se autentica.
 4. No `/admin`, troque o carrinho para **Hardware** (com a partida fora de "Em demonstração"). O cartão mostra **online** quando o ESP32 está conectado; os eventos do operador mostram "ESP32 de Carrinho A autenticado" ou "Conexão de dispositivo recusada".
 5. Para voltar ao simulador a qualquer momento: pausar e trocar para **Simulado**.
