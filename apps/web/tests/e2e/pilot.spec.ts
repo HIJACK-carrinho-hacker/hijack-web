@@ -1,26 +1,11 @@
-import { type Page, expect, test } from '@playwright/test'
-import { loginAs, resetEnvironment } from './helpers.ts'
+import { expect, test } from '@playwright/test'
+import { carPanel, holdJoystick, loginAs, resetEnvironment } from './helpers.ts'
 
 test.describe.configure({ mode: 'serial' })
 
 test.afterAll(async ({ browser }) => {
   await resetEnvironment(browser)
 })
-
-const carPanel = (page: Page, name: 'Carrinho A' | 'Carrinho B') =>
-  page.locator('[data-slot=card]').filter({ hasText: new RegExp(`^${name}`) })
-
-async function holdJoystick(page: Page, dx: number, dy: number) {
-  const joy = page.getByRole('application', { name: /Analógico/ })
-  await joy.scrollIntoViewIfNeeded()
-  const box = await joy.boundingBox()
-  if (!box) throw new Error('joystick sem posição')
-  const cx = box.x + box.width / 2
-  const cy = box.y + box.height / 2
-  await page.mouse.move(cx, cy)
-  await page.mouse.down()
-  await page.mouse.move(cx + dx * box.width * 0.3, cy + dy * box.height * 0.3, { steps: 4 })
-}
 
 test('antes da largada o piloto aguarda e os botões A/B não têm função', async ({ browser, page }) => {
   await resetEnvironment(browser)

@@ -8,8 +8,8 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 | 1. Monorepo e contratos | ✅ | Workspaces Bun, protocol Zod, Express+ws com `/health` e `/ws`, Vite+shadcn tema escuro, proxy dev |
 | 2. Simulador | ✅ | `HijackEngine`, `CarController`, `SimulatorAdapter`, pipeline, métricas, eventos, `/simulator`. Revisado pelo usuário |
 | 3. Sessões e login | ✅ | Login HTTP + cookie, vagas, autorização por mensagem, troca de senha real com revogação do piloto, admin, rate limit; telas `/`, `/hacker` (esqueleto + Defesa/Autenticação), `/pilot` (provisória), `/admin` |
-| 4. Piloto | ✅ | Joystick pointer/touch com dead zone ajustável, WASD/setas, refresh 100 ms, STOP em soltar/blur/aba oculta/desmontar/sem WS, manopla volta ao centro em parada forçada, A/B desabilitados, estados visuais. Aguardando teste no celular |
-| 5. Ataque guiado | ⏳ | |
+| 4. Piloto | ✅ | Joystick pointer/touch com dead zone ajustável, WASD/setas, refresh 100 ms, STOP em soltar/blur/aba oculta/desmontar/sem WS, manopla volta ao centro em parada forçada, A/B desabilitados, estados visuais |
+| 5. Ataque guiado | ✅ | `AttackManager` (4 etapas, alvo só adversário, inversões independentes), eventos de comando alterado sem repetição, ocultação para o piloto, aba Ataque com etapas progressivas e registro |
 | 6. Defesa | ⏳ | Pausa: fluxo simulado completo |
 | 7. Firmware + Esp32Adapter | ⏳ | Pausa: checklist físico |
 | 8. Robustez e apresentação | ⏳ | |
@@ -29,10 +29,14 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 - Fase 4 (05/11/2026): typecheck ✅ (5 projetos), lint ✅, `bun run test` ✅ 94 (protocolo 18, servidor 61, web 15), build ✅, Playwright ✅ 19 + 1 pulado (teclado no perfil mobile).
 - Fase 4: verificação manual no Chrome — analógico em diagonal manteve o carrinho A em movimento por > 2 s com `seq` subindo (refresh), B parado; `blur` da janela parou o carrinho na hora; layout retrato em 412 px ok.
 
+- Fase 5 (05/11/2026): typecheck ✅, lint ✅, `bun run test` ✅ 109 (protocolo 18, servidor 76, web 15), build ✅, Playwright ✅ 23 + 1 pulado; E2E de ataque repetido 4× em desktop e mobile sem falha.
+- Fase 5: verificação manual no Chrome — 4 etapas pela UI; piloto B (script) pediu frente e o carrinho B executou ré; registro mostrou "Comando alterado: frente → ré".
+- Correção na Fase 5: o servidor envia o `state.snapshot` atualizado ao autor **antes** do `action.ok`, evitando que a UI use estado antigo logo após uma ação.
+
 ## Bloqueios reais
 
 _(nenhum)_
 
 ## Próximo passo
 
-Teste do piloto em celular real pelo usuário. Depois, Fase 5: ataque guiado (scan → alvo → exploração → manipulação) com inversões independentes, ocultando a transformação do piloto.
+Fase 6: defesa didática — cartões de integridade (bloqueia a inversão no servidor, rótulo "Simulação, não HMAC") e repetição (evento didático de comando antigo recusado, rótulo "Simulação, não validação no firmware"), indicador 0–3, comparação desejado × aplicado. Depois pausar para o fluxo completo com 2 pilotos + 2 hackers.

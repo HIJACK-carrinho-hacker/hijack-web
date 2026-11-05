@@ -1,6 +1,6 @@
 import type { CarId, CarMode, EventLogEntry, Role, TeamId } from "@hijack/protocol";
 
-export type EventVisibility = "public" | "team" | "admin";
+export type EventVisibility = "public" | "staff" | "team" | "admin";
 
 export interface StoredEvent extends EventLogEntry {
   visibility: EventVisibility;

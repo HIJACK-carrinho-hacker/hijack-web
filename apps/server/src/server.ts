@@ -47,6 +47,7 @@ export function createHijackServer(config: Config, opts: ServerOptions = {}): Hi
       const result = await service.handle(conn, msg);
       if (msg.type === "session.resume" || msg.type === "session.logout") broadcaster.sendTo(conn);
       if (!result) return;
+      if (result.ok && msg.type !== "session.resume" && msg.type !== "session.logout") broadcaster.sendTo(conn);
       if (result.ok) browserHub.send(conn, "action.ok", { type: msg.type }, msg.requestId);
       else browserHub.sendError(conn, result.code, result.message, msg.requestId);
     },

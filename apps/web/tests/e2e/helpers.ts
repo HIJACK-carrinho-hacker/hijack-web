@@ -57,3 +57,18 @@ export async function loginAs(page: Page, opts: { name: string; role: 'Piloto' |
   await page.getByLabel('Senha do carrinho').fill(opts.password ?? '1234')
   await page.getByRole('button', { name: 'Conectar e entrar' }).click()
 }
+
+export const carPanel = (page: Page, name: 'Carrinho A' | 'Carrinho B') =>
+  page.locator('[data-slot=card]').filter({ hasText: new RegExp(`^${name}`) })
+
+export async function holdJoystick(page: Page, dx: number, dy: number) {
+  const joy = page.getByRole('application', { name: /Analógico/ })
+  await joy.scrollIntoViewIfNeeded()
+  const box = await joy.boundingBox()
+  if (!box) throw new Error('joystick sem posição')
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+  await page.mouse.move(cx, cy)
+  await page.mouse.down()
+  await page.mouse.move(cx + dx * box.width * 0.3, cy + dy * box.height * 0.3, { steps: 4 })
+}

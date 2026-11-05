@@ -1,6 +1,8 @@
 import { ParticipantHeader } from "@/components/hijack/participant-header";
 import { SecurityPills } from "@/components/hijack/security-pills";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EventList } from "@/components/hijack/event-list";
+import { AttackSteps } from "@/features/hacker/attack-steps";
 import { PasswordCard } from "@/features/hacker/password-card";
 import { useHijack } from "@/hooks/use-hijack";
 
@@ -10,6 +12,8 @@ export function HackerPage() {
   const { state, me } = useHijack();
   const defense = state?.defenses.find((d) => d.carId === me?.carId);
   const running = state?.demoState === "running";
+  const attack = state?.attacks.find((a) => a.attackerTeam === me?.teamId);
+  const log = (state?.events ?? []).filter((e) => /^(attack|defense)\./.test(e.kind)).slice(0, 12);
   return (
     <main className="mx-auto flex min-h-svh max-w-4xl flex-col gap-6 px-4 py-6">
       <ParticipantHeader>
@@ -28,7 +32,14 @@ export function HackerPage() {
           <p className="text-sm text-muted-foreground">
             {running ? "Siga as etapas guiadas." : "O ataque é liberado quando a partida começar."}
           </p>
+          {attack && state && <AttackSteps attack={attack} cars={state.cars} running={running} />}
           <p className="text-xs text-warning">Esta é uma simulação no servidor, não uma invasão de rede.</p>
+          {log.length > 0 && (
+            <section className="flex flex-col gap-2 rounded-xl border bg-card p-4">
+              <h3 className="text-sm font-semibold">Registro</h3>
+              <EventList events={log} />
+            </section>
+          )}
         </TabsContent>
         <TabsContent value="defense" className="flex flex-col gap-4">
           <PasswordCard defense={defense} />

@@ -18,7 +18,7 @@ import { OfflineHardwareAdapter } from "./adapters/offline-adapter.ts";
 import { SimulatorAdapter } from "./adapters/simulator/simulator-adapter.ts";
 import type { Config } from "./config/env.ts";
 import { CarController } from "./control/car-controller.ts";
-import { type AttackEffect, applyAttack, isNeutral } from "./control/pipeline.ts";
+import { type AttackEffect, type PipelineResult, applyAttack, isNeutral } from "./control/pipeline.ts";
 import { DEMO_STATE_LABEL, allowsMovement, canTransition } from "./demo/demo-state.ts";
 import { type Clock, type DeviceAdapter, type DeviceEvent, systemClock } from "./devices/types.ts";
 import { EventLog, type NewEvent, type StoredEvent } from "./telemetry/event-log.ts";
@@ -58,6 +58,7 @@ interface CarRuntime {
   rejectedCommands: number;
   lastSeq: number;
   watchdogTrips: number;
+  lastTransformKey: string | null;
 }
 
 const SIM_START: Record<CarId, { x: number; y: number; heading: number }> = {
@@ -192,6 +193,7 @@ export class HijackEngine {
     const car = this.mustCar(carId);
     this.metrics.inc(carId, car.mode, "received");
     if (!input.pressed || isNeutral(input)) {
+      car.lastTransformKey = null;
       car.controller.stop("pilot-release");
       return ok;
     }
@@ -204,10 +206,12 @@ export class HijackEngine {
       this.metrics.inc(carId, car.mode, "rejected");
       return fail("car_offline", "carrinho offline");
     }
+    const requested = { throttle: input.throttle, steering: input.steering };
     const { effect, integrity } = this.attackEffectFor(carId);
-    const result = applyAttack({ throttle: input.throttle, steering: input.steering }, effect, integrity);
+    const result = applyAttack(requested, effect, integrity);
     if (result.transformed) this.metrics.inc(carId, car.mode, "transformed");
     if (result.blocked) this.metrics.inc(carId, car.mode, "blocked");
+    this.logTransform(car, requested, result);
     car.controller.command(result.output);
     return ok;
   }
@@ -223,12 +227,14 @@ export class HijackEngine {
   }
 
   snapshot(viewer: Viewer, extra: Partial<Pick<PublicState, "slots" | "attacks" | "defenses" | "me">> = {}): PublicState {
-    const cars = [...this.cars.values()].map((c) => this.carView(c));
+    const cars = [...this.cars.values()].map((c) => this.carView(c, viewer.role === "pilot"));
     const canSeeAll = viewer.role === "admin" || viewer.role === "spectator";
     const eventFilter = (e: StoredEvent) => {
       if (viewer.role === "admin") return true;
       if (e.visibility === "public") return true;
-      if (e.visibility === "team" && "teamId" in viewer) return e.teamId === viewer.teamId && viewer.role === "hacker";
+      if (viewer.role === "pilot") return false;
+      if (e.visibility === "staff") return true;
+      if (e.visibility === "team" && viewer.role === "hacker") return e.teamId === viewer.teamId;
       return false;
     };
     return {
@@ -256,15 +262,16 @@ export class HijackEngine {
     this.listeners.clear();
   }
 
-  private carView(c: CarRuntime): CarView {
+  private carView(c: CarRuntime, redact = false): CarView {
     const pose = c.controller.device.pose();
+    const hidden = { throttle: 0, steering: 0 } as const;
     return {
       id: c.id,
       teamId: c.teamId,
       displayName: c.displayName,
       mode: c.mode,
-      desired: c.controller.desired,
-      confirmed: { ...c.confirmed },
+      desired: redact ? { ...hidden } : c.controller.desired,
+      confirmed: redact ? { ...hidden } : { ...c.confirmed },
       moving: c.controller.moving,
       stopReason: c.controller.stopReason,
       telemetry: {
@@ -302,6 +309,7 @@ export class HijackEngine {
       rejectedCommands: 0,
       lastSeq: 0,
       watchdogTrips: 0,
+      lastTransformKey: null,
       unsubscribe: () => {},
     } as Omit<CarRuntime, "controller"> as CarRuntime;
     runtime.controller = new CarController(
@@ -377,6 +385,35 @@ export class HijackEngine {
     this.changed();
   }
 
+  private logTransform(car: CarRuntime, requested: DriveVector, result: PipelineResult): void {
+    const key = result.transformed || result.blocked
+      ? `${result.blocked ? "b" : "t"}:${requested.throttle},${requested.steering}>${result.output.throttle},${result.output.steering}`
+      : null;
+    if (key === car.lastTransformKey) return;
+    car.lastTransformKey = key;
+    if (!key) return;
+    const from = describeVector(requested);
+    if (result.blocked) {
+      this.log({
+        kind: "defense.blocked",
+        carId: car.id,
+        teamId: car.teamId,
+        mode: car.mode,
+        visibility: "staff",
+        message: `Alteração bloqueada pela integridade (simulada): ${from} mantido`,
+      });
+      return;
+    }
+    this.log({
+      kind: "attack.transformed",
+      carId: car.id,
+      teamId: car.teamId,
+      mode: car.mode,
+      visibility: "staff",
+      message: `Comando alterado: ${from} → ${describeVector(result.output)}`,
+    });
+  }
+
   private tick(): void {
     let moving = false;
     for (const car of this.cars.values()) {
@@ -399,3 +436,9 @@ export class HijackEngine {
 }
 
 const round3 = (v: number) => Math.round(v * 1000) / 1000;
+
+export function describeVector(v: DriveVector): string {
+  const t = v.throttle === 1 ? "frente" : v.throttle === -1 ? "ré" : "";
+  const s = v.steering === 1 ? "direita" : v.steering === -1 ? "esquerda" : "";
+  return [t, s].filter(Boolean).join(" + ") || "parado";
+}

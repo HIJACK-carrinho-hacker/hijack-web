@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import {
   CAR_IDS,
+  type AttackView,
   type ClientMessage,
   type DefenseView,
   type ErrorCode,
@@ -10,6 +11,7 @@ import {
   type PublicState,
   type SlotView,
 } from "@hijack/protocol";
+import { AttackManager } from "./attacks/attack-manager.ts";
 import { PasswordStore, checkStrongPassword } from "./auth/password-store.ts";
 import { type ParticipantSession, type Session, SessionStore } from "./auth/sessions.ts";
 import type { Config } from "./config/env.ts";
@@ -32,6 +34,7 @@ const loginThrottleOptions = { maxFailures: 5, windowMs: 60_000, baseLockMs: 15_
 export class HijackService {
   readonly sessions: SessionStore;
   readonly passwords: PasswordStore;
+  readonly attacks = new AttackManager();
   private readonly config: Config;
   private readonly engine: HijackEngine;
   private readonly hub: BrowserHub;
@@ -47,6 +50,7 @@ export class HijackService {
     this.sessions = new SessionStore(opts.config.SESSION_TTL_MS);
     this.passwords = new PasswordStore(opts.config.DATA_DIR);
     this.sweepTimer = setInterval(() => this.sweep(), 30_000);
+    this.engine.setAttackResolver((carId) => ({ effect: this.attacks.effectOn(carId), integrity: false }));
   }
 
   setStateChangedListener(fn: () => void): void {
@@ -154,6 +158,7 @@ export class HijackService {
     return this.engine.snapshot(viewer, {
       me: this.me(session),
       slots: this.slots(),
+      attacks: this.attacksFor(viewer),
       defenses: this.defensesFor(viewer),
     });
   }
@@ -200,7 +205,11 @@ export class HijackService {
       case "attack.selectTarget":
       case "attack.exploitDemo":
       case "attack.configure":
-      case "attack.disable":
+      case "attack.disable": {
+        const hacker = this.requireParticipant(session, "hacker");
+        if (!hacker.ok) return hacker.result;
+        return this.handleAttack(hacker.session, msg);
+      }
       case "defense.setIntegrityDemo":
       case "defense.setReplayDemo": {
         const hacker = this.requireParticipant(session, "hacker");
@@ -217,6 +226,65 @@ export class HijackService {
         return this.handleAdmin(msg);
       }
     }
+  }
+
+  private handleAttack(session: ParticipantSession, msg: ClientMessage): Result {
+    const team = session.teamId;
+    if (msg.type === "attack.disable") {
+      const was = this.attacks.view(team).active;
+      const r = this.attacks.disable(team);
+      if (was) this.logAttack(session, "Ataque desativado");
+      this.onStateChanged();
+      return r;
+    }
+    if (this.engine.demoState !== "running") return fail("demo_not_running", "o ataque é liberado quando a partida começar");
+    let r: Result;
+    switch (msg.type) {
+      case "attack.scan":
+        r = this.attacks.scan(team);
+        if (r.ok) this.logAttack(session, "Varredura simulada: carrinhos cadastrados no servidor listados", "team");
+        break;
+      case "attack.selectTarget":
+        r = this.attacks.selectTarget(team, msg.payload.targetCarId);
+        if (r.ok) this.logAttack(session, `Alvo escolhido: ${this.engine.car(msg.payload.targetCarId).displayName}`, "team");
+        break;
+      case "attack.exploitDemo": {
+        const target = this.attacks.view(team).targetCarId;
+        r = target
+          ? this.attacks.exploit(team, {
+              targetName: this.engine.car(target).displayName,
+              targetUsesDefaultPassword: this.passwords.isDefault(target),
+            })
+          : fail("attack_step_invalid", "escolha o alvo primeiro");
+        if (r.ok) this.logAttack(session, "Exploração simulada concluída", "team");
+        break;
+      }
+      case "attack.configure": {
+        const { invertThrottle, invertSteering } = msg.payload;
+        r = this.attacks.configure(team, invertThrottle, invertSteering);
+        if (r.ok) {
+          const parts = [invertThrottle && "frente ↔ ré", invertSteering && "esquerda ↔ direita"].filter(Boolean);
+          this.logAttack(session, parts.length ? `Inversão ativa: ${parts.join(" e ")}` : "Inversões desligadas");
+        }
+        break;
+      }
+      default:
+        r = fail("bad_request", "ação desconhecida");
+    }
+    this.onStateChanged();
+    return r;
+  }
+
+  private logAttack(session: ParticipantSession, message: string, visibility: "team" | "staff" = "staff"): void {
+    const target = this.attacks.view(session.teamId).targetCarId;
+    this.engine.log({
+      kind: "attack.step",
+      carId: target,
+      teamId: session.teamId,
+      actorRole: "hacker",
+      visibility,
+      message: `Equipe ${session.teamId}: ${message}`,
+    });
   }
 
   private handleAdmin(msg: ClientMessage): Result {
@@ -249,6 +317,7 @@ export class HijackService {
   private resetDemo(flags: { resetAttacks: boolean; resetDefenses: boolean; resetPasswords: boolean }): Result {
     if (this.engine.demoState === "running") return fail("forbidden", "pause ou encerre a demonstração antes de resetar");
     this.engine.stopAll("admin-stop-all", false);
+    if (flags.resetAttacks) this.attacks.reset();
     if (flags.resetPasswords) {
       for (const id of CAR_IDS) this.passwords.resetToDefault(id);
       this.engine.log({ kind: "auth.passwordReset", actorRole: "admin", message: "Senhas dos carrinhos voltaram ao padrão vulnerável" });
@@ -337,6 +406,12 @@ export class HijackService {
       pilot: this.sessions.slotHolder(carId, "pilot")?.displayName ?? null,
       hacker: this.sessions.slotHolder(carId, "hacker")?.displayName ?? null,
     }));
+  }
+
+  private attacksFor(viewer: Viewer): AttackView[] {
+    if (viewer.role === "admin" || viewer.role === "spectator") return this.attacks.all();
+    if (viewer.role === "hacker") return [this.attacks.view(viewer.teamId)];
+    return [];
   }
 
   private defensesFor(viewer: Viewer): DefenseView[] {

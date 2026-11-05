@@ -66,7 +66,24 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 
 ## Etapas do ataque
 
-`locked` (não iniciado) → `scan` → `target` → `exploit` → `manipulate` (inversões liberadas). Tudo é simulado no servidor; `scan` lista apenas os carrinhos cadastrados.
+`step` indica a **última etapa concluída**: `locked` (nada feito) → `scan` → `target` → `exploit` → `manipulate`.
+
+| Mensagem | Exige | Efeito |
+|---|---|---|
+| `attack.scan` | `running` | lista os carrinhos cadastrados (sem varredura real) |
+| `attack.selectTarget {targetCarId}` | `running`, etapa ≥ `scan`, alvo = carrinho adversário | define o alvo |
+| `attack.exploitDemo` | `running`, etapa ≥ `target` | gera o relatório simulado |
+| `attack.configure {invertThrottle, invertSteering}` | `running`, etapa ≥ `exploit` | liga/desliga cada inversão; `active` = alguma ligada |
+| `attack.disable` | qualquer estado | desliga as inversões (progresso mantido) |
+
+Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria equipe). Pausar preserva o progresso. A troca de senha **não** bloqueia a inversão (pré-projeto: a senha forte "não impede por si só alterações nos comandos feitas por um componente autorizado"); só a integridade didática bloqueia.
+
+## Visibilidade
+
+- Piloto: `desired`/`confirmed` sempre zerados, `attacks` vazio, só eventos públicos.
+- Hacker: o próprio ataque, a defesa do próprio carrinho, eventos públicos, de "staff" (comando alterado/bloqueado, ataque ativado) e da própria equipe.
+- Espectador (`/simulator`) e operador: todos os ataques e defesas; eventos marcados só para o operador não aparecem ao espectador.
+- Depois de uma ação aceita, o autor recebe o `state.snapshot` atualizado antes do `action.ok`.
 
 ## Autorização por tipo
 
