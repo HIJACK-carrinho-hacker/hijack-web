@@ -1,10 +1,12 @@
 import { type Server, createServer } from "node:http";
 import type { AddressInfo } from "node:net";
-import type { ClientMessage } from "@hijack/protocol";
+import { SESSION_COOKIE, parseCookies } from "./auth/sessions.ts";
 import type { Config } from "./config/env.ts";
-import { type AdapterFactory, HijackEngine, type Result, type Viewer } from "./engine.ts";
+import { type AdapterFactory, HijackEngine } from "./engine.ts";
+import { HijackService } from "./hijack-service.ts";
+import { createApiRouter } from "./http/api.ts";
 import { createHttpApp } from "./http/app.ts";
-import { type BrowserConn, BrowserHub } from "./ws/browser-hub.ts";
+import { BrowserHub } from "./ws/browser-hub.ts";
 import { SnapshotBroadcaster } from "./ws/broadcaster.ts";
 import { isOriginAllowed } from "./ws/origin.ts";
 
@@ -12,6 +14,7 @@ export interface HijackServer {
   readonly httpServer: Server;
   readonly browserHub: BrowserHub;
   readonly engine: HijackEngine;
+  readonly service: HijackService;
   listen(port?: number, host?: string): Promise<number>;
   close(): Promise<void>;
 }
@@ -24,53 +27,32 @@ export interface ServerOptions {
 export function createHijackServer(config: Config, opts: ServerOptions = {}): HijackServer {
   const engine = new HijackEngine({ config, adapterFactory: opts.adapterFactory });
   const browserHub = new BrowserHub(() => engine.revision);
-
-  const viewerOf = (_conn: BrowserConn): Viewer => ({ role: "spectator" });
+  const service = new HijackService({ config, engine, hub: browserHub });
 
   const broadcaster = new SnapshotBroadcaster({
     hub: browserHub,
-    viewerOf,
-    snapshotFor: (_conn, viewer) => engine.snapshot(viewer),
+    viewerOf: (conn) => service.viewerOf(conn),
+    snapshotFor: (conn, viewer) => service.snapshotFor(conn, viewer),
     intervalMs: opts.broadcastIntervalMs,
   });
   engine.onChange(() => broadcaster.schedule());
-
-  const reply = (conn: BrowserConn, msg: ClientMessage, result: Result) => {
-    if (result.ok) browserHub.send(conn, "action.ok", { type: msg.type }, msg.requestId);
-    else browserHub.sendError(conn, result.code, result.message, msg.requestId);
-  };
-
-  const handle = (conn: BrowserConn, msg: ClientMessage): Result => {
-    switch (msg.type) {
-      case "session.resume":
-        broadcaster.sendTo(conn);
-        return { ok: true };
-      case "sim.manualDrive":
-        return engine.manualDrive(msg.payload.carId, {
-          throttle: msg.payload.throttle,
-          steering: msg.payload.steering,
-        });
-      case "admin.stopAll":
-        engine.stopAll("admin-stop-all");
-        browserHub.broadcast("system.stopAll", { reason: msg.payload.reason || "operador" });
-        return { ok: true };
-      case "admin.setDemoState":
-        return engine.setDemoState(msg.payload.state);
-      case "admin.setCarMode":
-        return engine.setCarMode(msg.payload.carId, msg.payload.mode);
-      default:
-        return { ok: false, code: "forbidden", message: "ação ainda não disponível" };
-    }
-  };
+  service.setStateChangedListener(() => broadcaster.schedule());
 
   browserHub.setHandlers({
     onOpen(conn) {
+      service.onConnOpen(conn);
       broadcaster.sendTo(conn);
     },
-    onMessage(conn, msg) {
-      reply(conn, msg, handle(conn, msg));
+    async onMessage(conn, msg) {
+      const result = await service.handle(conn, msg);
+      if (msg.type === "session.resume" || msg.type === "session.logout") broadcaster.sendTo(conn);
+      if (!result) return;
+      if (result.ok) browserHub.send(conn, "action.ok", { type: msg.type }, msg.requestId);
+      else browserHub.sendError(conn, result.code, result.message, msg.requestId);
     },
-    onClose() {},
+    onClose(conn) {
+      service.onConnClose(conn);
+    },
   });
 
   const app = createHttpApp({
@@ -79,6 +61,7 @@ export function createHijackServer(config: Config, opts: ServerOptions = {}): Hi
       browsers: browserHub.connections().size,
       demoState: engine.demoState,
     }),
+    api: createApiRouter(service, config),
     staticDir: config.NODE_ENV === "production" ? config.STATIC_DIR : undefined,
   });
 
@@ -92,8 +75,9 @@ export function createHijackServer(config: Config, opts: ServerOptions = {}): Hi
         socket.destroy();
         return;
       }
+      const sessionToken = parseCookies(req.headers.cookie)[SESSION_COOKIE] ?? null;
       browserHub.wss.handleUpgrade(req, socket, head, (ws) => {
-        browserHub.accept(ws, req, { sessionToken: null, isAdmin: false });
+        browserHub.accept(ws, req, { sessionToken });
       });
       return;
     }
@@ -105,6 +89,7 @@ export function createHijackServer(config: Config, opts: ServerOptions = {}): Hi
     httpServer,
     browserHub,
     engine,
+    service,
     listen(port = config.SERVER_PORT, host = config.SERVER_HOST) {
       return new Promise((resolve) => {
         httpServer.listen(port, host, () => resolve((httpServer.address() as AddressInfo).port));
@@ -112,6 +97,7 @@ export function createHijackServer(config: Config, opts: ServerOptions = {}): Hi
     },
     close() {
       broadcaster.dispose();
+      service.dispose();
       engine.dispose();
       browserHub.closeAll();
       return new Promise((resolve) => httpServer.close(() => resolve()));

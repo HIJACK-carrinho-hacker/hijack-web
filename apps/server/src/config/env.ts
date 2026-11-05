@@ -1,3 +1,6 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { CAR_MODES, DEFAULT_COMMAND_TTL_MS } from "@hijack/protocol";
 import { z } from "zod";
 
@@ -42,6 +45,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
 export function testConfig(overrides: Partial<Config> = {}): Config {
   return {
     ...loadConfig({}),
+    DATA_DIR: mkdtempSync(path.join(tmpdir(), "hijack-test-")),
     ADMIN_SECRET: "admin-secret-test",
     DEVICE_SECRET_CAR_A: "device-secret-a",
     DEVICE_SECRET_CAR_B: "device-secret-b",

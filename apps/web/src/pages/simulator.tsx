@@ -10,7 +10,8 @@ import { useHijack } from "@/hooks/use-hijack";
 import { DEMO_STATE_LABEL } from "@/lib/labels";
 
 export function SimulatorPage() {
-  const { status, state } = useHijack();
+  const { status, state, me } = useHijack();
+  const isAdmin = me?.role === "admin";
   return (
     <main className="mx-auto flex min-h-svh max-w-6xl flex-col gap-6 px-4 py-6">
       <header className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border bg-card px-4 py-3">
@@ -28,7 +29,7 @@ export function SimulatorPage() {
         <p className="text-muted-foreground">Aguardando estado do servidor…</p>
       ) : (
         <>
-          <DemoControls demoState={state.demoState} />
+          {isAdmin && <DemoControls demoState={state.demoState} />}
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div className="flex flex-col gap-2">
               <Arena cars={state.cars} />
@@ -39,7 +40,7 @@ export function SimulatorPage() {
             <div className="flex flex-col gap-4">
               {state.cars.map((car) => (
                 <CarPanel key={car.id} car={car}>
-                  {car.mode === "simulated" && (
+                  {isAdmin && car.mode === "simulated" && (
                     <ManualPad carId={car.id} disabled={state.demoState === "running" || !car.telemetry.online} />
                   )}
                 </CarPanel>

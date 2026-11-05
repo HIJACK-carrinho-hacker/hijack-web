@@ -37,6 +37,11 @@ Distingue **fatos/decisões do grupo**, **decisões técnicas do agente** e **pe
 - **Teste manual do operador** (`sim.manualDrive`): só para carros simulados e fora de `running`. Na Fase 2 ainda não há autenticação; a partir da Fase 3 fica restrito ao admin.
 - **STOP não conta no limite de taxa** de 20 cmd/s; só comandos de movimento são coalescidos.
 - **Cor da equipe B:** token `chart-4` (`#2b7fff`); a equipe A usa `primary`. As referências não definem cor por equipe.
+- **Uma sessão por navegador**; vaga ocupada só é liberada por logout, expiração ou pelo operador. Não há "tomar a vaga" automático.
+- **Visitante** (sem sessão) recebe o snapshot público: é o modo da página `/simulator` para projetar ao público.
+- **Política de senha forte:** ≥ 8 caracteres, letras e números, diferente de `1234` e da atual.
+- **Limites de força bruta:** ver `security-model.md`.
+- **Shadcn customizado:** `Input` e `SelectTrigger` usam `dark:bg-card` (#18181b) para bater com a referência.
 - **Piloto não vê** sinalização de comando alterado pelo ataque (padrão do plano 6.2).
 
 ## 4. Pendências físicas (não resolvidas por software)

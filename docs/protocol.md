@@ -7,7 +7,11 @@ Fonte de verdade em código: `packages/protocol/src/schema.ts` (schemas Zod) e `
 | Caminho | Quem conecta | Autenticação |
 |---|---|---|
 | `GET /health` | qualquer | nenhuma; não expõe dados sensíveis |
-| `POST /api/session` | navegador | nome + papel + carrinho + senha → cookie `HttpOnly; SameSite=Strict` (Fase 3) |
+| `GET /api/public` | qualquer | carrinhos, modo, se a dica de senha padrão aparece, vagas ocupadas, se há admin |
+| `GET /api/session` | navegador | `me` da sessão atual ou 401 |
+| `POST /api/session` | navegador | `{name, role, carId, carDisplayName?, password}` → cookie `hijack_session` (`HttpOnly; SameSite=Strict`). Erros: 400 `invalid_payload`, 401 `invalid_credentials`, 409 `slot_taken`, 429 `rate_limited` (com `Retry-After`) |
+| `DELETE /api/session` | navegador | sai, libera a vaga e apaga o cookie |
+| `POST /api/admin/session` | operador | `{secret}` → mesmo cookie, sessão de operador |
 | `WS /ws` | navegador | `Origin` igual ao `Host` ou listado em `ALLOWED_ORIGINS`; cookie de sessão; autorização por mensagem |
 | `WS /device` | ESP32 | `device.hello` com `deviceId` + segredo do dispositivo (Fase 7) |
 
@@ -64,10 +68,23 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 
 `locked` (não iniciado) → `scan` → `target` → `exploit` → `manipulate` (inversões liberadas). Tudo é simulado no servidor; `scan` lista apenas os carrinhos cadastrados.
 
+## Autorização por tipo
+
+| Mensagem | Quem pode |
+|---|---|
+| `session.resume`, `session.logout` | qualquer conexão |
+| `pilot.drive`, `pilot.stop` | piloto (carro da sessão) |
+| `attack.*`, `defense.*`, `auth.changePassword` | hacker (`auth.changePassword` altera o carro da sessão) |
+| `admin.*`, `sim.manualDrive` | operador |
+
+Sem sessão → `unauthenticated`; papel errado → `forbidden`. `pilot.drive` aceito não gera `action.ok` (evita ruído a 10 Hz); recusado gera `pilot.commandRejected`.
+
+Ao abrir a conexão, o servidor envia `session.accepted` (se houver sessão) e um `state.snapshot`. Sessão revogada → `session.revoked {reason}`, e a conexão passa a ser de visitante.
+
 ## Mensagens de operação
 
 - `sim.manualDrive {carId, throttle, steering}`: teste manual de um carro **simulado** fora de `running` (admin).
-- `admin.setCarMode {carId, mode}`, `admin.releaseSlot {carId, role}`, `admin.setDemoState`, `admin.stopAll`, `admin.resetDemo`.
+- `admin.setCarMode {carId, mode}`, `admin.releaseSlot {carId, role}`, `admin.setDemoState`, `admin.stopAll`, `admin.resetDemo {resetAttacks, resetDefenses, resetPasswords}` (só fora de `running`; senhas só voltam a `1234` com `resetPasswords: true`).
 - O servidor responde `action.ok {type}` (com `requestId`) quando a ação é aceita, ou `system.error`.
 
 ## Servidor ↔ ESP32

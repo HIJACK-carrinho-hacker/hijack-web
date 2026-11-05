@@ -49,7 +49,17 @@ export class WsClient {
   }
 
   reconnectNow(): void {
-    this.socket?.close(4000, "reconnect");
+    const old = this.socket;
+    this.socket = null;
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    if (old) {
+      old.onclose = null;
+      old.onmessage = null;
+      old.close(4000, "reconnect");
+    }
+    this.attempts = 0;
+    if (!this.stopped) this.open();
   }
 
   get isOpen(): boolean {
@@ -75,7 +85,7 @@ export class WsClient {
       this.opts.onStatus("open");
     };
     socket.onmessage = (ev) => {
-      if (typeof ev.data !== "string") return;
+      if (this.socket !== socket || typeof ev.data !== "string") return;
       const parsed = parseMessage(serverMessageSchema, ev.data, SERVER_MESSAGE_TYPES, SERVER_MAX_BYTES);
       if (!parsed.ok) {
         console.warn("[ws] mensagem do servidor ignorada:", parsed.code);

@@ -16,12 +16,11 @@ export interface BrowserConn {
   readonly id: number;
   readonly socket: WebSocket;
   sessionToken: string | null;
-  isAdmin: boolean;
 }
 
 export interface BrowserHubHandlers {
   onOpen(conn: BrowserConn): void;
-  onMessage(conn: BrowserConn, msg: ClientMessage): void;
+  onMessage(conn: BrowserConn, msg: ClientMessage): void | Promise<void>;
   onClose(conn: BrowserConn): void;
 }
 
@@ -40,7 +39,7 @@ export class BrowserHub {
     this.handlers = handlers;
   }
 
-  accept(socket: WebSocket, _req: IncomingMessage, auth: { sessionToken: string | null; isAdmin: boolean }): void {
+  accept(socket: WebSocket, _req: IncomingMessage, auth: { sessionToken: string | null }): void {
     const conn: BrowserConn = { id: this.nextId++, socket, ...auth };
     this.conns.add(conn);
     socket.on("message", (data, isBinary) => {
@@ -54,11 +53,15 @@ export class BrowserHub {
         this.sendError(conn, parsed.code, parsed.message);
         return;
       }
-      try {
-        this.handlers?.onMessage(conn, parsed.value);
-      } catch (err) {
+      const fail = (err: unknown) => {
         console.error("[ws] erro ao tratar mensagem", parsed.value.type, err);
-        this.sendError(conn, "internal", "erro interno");
+        this.sendError(conn, "internal", "erro interno", parsed.value.requestId);
+      };
+      try {
+        const r = this.handlers?.onMessage(conn, parsed.value);
+        if (r instanceof Promise) r.catch(fail);
+      } catch (err) {
+        fail(err);
       }
     });
     socket.on("close", () => {

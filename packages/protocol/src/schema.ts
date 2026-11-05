@@ -54,6 +54,21 @@ export const adminLoginRequestSchema = z.strictObject({
   secret: z.string().min(1).max(256),
 });
 
+export const publicCarInfoSchema = z.strictObject({
+  id: carIdSchema,
+  teamId: teamIdSchema,
+  displayName: z.string(),
+  mode: carModeSchema,
+  defaultPasswordHint: z.boolean(),
+  pilotTaken: z.boolean(),
+  hackerTaken: z.boolean(),
+});
+
+export const publicInfoSchema = z.strictObject({
+  cars: z.array(publicCarInfoSchema),
+  adminAvailable: z.boolean(),
+});
+
 const clientEnvelope = <T extends string, P extends z.ZodType>(type: T, payload: P) =>
   z.strictObject({
     protocolVersion: z.literal(PROTOCOL_VERSION),
@@ -89,7 +104,7 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientEnvelope("admin.stopAll", z.strictObject({ reason: z.string().max(120) })),
   clientEnvelope(
     "admin.resetDemo",
-    z.strictObject({ resetAttacks: z.boolean(), resetDefenses: z.boolean() }),
+    z.strictObject({ resetAttacks: z.boolean(), resetDefenses: z.boolean(), resetPasswords: z.boolean() }),
   ),
   clientEnvelope("admin.setCarMode", z.strictObject({ carId: carIdSchema, mode: carModeSchema })),
   clientEnvelope("admin.releaseSlot", z.strictObject({ carId: carIdSchema, role: participantRoleSchema })),

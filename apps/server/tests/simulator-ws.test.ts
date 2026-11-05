@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { type Harness, TestClient, startServer } from "./helpers.ts";
+import { type Harness, type TestClient, adminLogin, connectAs, startServer } from "./helpers.ts";
 
 let h: Harness;
 let c: TestClient;
 
 beforeEach(async () => {
   h = await startServer();
-  c = await TestClient.connect(h.port);
-  await c.waitFor("state.snapshot");
+  const admin = await adminLogin(h.base);
+  c = await connectAs(h, admin.cookie);
 });
 
 afterEach(async () => {

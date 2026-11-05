@@ -7,16 +7,19 @@ export interface Harness {
   server: HijackServer;
   port: number;
   base: string;
+  dataDir: string;
   close(): Promise<void>;
 }
 
 export async function startServer(overrides: Partial<Config> = {}): Promise<Harness> {
-  const server = createHijackServer(testConfig(overrides));
+  const config = testConfig(overrides);
+  const server = createHijackServer(config);
   const port = await server.listen(0, "127.0.0.1");
   return {
     server,
     port,
     base: `http://127.0.0.1:${port}`,
+    dataDir: config.DATA_DIR,
     close: () => server.close(),
   };
 }
@@ -87,4 +90,46 @@ export class TestClient {
   close(): void {
     this.ws.close();
   }
+}
+
+export interface LoginResult {
+  status: number;
+  cookie: string | null;
+  body: { ok: boolean; code?: string; me?: unknown };
+}
+
+const cookieFrom = (res: Response) => {
+  const set = res.headers.get("set-cookie");
+  if (!set) return null;
+  return set.split(";")[0] ?? null;
+};
+
+export async function login(
+  base: string,
+  input: { name?: string; role: "pilot" | "hacker"; carId: "car-a" | "car-b"; password?: string; carDisplayName?: string },
+  cookie?: string | null,
+): Promise<LoginResult> {
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (cookie) headers.cookie = cookie;
+  const res = await fetch(`${base}/api/session`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ ...input, name: input.name ?? "Teste", password: input.password ?? "1234" }),
+  });
+  return { status: res.status, cookie: cookieFrom(res) ?? cookie ?? null, body: (await res.json()) as LoginResult["body"] };
+}
+
+export async function adminLogin(base: string, secret = "admin-secret-test"): Promise<LoginResult> {
+  const res = await fetch(`${base}/api/admin/session`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ secret }),
+  });
+  return { status: res.status, cookie: cookieFrom(res), body: (await res.json()) as LoginResult["body"] };
+}
+
+export async function connectAs(h: Harness, cookie: string | null): Promise<TestClient> {
+  const c = await TestClient.connect(h.port, cookie ? { cookie } : {});
+  await c.waitFor("state.snapshot");
+  return c;
 }

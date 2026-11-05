@@ -19,6 +19,7 @@ import type {
   loginRequestSchema,
   meSchema,
   metricsSchema,
+  publicInfoSchema,
   publicStateSchema,
   serverMessageSchema,
   serverToDeviceSchema,
@@ -60,3 +61,4 @@ export type ServerToDevice = z.infer<typeof serverToDeviceSchema>;
 export type DeviceToServer = z.infer<typeof deviceToServerSchema>;
 export type ClientPayload<T extends ClientMessageType> = ClientMessageOf<T>["payload"];
 export type ServerPayload<T extends ServerMessageType> = ServerMessageOf<T>["payload"];
+export type PublicInfo = z.infer<typeof publicInfoSchema>;
