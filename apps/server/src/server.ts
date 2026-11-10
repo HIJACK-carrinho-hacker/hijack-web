@@ -57,7 +57,7 @@ export function createHijackServer(config: Config, opts: ServerOptions = {}): Hi
         carId,
         mode: "hardware",
         visibility: "admin",
-        message: `ESP32 desconectado (código ${info.code}${info.reason ? ` "${info.reason}"` : ""}, conectado há ${(info.connectedMs / 1000).toFixed(1)} s)`,
+        message: `ESP32 desconectado (código ${info.code}${info.reason ? ` "${info.reason}"` : ""}, conectado há ${(info.connectedMs / 1000).toFixed(1)} s, ${info.droppedByKeepAlive ? "derrubado pelo servidor por falta de pong" : "fechado pelo outro lado"}, pongs=${info.pongs}, pings do ESP=${info.devicePings})`,
       }),
   });
   const browserHub = new BrowserHub(() => engine.revision);

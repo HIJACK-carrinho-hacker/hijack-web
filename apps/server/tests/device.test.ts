@@ -255,6 +255,9 @@ describe("keep-alive do ESP32", () => {
     await d.waitClose();
     expect(d.pings).toBe(3);
     expect(h.server.deviceHub.isConnected("car-a")).toBe(false);
+    const ev = h.server.engine.snapshot({ role: "admin" }).events.find((e) => e.kind === "device.disconnected");
+    expect(ev?.message).toContain("derrubado pelo servidor por falta de pong");
+    expect(ev?.message).toContain("pongs=0");
   });
 
   test("um pong no meio zera a contagem de falhas", async () => {

@@ -31,12 +31,18 @@ interface DeviceConn {
   carId: CarId | null;
   missedPongs: number;
   connectedAt: number;
+  pongs: number;
+  devicePings: number;
+  droppedByKeepAlive: boolean;
 }
 
 export interface DeviceHubEvents {
   onAuthFailed(ip: string): void;
   onConnected(carId: CarId): void;
-  onDisconnected(carId: CarId, info: { code: number; reason: string; connectedMs: number }): void;
+  onDisconnected(
+    carId: CarId,
+    info: { code: number; reason: string; connectedMs: number; pongs: number; devicePings: number; droppedByKeepAlive: boolean },
+  ): void;
 }
 
 const sameSecret = (a: string, b: string) => {
@@ -91,12 +97,25 @@ export class DeviceHub {
       socket.close(DEVICE_CLOSE.rateLimited, "rate limited");
       return;
     }
-    const conn: DeviceConn = { socket, ip, carId: null, missedPongs: 0, connectedAt: Date.now() };
+    const conn: DeviceConn = {
+      socket,
+      ip,
+      carId: null,
+      missedPongs: 0,
+      connectedAt: Date.now(),
+      pongs: 0,
+      devicePings: 0,
+      droppedByKeepAlive: false,
+    };
     const helloTimer = setTimeout(() => {
       if (!conn.carId) socket.close(DEVICE_CLOSE.helloTimeout, "hello timeout");
     }, HELLO_TIMEOUT_MS);
     socket.on("pong", () => {
       conn.missedPongs = 0;
+      conn.pongs++;
+    });
+    socket.on("ping", () => {
+      conn.devicePings++;
     });
     socket.on("message", (data, isBinary) => {
       if (isBinary) {
@@ -124,7 +143,14 @@ export class DeviceHub {
       if (conn.carId && this.sockets.get(conn.carId) === conn) {
         this.sockets.delete(conn.carId);
         this.adapters.get(conn.carId)?.unbind(socket);
-        this.events.onDisconnected(conn.carId, { code, reason: reason.toString(), connectedMs: Date.now() - conn.connectedAt });
+        this.events.onDisconnected(conn.carId, {
+          code,
+          reason: reason.toString(),
+          connectedMs: Date.now() - conn.connectedAt,
+          pongs: conn.pongs,
+          devicePings: conn.devicePings,
+          droppedByKeepAlive: conn.droppedByKeepAlive,
+        });
       }
     });
     socket.on("error", () => socket.terminate());
@@ -161,6 +187,7 @@ export class DeviceHub {
   private pingAll(): void {
     for (const c of this.sockets.values()) {
       if (c.missedPongs >= this.keepAlive.maxMissedPongs) {
+        c.droppedByKeepAlive = true;
         c.socket.terminate();
         continue;
       }
