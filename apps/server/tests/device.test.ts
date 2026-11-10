@@ -100,6 +100,16 @@ describe("conexão do ESP32", () => {
     d.close();
   });
 
+  test("a desconexão registra o código de fechamento e o tempo conectado", async () => {
+    const d = await FakeEsp32.connect(h.port);
+    d.hello("car-a", "device-secret-a");
+    await d.waitFor("device.welcome");
+    d.ws.close(1000, "teste");
+    await sleep(50);
+    const ev = h.server.engine.snapshot({ role: "admin" }).events.find((e) => e.kind === "device.disconnected");
+    expect(ev?.message).toMatch(/código 1000 "teste", conectado há \d+\.\d s/);
+  });
+
   test("carrinho em hardware fica offline sem ESP32 e online quando ele conecta", async () => {
     toHardware();
     expect(h.server.engine.car("car-a").online).toBe(false);

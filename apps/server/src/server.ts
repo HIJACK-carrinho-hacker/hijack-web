@@ -51,8 +51,14 @@ export function createHijackServer(config: Config, opts: ServerOptions = {}): Hi
             : `ESP32 de ${car.displayName} autenticado; o carrinho está em modo simulado`,
       });
     },
-    onDisconnected: (carId) =>
-      engine.log({ kind: "device.disconnected", carId, mode: "hardware", visibility: "admin", message: "ESP32 desconectado" }),
+    onDisconnected: (carId, info) =>
+      engine.log({
+        kind: "device.disconnected",
+        carId,
+        mode: "hardware",
+        visibility: "admin",
+        message: `ESP32 desconectado (código ${info.code}${info.reason ? ` "${info.reason}"` : ""}, conectado há ${(info.connectedMs / 1000).toFixed(1)} s)`,
+      }),
   });
   const browserHub = new BrowserHub(() => engine.revision);
   const service = new HijackService({ config, engine, hub: browserHub });

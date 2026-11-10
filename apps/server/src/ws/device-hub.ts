@@ -30,12 +30,13 @@ interface DeviceConn {
   ip: string;
   carId: CarId | null;
   missedPongs: number;
+  connectedAt: number;
 }
 
 export interface DeviceHubEvents {
   onAuthFailed(ip: string): void;
   onConnected(carId: CarId): void;
-  onDisconnected(carId: CarId): void;
+  onDisconnected(carId: CarId, info: { code: number; reason: string; connectedMs: number }): void;
 }
 
 const sameSecret = (a: string, b: string) => {
@@ -90,7 +91,7 @@ export class DeviceHub {
       socket.close(DEVICE_CLOSE.rateLimited, "rate limited");
       return;
     }
-    const conn: DeviceConn = { socket, ip, carId: null, missedPongs: 0 };
+    const conn: DeviceConn = { socket, ip, carId: null, missedPongs: 0, connectedAt: Date.now() };
     const helloTimer = setTimeout(() => {
       if (!conn.carId) socket.close(DEVICE_CLOSE.helloTimeout, "hello timeout");
     }, HELLO_TIMEOUT_MS);
@@ -118,12 +119,12 @@ export class DeviceHub {
       if (!parsed.ok) return;
       this.adapters.get(conn.carId)?.handle(parsed.value);
     });
-    socket.on("close", () => {
+    socket.on("close", (code, reason) => {
       clearTimeout(helloTimer);
       if (conn.carId && this.sockets.get(conn.carId) === conn) {
         this.sockets.delete(conn.carId);
         this.adapters.get(conn.carId)?.unbind(socket);
-        this.events.onDisconnected(conn.carId);
+        this.events.onDisconnected(conn.carId, { code, reason: reason.toString(), connectedMs: Date.now() - conn.connectedAt });
       }
     });
     socket.on("error", () => socket.terminate());
