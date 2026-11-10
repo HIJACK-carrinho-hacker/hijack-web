@@ -668,6 +668,9 @@ Documentar `SERVER_HOST`, `SERVER_PORT`, `PUBLIC_BASE_URL`, `WIFI_SSID`, `WIFI_P
 6. **Interface vs firmware:** frontend não deve decidir sozinho se o carrinho está seguro; o ESP32 precisa parar autonomamente.
 7. **WebSocket LAN:** IP do notebook pode mudar; oferecer passo a passo para descobrir IP e orientar roteador/firewall.
 8. **Escala:** duas equipes, dois carros e poucas conexões locais. Não otimizar para internet/SaaS nem introduzir infraestrutura desnecessária.
+9. **Rede da demonstração (atualização de 10/11/2026):** a mesh doméstica usada na bancada tem sinal fraco longe do nó e travadas de vários segundos. Usar roteador dedicado de 2,4 GHz em canal fixo, com o ESP32 perto (RSSI melhor que −70 dBm).
+10. **Failsafe independente da rede (atualização de 10/11/2026):** no firmware, Wi-Fi, portal e WebSocket rodam em tarefa própria e o `loop()` de controle é o único dono de failsafe, motores, servo e LED. Detalhes em `../../esp32/docs/progress.md`.
+11. **Próximos passos físicos (atualização de 10/11/2026):** ordem por módulo que chegar (L298N, servo, peças 3D) e critérios para ligar os motores com bateria em `../../esp32/docs/proximos-passos-hardware.md`.
 
 ---
 

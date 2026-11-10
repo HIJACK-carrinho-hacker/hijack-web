@@ -59,4 +59,4 @@ _(nenhum)_
 
 ## Próximo passo
 
-Integrar com o firmware atualizado para o mesmo contrato (direção proporcional, TTL 400 ms) e testar com 1 carrinho físico, seguindo a ordem de testes de `../esp32/docs/especificacao/05_requisitos_firmware.md` e `../esp32/docs/testing-hardware.md`, registrando medições reais em `docs/acceptance.md`.
+Teste físico em etapas, conforme o material chega: `../esp32/docs/proximos-passos-hardware.md` (A: bancada com o que já existe; B: L298N; C: servo; D: chassi e chão). Medições reais vão para `../esp32/docs/testing-hardware.md` e para `docs/acceptance.md`. Antes da demonstração: roteador dedicado de 2,4 GHz e 10 min de piloto automático sem queda.

@@ -32,13 +32,13 @@ Revisão de 05/11/2026. Legenda: ✅ verificado · ⚠️ verificado parcialment
 | Item | Situação | Observação |
 |---|---|---|
 | Pinos reais confirmados; servo escolhido e calibrado | ⏳ | pinos da equipe (especificação de 10/11/2026): servo GPIO 13; esquerdo ENA 25/IN1 26/IN2 27; direito ENB 21/IN3 18/IN4 19. Fiação física, centro e sentido do servo ainda não conferidos (ver `../esp32`) |
-| Alimentação do ESP32 e servo medida e estável sob carga | ⏳ | ver `esp32/docs/hardware.md` |
+| Alimentação do ESP32 e servo medida e estável sob carga | ⚠️ | parcial: LM2596 em 5 V em vazio e 4,98 V com o ESP32; falta servo, varredura de entrada e motores (`../esp32/docs/proximos-passos-hardware.md`) |
 | Tração e esterçamento testados com rodas suspensas | ⏳ | checklist em `esp32/docs/testing-hardware.md` |
-| Watchdog real para o carro em perda de WS/Wi-Fi | ⏳ | implementado e testado só em lógica (`pio test`) e com ESP32 falso; tempo real não medido |
+| Watchdog real para o carro em perda de WS/Wi-Fi | ⚠️ | com o ESP32 real e as saídas desligadas: rede presa por 3 s (`esp32dev_trava`), failsafe parou em 347, 367, 385 e 399 ms (log serial); falta medir até as rodas pararem, que exige a L298N |
 | STOP ALL e parada física comprovados | ⏳ | — |
-| Um ESP32 (topologia padrão de 1 carrinho) na LAN isolada | ⏳ | — |
+| Um ESP32 (topologia padrão de 1 carrinho) na LAN isolada | ⚠️ | ESP32 autenticado e pilotado pelo protocolo real (saídas desligadas); 10 min sem queda a −36 a −55 dBm numa mesh doméstica. Falta o roteador dedicado da demonstração |
 | Dois ESP32 juntos na LAN isolada (opcional, `dual`) | ⏳ | — |
-| Medições documentadas sem resultados inventados | ⏳ | nenhum número físico foi registrado |
+| Medições documentadas sem resultados inventados | ⚠️ | medições de 10/11/2026 em `../esp32/docs/testing-hardware.md` e `../esp32/docs/progress.md`; motores e servo sem números |
 
 ## Pendências e riscos conhecidos
 
@@ -49,6 +49,6 @@ Fonte da parte física: `../esp32/docs/especificacao/` (10/11/2026) e `../esp32/
 3. **Tração:** sentido de cada motor (`MOTOR_*_INVERTE`), `PWM_MINIMO_PCT` e `PWM_CRUZEIRO_PCT` medidos; corrente e aquecimento da L298N.
 4. **Alimentação:** HW-411 a 5,0 V sob carga, retroalimentação USB, capacidade da chave do porta-baterias (~3 A não confirmada), 2S **sem BMS** e **sem fusível** (células medidas uma a uma).
 5. **Brownout** ao arrancar ou esterçar (o firmware imprime o motivo do reset).
-6. **Tempo real de parada** por perda de Wi-Fi/WebSocket e STOP ALL.
+6. **Tempo real de parada** por perda de Wi-Fi/WebSocket e STOP ALL. A parada lógica foi medida com a rede presa (347 a 399 ms, saídas desligadas); falta medir até as rodas.
 7. **Toque em celular real:** sem resultado registrado.
 8. **Riscos aceitos** (detalhes em `security-model.md`): sem TLS na LAN; sessões em memória; no `bun run dev` o rate limit vê todos os aparelhos com o IP do proxy; erros repetidos de senha podem bloquear temporariamente a entrada.
