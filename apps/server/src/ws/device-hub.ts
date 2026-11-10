@@ -153,7 +153,10 @@ export class DeviceHub {
         });
       }
     });
-    socket.on("error", () => socket.terminate());
+    socket.on("error", (err) => {
+      console.warn(`[hijack] erro no socket do dispositivo ${conn.carId ?? "?"}: ${err.message}`);
+      socket.terminate();
+    });
   }
 
   dispose(): void {
