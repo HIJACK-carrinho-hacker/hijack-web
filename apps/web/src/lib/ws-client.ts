@@ -7,6 +7,7 @@ import {
   parseMessage,
   serverMessageSchema,
 } from "@hijack/protocol";
+import { newRequestId } from "./request-id.ts";
 
 export type ConnectionStatus = "connecting" | "open" | "closed";
 
@@ -68,7 +69,7 @@ export class WsClient {
 
   send<T extends ClientMessageType>(type: T, payload: ClientPayload<T>): string | null {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return null;
-    const requestId = crypto.randomUUID();
+    const requestId = newRequestId();
     this.socket.send(
       JSON.stringify({ protocolVersion: PROTOCOL_VERSION, type, requestId, sentAt: Date.now(), payload }),
     );

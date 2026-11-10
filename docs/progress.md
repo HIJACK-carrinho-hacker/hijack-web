@@ -48,6 +48,8 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 - Passo 10 (10/11/2026): typecheck ✅ (5 projetos), lint ✅ (0 avisos), `bun run test` ✅ 170 (protocolo 33, servidor 117, web 20), build ✅, Playwright ✅ 35 + 1 pulado (desktop + mobile, inclui `topology.spec.ts`), rodado duas vezes seguidas contra o mesmo servidor.
 - Correção no passo 10: o registro "Comando alterado" deixava de aparecer quando o mesmo tipo de alteração se repetia depois de um `pilot.stop` (a chave de deduplicação só era limpa ao soltar pelo `pilot.drive`); agora qualquer parada limpa a chave.
 
+- Correção na integração com o ESP32 (10/11/2026): `crypto.randomUUID` não existe em contexto inseguro (HTTP pelo IP da LAN), então toda mensagem enviada pelo navegador (Pronto no `/admin`, joystick do `/pilot`) lançava `TypeError`. `newRequestId` (`apps/web/src/lib/request-id.ts`) usa `randomUUID` quando existe e cai para `getRandomValues` com UUID v4. typecheck ✅, lint ✅, `bun run test` ✅ 174 (4 novos), build ✅. Verificado no Chrome em `http://192.168.0.198:3000/admin`: Pronto → "Aguardando largada". Playwright não foi reexecutado (roda em localhost, contexto seguro).
+
 ## Bloqueios reais
 
 _(nenhum)_
