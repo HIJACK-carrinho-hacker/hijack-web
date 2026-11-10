@@ -25,7 +25,7 @@ Revisão de 05/11/2026. Legenda: ✅ verificado · ⚠️ verificado parcialment
 | Direção proporcional -100..+100 no protocolo, servidor, simulador e telas; tração continua -1/0/1 | ✅ software | `protocol.test.ts`, `pipeline.test.ts`, `simulator-adapter.test.ts`, `joystick-math.test.ts`, E2E `attack.spec.ts` |
 | TTL padrão 400 ms | ✅ software | `topology.test.ts`, `device.test.ts` |
 | Topologia de 1 carrinho como padrão, 2 como opção | ✅ software | `topology.test.ts`, E2E `topology.spec.ts` |
-| Direção proporcional e failsafe de 400 ms no carrinho real | ⏳ | depende do firmware em `../esp32` e de teste físico |
+| Direção proporcional e failsafe de 400 ms no carrinho real | ⚠️ | firmware `../esp32` (`1e637ba`) implementa o mesmo contrato (steering -100..100, `FAILSAFE_MS` 400, ±45°, rampa) com 26 testes nativos; falta teste físico |
 
 ## Pronto para demonstração física
 
@@ -42,11 +42,13 @@ Revisão de 05/11/2026. Legenda: ✅ verificado · ⚠️ verificado parcialment
 
 ## Pendências e riscos conhecidos
 
-1. **Servo:** pino, pulsos e geometria da direção.
-2. **Alimentação:** 5 V da L298N não validado; provável regulador externo.
-3. **GPIO14 (ENA)** emite PWM no boot: verificar tranco do motor A.
-4. **Polaridade** dos motores e `TRACAO_PWM_VELOCIDADE_FIXA_0_A_255` a ajustar em bancada.
-5. **Convivência PWM:** `analogWrite` (L298N) e `ESP32Servo` usam o LEDC do ESP32; compila, mas o funcionamento simultâneo só será confirmado no hardware.
-6. **`enableLoopWDT`:** comportamento de reinício por travamento não testado na placa.
-7. **Toque real em celular:** sem resultado registrado.
-8. **Riscos aceitos** (detalhes em `security-model.md`): sem TLS na LAN; sessões em memória; no `bun run dev` o rate limit vê todos os aparelhos com o IP do proxy; erros repetidos de senha podem bloquear temporariamente a entrada num carrinho.
+Fonte da parte física: `../esp32/docs/especificacao/` (10/11/2026) e `../esp32/docs/testing-hardware.md`.
+
+1. **Fiação real** dos pinos da equipe (servo 13; esquerdo 25/26/27; direito ENB 21/18/19) e jumpers ENA/ENB retirados.
+2. **Servo SG90:** centro, sentido e curso até ±45° calibrados pelo modo serial (`k`), sem forçar o batente (~48°); torque no piso.
+3. **Tração:** sentido de cada motor (`MOTOR_*_INVERTE`), `PWM_MINIMO_PCT` e `PWM_CRUZEIRO_PCT` medidos; corrente e aquecimento da L298N.
+4. **Alimentação:** HW-411 a 5,0 V sob carga, retroalimentação USB, capacidade da chave do porta-baterias (~3 A não confirmada), 2S **sem BMS** e **sem fusível** (células medidas uma a uma).
+5. **Brownout** ao arrancar ou esterçar (o firmware imprime o motivo do reset).
+6. **Tempo real de parada** por perda de Wi-Fi/WebSocket e STOP ALL.
+7. **Toque em celular real:** sem resultado registrado.
+8. **Riscos aceitos** (detalhes em `security-model.md`): sem TLS na LAN; sessões em memória; no `bun run dev` o rate limit vê todos os aparelhos com o IP do proxy; erros repetidos de senha podem bloquear temporariamente a entrada.
