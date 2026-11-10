@@ -55,9 +55,9 @@ export class AttackManager {
     return TEAM_IDS.map((t) => this.view(t));
   }
 
-  scan(team: TeamId): Result {
+  scan(team: TeamId, visibleCars: readonly CarId[] = CAR_IDS): Result {
     const s = this.states[team];
-    s.scanResults = [...CAR_IDS];
+    s.scanResults = [...visibleCars];
     if (order(s.step) < order("scan")) s.step = "scan";
     return ok;
   }

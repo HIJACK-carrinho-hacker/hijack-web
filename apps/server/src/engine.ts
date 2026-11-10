@@ -4,10 +4,12 @@ import {
   type CarMode,
   type CarView,
   type DemoState,
+  type DemoTopology,
   type DriveVector,
   type ErrorCode,
   MAX_DEVICE_COMMANDS_PER_SECOND,
   type PublicState,
+  SINGLE_TOPOLOGY_CAR,
   STOP_REASONS,
   type StopReason,
   TEAM_OF_CAR,
@@ -84,6 +86,7 @@ export class HijackEngine {
   private readonly listeners = new Set<() => void>();
   private readonly tickTimer: ReturnType<typeof setInterval>;
   private demo: DemoState = "setup";
+  private topologyValue: DemoTopology;
   private rev = 0;
   private attackEffectFor: (carId: CarId) => { effect: AttackEffect | null; integrity: boolean } = () => ({
     effect: null,
@@ -95,6 +98,7 @@ export class HijackEngine {
     this.clock = opts.clock ?? systemClock;
     this.adapterFactory = opts.adapterFactory ?? defaultAdapterFactory;
     this.events = new EventLog(opts.config.MAX_EVENTS);
+    this.topologyValue = opts.config.DEMO_TOPOLOGY;
     const modes: Record<CarId, CarMode> = { "car-a": opts.config.CAR_A_MODE, "car-b": opts.config.CAR_B_MODE };
     for (const id of CAR_IDS) this.cars.set(id, this.createRuntime(id, modes[id]));
     this.tickTimer = setInterval(() => this.tick(), 50);
@@ -103,6 +107,28 @@ export class HijackEngine {
 
   get demoState(): DemoState {
     return this.demo;
+  }
+
+  get topology(): DemoTopology {
+    return this.topologyValue;
+  }
+
+  isActive(carId: CarId): boolean {
+    return this.topologyValue === "dual" || carId === SINGLE_TOPOLOGY_CAR;
+  }
+
+  setTopology(next: DemoTopology): Result {
+    if (this.demo === "running") return fail("forbidden", "pause ou encerre a demonstração antes de trocar a topologia");
+    if (next === this.topologyValue) return ok;
+    this.stopAll("admin-stop-all", false);
+    this.topologyValue = next;
+    this.log({
+      kind: "demo.topology",
+      actorRole: "admin",
+      message: next === "single" ? "Topologia: 1 carrinho (Carrinho A)" : "Topologia: 2 carrinhos",
+    });
+    this.changed();
+    return ok;
   }
 
   get revision(): number {
@@ -183,6 +209,7 @@ export class HijackEngine {
 
   manualDrive(carId: CarId, vec: DriveVector): Result {
     const car = this.mustCar(carId);
+    if (!this.isActive(carId)) return fail("forbidden", "carrinho desativado na topologia atual");
     if (car.mode !== "simulated") return fail("forbidden", "teste manual só em carrinho simulado");
     if (this.demo === "running") return fail("forbidden", "teste manual indisponível durante a demonstração");
     if (!car.online) return fail("car_offline", "carrinho offline");
@@ -199,6 +226,11 @@ export class HijackEngine {
       car.lastTransformKey = null;
       car.controller.stop("pilot-release");
       return ok;
+    }
+    if (!this.isActive(carId)) {
+      car.controller.stop("pilot-stop");
+      this.metrics.inc(carId, car.mode, "rejected");
+      return fail("forbidden", "carrinho desativado na topologia atual");
     }
     if (!allowsMovement(this.demo)) {
       car.controller.stop("demo-not-running");
@@ -243,6 +275,7 @@ export class HijackEngine {
     };
     return {
       demoState: this.demo,
+      topology: this.topologyValue,
       me: extra.me ?? null,
       cars,
       slots: extra.slots ?? [],
@@ -274,6 +307,7 @@ export class HijackEngine {
       teamId: c.teamId,
       displayName: c.displayName,
       mode: c.mode,
+      active: this.isActive(c.id),
       requested: redact || !c.controller.moving ? { ...hidden } : { ...c.requested },
       desired: redact ? { ...hidden } : c.controller.desired,
       confirmed: redact ? { ...hidden } : { ...c.confirmed },
@@ -326,6 +360,7 @@ export class HijackEngine {
       {
         onSent: ({ seq, at }) => this.metrics.recordSend(id, runtime.mode, seq, at),
         onStopped: (reason) => {
+          runtime.lastTransformKey = null;
           if (reason === "watchdog") {
             this.metrics.inc(id, runtime.mode, "watchdogTrips");
             this.log({ kind: "safety.watchdog", carId: id, mode: runtime.mode, message: "Watchdog do servidor parou a tração" });
@@ -404,7 +439,7 @@ export class HijackEngine {
 
   private logTransform(car: CarRuntime, requested: DriveVector, result: PipelineResult): void {
     const key = result.transformed || result.blocked
-      ? `${result.blocked ? "b" : "t"}:${requested.throttle},${requested.steering}>${result.output.throttle},${result.output.steering}`
+      ? `${result.blocked ? "b" : "t"}:${requested.throttle},${Math.sign(requested.steering)}>${result.output.throttle},${Math.sign(result.output.steering)}`
       : null;
     if (key === car.lastTransformKey) return;
     car.lastTransformKey = key;
@@ -456,6 +491,6 @@ const round3 = (v: number) => Math.round(v * 1000) / 1000;
 
 export function describeVector(v: DriveVector): string {
   const t = v.throttle === 1 ? "frente" : v.throttle === -1 ? "ré" : "";
-  const s = v.steering === 1 ? "direita" : v.steering === -1 ? "esquerda" : "";
+  const s = v.steering > 0 ? `direita ${v.steering}%` : v.steering < 0 ? `esquerda ${-v.steering}%` : "";
   return [t, s].filter(Boolean).join(" + ") || "parado";
 }

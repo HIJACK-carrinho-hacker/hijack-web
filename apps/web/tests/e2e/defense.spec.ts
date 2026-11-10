@@ -4,12 +4,12 @@ import { carPanel, completeAttack, holdJoystick, loginAs, resetEnvironment } fro
 test.describe.configure({ mode: 'serial' })
 
 test.afterAll(async ({ browser }) => {
-  await resetEnvironment(browser)
+  await resetEnvironment(browser, 'dual')
 })
 
 test('integridade do defensor bloqueia a inversão; desligar volta a inverter', async ({ browser }) => {
   test.setTimeout(60_000)
-  await resetEnvironment(browser, 'running')
+  await resetEnvironment(browser, 'dual', 'running')
   const viewer = await (await browser.newContext()).newPage()
   await viewer.goto('/simulator')
   const attacker = await (await browser.newContext()).newPage()
@@ -47,7 +47,7 @@ test('integridade do defensor bloqueia a inversão; desligar volta a inverter', 
 })
 
 test('repetição gera exemplo didático sem mover o carrinho', async ({ browser }) => {
-  await resetEnvironment(browser, 'running')
+  await resetEnvironment(browser, 'dual', 'running')
   const viewer = await (await browser.newContext()).newPage()
   await viewer.goto('/simulator')
   const defender = await (await browser.newContext()).newPage()

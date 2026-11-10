@@ -1,18 +1,18 @@
-import type { Axis, CarId } from "@hijack/protocol";
+import { type Axis, type CarId, STEERING_MAX } from "@hijack/protocol";
 import { useHijack } from "@/hooks/use-hijack";
 import { useHoldRepeat } from "@/hooks/use-hold-repeat";
 import { cn } from "@/lib/utils";
 
-const PADS: { label: string; throttle: Axis; steering: Axis }[] = [
-  { label: "↖", throttle: 1, steering: -1 },
+const PADS: { label: string; throttle: Axis; steering: number }[] = [
+  { label: "↖", throttle: 1, steering: -STEERING_MAX },
   { label: "↑", throttle: 1, steering: 0 },
-  { label: "↗", throttle: 1, steering: 1 },
-  { label: "↙", throttle: -1, steering: -1 },
+  { label: "↗", throttle: 1, steering: STEERING_MAX },
+  { label: "↙", throttle: -1, steering: -STEERING_MAX },
   { label: "↓", throttle: -1, steering: 0 },
-  { label: "↘", throttle: -1, steering: 1 },
+  { label: "↘", throttle: -1, steering: STEERING_MAX },
 ];
 
-function HoldButton({ carId, throttle, steering, label, disabled }: { carId: CarId; throttle: Axis; steering: Axis; label: string; disabled: boolean }) {
+function HoldButton({ carId, throttle, steering, label, disabled }: { carId: CarId; throttle: Axis; steering: number; label: string; disabled: boolean }) {
   const { send } = useHijack();
   const hold = useHoldRepeat(
     () => send("sim.manualDrive", { carId, throttle, steering }),

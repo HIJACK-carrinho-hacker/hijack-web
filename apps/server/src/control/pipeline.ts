@@ -1,4 +1,4 @@
-import type { Axis, DriveVector } from "@hijack/protocol";
+import type { Axis, DriveVector, Steering } from "@hijack/protocol";
 
 export interface AttackEffect {
   invertThrottle: boolean;
@@ -12,6 +12,7 @@ export interface PipelineResult {
 }
 
 const invert = (v: Axis): Axis => (v === 0 ? 0 : v === 1 ? -1 : 1);
+const mirror = (v: Steering): Steering => (v === 0 ? 0 : -v);
 
 export function isNeutral(v: DriveVector): boolean {
   return v.throttle === 0 && v.steering === 0;
@@ -29,6 +30,6 @@ export function applyAttack(
   if (!wouldChange) return { output, transformed: false, blocked: false };
   if (integrityDemoEnabled) return { output, transformed: false, blocked: true };
   if (attack.invertThrottle) output.throttle = invert(input.throttle);
-  if (attack.invertSteering) output.steering = invert(input.steering);
+  if (attack.invertSteering) output.steering = mirror(input.steering);
   return { output, transformed: true, blocked: false };
 }

@@ -3,6 +3,7 @@ import type {
   CAR_IDS,
   CAR_MODES,
   DEMO_STATES,
+  DEMO_TOPOLOGIES,
   ERROR_CODES,
   ROLES,
   TEAM_IDS,
@@ -24,6 +25,7 @@ import type {
   serverMessageSchema,
   serverToDeviceSchema,
   slotViewSchema,
+  steeringSchema,
   stopReasonSchema,
   telemetrySchema,
 } from "./schema.ts";
@@ -34,9 +36,11 @@ export type CarId = (typeof CAR_IDS)[number];
 export type Role = (typeof ROLES)[number];
 export type CarMode = (typeof CAR_MODES)[number];
 export type DemoState = (typeof DEMO_STATES)[number];
+export type DemoTopology = (typeof DEMO_TOPOLOGIES)[number];
 export type ErrorCode = (typeof ERROR_CODES)[number];
 export type StopReason = z.infer<typeof stopReasonSchema>;
 export type DriveVector = z.infer<typeof driveVectorSchema>;
+export type Steering = z.infer<typeof steeringSchema>;
 
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export type ClientMessage = z.infer<typeof clientMessageSchema>;

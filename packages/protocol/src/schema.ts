@@ -4,6 +4,7 @@ import {
   CAR_IDS,
   CAR_MODES,
   DEMO_STATES,
+  DEMO_TOPOLOGIES,
   ERROR_CODES,
   MAX_NAME_LENGTH,
   MAX_PASSWORD_LENGTH,
@@ -11,11 +12,14 @@ import {
   PILOT_STOP_REASONS,
   PROTOCOL_VERSION,
   ROLES,
+  STEERING_MAX,
   STOP_REASONS,
   TEAM_IDS,
 } from "./constants.ts";
 
 export const axisSchema = z.union([z.literal(-1), z.literal(0), z.literal(1)]);
+export const steeringSchema = z.number().int().min(-STEERING_MAX).max(STEERING_MAX);
+export const topologySchema = z.enum(DEMO_TOPOLOGIES);
 export const teamIdSchema = z.enum(TEAM_IDS);
 export const carIdSchema = z.enum(CAR_IDS);
 export const roleSchema = z.enum(ROLES);
@@ -39,7 +43,7 @@ export const passwordSchema = z.string().min(1).max(MAX_PASSWORD_LENGTH);
 
 export const driveVectorSchema = z.strictObject({
   throttle: axisSchema,
-  steering: axisSchema,
+  steering: steeringSchema,
 });
 
 export const loginRequestSchema = z.strictObject({
@@ -62,9 +66,11 @@ export const publicCarInfoSchema = z.strictObject({
   defaultPasswordHint: z.boolean(),
   pilotTaken: z.boolean(),
   hackerTaken: z.boolean(),
+  active: z.boolean(),
 });
 
 export const publicInfoSchema = z.strictObject({
+  topology: topologySchema,
   cars: z.array(publicCarInfoSchema),
   adminAvailable: z.boolean(),
 });
@@ -83,7 +89,7 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientEnvelope("session.resume", empty),
   clientEnvelope(
     "pilot.drive",
-    z.strictObject({ throttle: axisSchema, steering: axisSchema, pressed: z.boolean() }),
+    z.strictObject({ throttle: axisSchema, steering: steeringSchema, pressed: z.boolean() }),
   ),
   clientEnvelope("pilot.stop", z.strictObject({ reason: z.enum(PILOT_STOP_REASONS) })),
   clientEnvelope("attack.scan", empty),
@@ -107,8 +113,9 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
     z.strictObject({ resetAttacks: z.boolean(), resetDefenses: z.boolean(), resetPasswords: z.boolean() }),
   ),
   clientEnvelope("admin.setCarMode", z.strictObject({ carId: carIdSchema, mode: carModeSchema })),
+  clientEnvelope("admin.setTopology", z.strictObject({ topology: topologySchema })),
   clientEnvelope("admin.releaseSlot", z.strictObject({ carId: carIdSchema, role: participantRoleSchema })),
-  clientEnvelope("sim.manualDrive", z.strictObject({ carId: carIdSchema, throttle: axisSchema, steering: axisSchema })),
+  clientEnvelope("sim.manualDrive", z.strictObject({ carId: carIdSchema, throttle: axisSchema, steering: steeringSchema })),
 ]);
 
 export const telemetrySchema = z.strictObject({
@@ -127,6 +134,7 @@ export const carViewSchema = z.strictObject({
   teamId: teamIdSchema,
   displayName: z.string(),
   mode: carModeSchema,
+  active: z.boolean(),
   requested: driveVectorSchema,
   desired: driveVectorSchema,
   confirmed: driveVectorSchema,
@@ -197,6 +205,7 @@ export const metricsSchema = z.strictObject({
 
 export const publicStateSchema = z.strictObject({
   demoState: demoStateSchema,
+  topology: topologySchema,
   me: meSchema.nullable(),
   cars: z.array(carViewSchema),
   slots: z.array(slotViewSchema),
@@ -245,7 +254,7 @@ export const serverToDeviceSchema = z.discriminatedUnion("type", [
     seq: z.number().int().positive(),
     payload: z.strictObject({
       throttle: axisSchema,
-      steering: axisSchema,
+      steering: steeringSchema,
       speedMode: z.literal("fixed"),
       commandTtlMs: z.number().int().min(50).max(2000),
     }),
@@ -285,7 +294,7 @@ export const deviceToServerSchema = z.discriminatedUnion("type", [
     payload: z.strictObject({
       seq: z.number().int().nonnegative(),
       throttle: axisSchema,
-      steering: axisSchema,
+      steering: steeringSchema,
     }),
   }),
   z.strictObject({
@@ -296,7 +305,7 @@ export const deviceToServerSchema = z.discriminatedUnion("type", [
       rssi: z.number().nullable(),
       lastSeq: z.number().int().nonnegative(),
       throttle: axisSchema,
-      steering: axisSchema,
+      steering: steeringSchema,
       reconnects: z.number().int().nonnegative(),
       rejectedCommands: z.number().int().nonnegative(),
       watchdogTrips: z.number().int().nonnegative(),

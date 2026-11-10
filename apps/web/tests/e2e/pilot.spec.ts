@@ -4,11 +4,11 @@ import { carPanel, holdJoystick, loginAs, resetEnvironment } from './helpers.ts'
 test.describe.configure({ mode: 'serial' })
 
 test.afterAll(async ({ browser }) => {
-  await resetEnvironment(browser)
+  await resetEnvironment(browser, 'dual')
 })
 
 test('antes da largada o piloto aguarda e os botões A/B não têm função', async ({ browser, page }) => {
-  await resetEnvironment(browser)
+  await resetEnvironment(browser, 'dual')
   await loginAs(page, { name: 'Ana', role: 'Piloto', car: 'Carrinho A' })
   await expect(page).toHaveURL('/pilot')
   await expect(page.getByRole('status').filter({ hasText: 'Aguardando a largada' })).toBeVisible()
@@ -17,7 +17,7 @@ test('antes da largada o piloto aguarda e os botões A/B não têm função', as
 })
 
 test('analógico move só o carrinho do piloto e soltar para', async ({ browser, page }) => {
-  await resetEnvironment(browser, 'running')
+  await resetEnvironment(browser, 'dual', 'running')
   const viewer = await (await browser.newContext()).newPage()
   await viewer.goto('/simulator')
   await loginAs(page, { name: 'Ana', role: 'Piloto', car: 'Carrinho A' })
@@ -36,7 +36,7 @@ test('analógico move só o carrinho do piloto e soltar para', async ({ browser,
 
 test('teclado WASD dirige no computador', async ({ browser, page }, info) => {
   test.skip(info.project.name === 'mobile', 'teclado só no desktop')
-  await resetEnvironment(browser, 'running')
+  await resetEnvironment(browser, 'dual', 'running')
   const viewer = await (await browser.newContext()).newPage()
   await viewer.goto('/simulator')
   await loginAs(page, { name: 'Bia', role: 'Piloto', car: 'Carrinho B' })
@@ -48,7 +48,7 @@ test('teclado WASD dirige no computador', async ({ browser, page }, info) => {
 })
 
 test('fechar a página do piloto para o carrinho', async ({ browser }) => {
-  await resetEnvironment(browser, 'running')
+  await resetEnvironment(browser, 'dual', 'running')
   const viewer = await (await browser.newContext()).newPage()
   await viewer.goto('/simulator')
   const ctx = await browser.newContext()

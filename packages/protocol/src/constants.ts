@@ -8,6 +8,7 @@ export const PARTICIPANT_ROLES = ["pilot", "hacker"] as const;
 export const ROLES = ["pilot", "hacker", "admin"] as const;
 export const CAR_MODES = ["simulated", "hardware"] as const;
 export const DEMO_STATES = ["setup", "ready", "running", "paused", "stopped"] as const;
+export const DEMO_TOPOLOGIES = ["single", "dual"] as const;
 
 export const ATTACK_STEPS = ["locked", "scan", "target", "exploit", "manipulate"] as const;
 
@@ -35,7 +36,8 @@ export const STOP_REASONS = [
   "fault",
 ] as const;
 
-export const DEFAULT_COMMAND_TTL_MS = 300;
+export const DEFAULT_COMMAND_TTL_MS = 400;
+export const STEERING_MAX = 100;
 export const PILOT_REFRESH_MS = 100;
 export const MAX_DEVICE_COMMANDS_PER_SECOND = 20;
 
@@ -47,6 +49,8 @@ export const MAX_NAME_LENGTH = 32;
 export const TEAM_OF_CAR = { "car-a": "A", "car-b": "B" } as const;
 export const CAR_OF_TEAM = { A: "car-a", B: "car-b" } as const;
 export const OPPONENT_CAR = { A: "car-b", B: "car-a" } as const;
+export const SINGLE_TOPOLOGY_CAR = "car-a" as const;
+export const SINGLE_TOPOLOGY_ATTACKER = "B" as const;
 
 export const ERROR_CODES = [
   "bad_request",

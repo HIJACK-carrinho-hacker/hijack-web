@@ -91,7 +91,7 @@ describe("conexão do ESP32", () => {
     const d = await FakeEsp32.connect(h.port);
     d.hello("car-a", "device-secret-a");
     const w = await d.waitFor("device.welcome");
-    expect(w.payload).toEqual({ carId: "car-a", commandTtlMs: 300 });
+    expect(w.payload).toEqual({ carId: "car-a", commandTtlMs: 400 });
     expect(h.server.deviceHub.isConnected("car-a")).toBe(true);
     d.close();
   });
@@ -125,14 +125,14 @@ describe("comandos para o ESP32", () => {
     await d.waitFor("device.welcome");
     run();
     pilotA = await connectAs(h, (await login(h.base, { role: "pilot", carId: "car-a" })).cookie);
-    pilotA.send("pilot.drive", { throttle: 1, steering: -1, pressed: true });
+    pilotA.send("pilot.drive", { throttle: 1, steering: -60, pressed: true });
     const drive = await d.waitFor("device.drive");
     expect(serverToDeviceSchema.safeParse(drive).success).toBe(true);
-    expect(drive.payload).toEqual({ throttle: 1, steering: -1, speedMode: "fixed", commandTtlMs: 300 });
-    d.send("device.ack", { seq: drive.seq, throttle: 1, steering: -1 });
+    expect(drive.payload).toEqual({ throttle: 1, steering: -60, speedMode: "fixed", commandTtlMs: 400 });
+    d.send("device.ack", { seq: drive.seq, throttle: 1, steering: -60 });
     await sleep(30);
     const car = h.server.engine.snapshot({ role: "admin" }).cars.find((c) => c.id === "car-a");
-    expect(car?.confirmed).toEqual({ throttle: 1, steering: -1 });
+    expect(car?.confirmed).toEqual({ throttle: 1, steering: -60 });
     expect(car?.mode).toBe("hardware");
     const m = h.server.engine.snapshot({ role: "admin" }).metrics.find((x) => x.carId === "car-a" && x.mode === "hardware");
     expect(m?.ackLatencyMsP50).not.toBeNull();

@@ -1,4 +1,4 @@
-import type { CarMode, DemoState, StopReason } from "@hijack/protocol";
+import type { CarMode, DemoState, DemoTopology, DriveVector, StopReason } from "@hijack/protocol";
 
 export const DEMO_STATE_LABEL: Record<DemoState, string> = {
   setup: "Configuração",
@@ -7,6 +7,21 @@ export const DEMO_STATE_LABEL: Record<DemoState, string> = {
   paused: "Pausado",
   stopped: "Encerrado",
 };
+
+export const TOPOLOGY_LABEL: Record<DemoTopology, string> = {
+  single: "1 carrinho",
+  dual: "2 carrinhos",
+};
+
+export function describeSteering(steering: number): string {
+  if (steering === 0) return "direção centro";
+  return `direção ${Math.abs(steering)}% à ${steering > 0 ? "direita" : "esquerda"}`;
+}
+
+export function describeDrive(v: DriveVector): string {
+  const t = v.throttle === 1 ? "frente" : v.throttle === -1 ? "ré" : "parado";
+  return `${t}, ${describeSteering(v.steering)}`;
+}
 
 export const MODE_LABEL: Record<CarMode, string> = {
   simulated: "Simulado",

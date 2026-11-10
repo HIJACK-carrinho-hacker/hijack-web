@@ -17,8 +17,28 @@ describe("SimulatorAdapter", () => {
   test("aplica comando e confirma com ack", () => {
     sim = new SimulatorAdapter("car-a", { tickMs: 10 });
     const events = collect(sim);
-    sim.drive({ seq: 1, throttle: 1, steering: -1, ttlMs: 300 });
-    expect(events).toContainEqual(expect.objectContaining({ kind: "ack", seq: 1, throttle: 1, steering: -1 }));
+    sim.drive({ seq: 1, throttle: 1, steering: -60, ttlMs: 400 });
+    expect(events).toContainEqual(expect.objectContaining({ kind: "ack", seq: 1, throttle: 1, steering: -60 }));
+  });
+
+  test("taxa de giro é proporcional à direção", async () => {
+    const t = { now: 0 };
+    const clock = { now: () => t.now };
+    const full = new SimulatorAdapter("car-a", { tickMs: 5, telemetryMs: 10_000, clock });
+    const half = new SimulatorAdapter("car-b", { tickMs: 5, telemetryMs: 10_000, clock });
+    sim = full;
+    full.drive({ seq: 1, throttle: 1, steering: 100, ttlMs: 2000 });
+    half.drive({ seq: 1, throttle: 1, steering: 50, ttlMs: 2000 });
+    const h0 = full.pose().heading;
+    for (let i = 0; i < 10; i++) {
+      t.now += 20;
+      await sleep(8);
+    }
+    const dFull = full.pose().heading - h0;
+    const dHalf = half.pose().heading - h0;
+    half.dispose();
+    expect(dFull).toBeGreaterThan(0);
+    expect(dHalf / dFull).toBeCloseTo(0.5, 1);
   });
 
   test("descarta seq antigo ou repetido", () => {

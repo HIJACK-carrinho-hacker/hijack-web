@@ -7,6 +7,7 @@ const car = (over: Partial<CarView> = {}): CarView => ({
   teamId: "A",
   displayName: "Carrinho A",
   mode: "simulated",
+  active: true,
   requested: { throttle: 0, steering: 0 },
   desired: { throttle: 0, steering: 0 },
   confirmed: { throttle: 0, steering: 0 },
@@ -32,6 +33,12 @@ describe("pilotStatus", () => {
   });
   test("pausado não dirige", () => {
     expect(pilotStatus("open", "paused", car())).toMatchObject({ label: "Pausado", canDrive: false });
+  });
+  test("carrinho desativado pela topologia não dirige", () => {
+    expect(pilotStatus("open", "running", car({ active: false }))).toMatchObject({
+      label: "Carrinho desativado nesta demonstração",
+      canDrive: false,
+    });
   });
   test("carrinho offline", () => {
     const offline = car({ telemetry: { ...car().telemetry, online: false } });

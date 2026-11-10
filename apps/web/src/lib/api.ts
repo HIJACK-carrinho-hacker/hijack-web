@@ -30,6 +30,6 @@ export const LOGIN_ERROR_MESSAGE: Partial<Record<ErrorCode | "network", string>>
   slot_taken: "Essa vaga já está ocupada. Peça ao operador para liberá-la.",
   rate_limited: "Muitas tentativas. Aguarde alguns segundos e tente de novo.",
   invalid_payload: "Confira os campos preenchidos.",
-  forbidden: "Acesso não permitido.",
+  forbidden: "Opção indisponível na demonstração atual. Atualize a página e escolha de novo.",
   network: "Sem conexão com o servidor.",
 };

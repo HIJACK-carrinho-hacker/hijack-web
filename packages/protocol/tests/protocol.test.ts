@@ -26,13 +26,31 @@ const parseClient = (raw: string) => parseMessage(clientMessageSchema, raw, CLIE
 
 describe("mensagens do cliente", () => {
   test("aceita pilot.drive válido", () => {
-    const r = parseClient(drive({ throttle: 1, steering: -1, pressed: true }));
+    const r = parseClient(drive({ throttle: 1, steering: -100, pressed: true }));
     expect(r.ok).toBe(true);
   });
 
-  test.each([2, -2, 0.5, "1", null])("rejeita eixo fora de -1/0/1: %p", (value) => {
+  test.each([2, -2, 0.5, "1", null])("rejeita tração fora de -1/0/1: %p", (value) => {
     const r = parseClient(drive({ throttle: value, steering: 0, pressed: true }));
     expect(r).toMatchObject({ ok: false, code: "invalid_payload" });
+  });
+
+  test.each([-100, -55, 0, 5, 60, 100])("aceita direção proporcional inteira: %p", (value) => {
+    const r = parseClient(drive({ throttle: 0, steering: value, pressed: true }));
+    expect(r.ok).toBe(true);
+  });
+
+  test.each([101, -101, 200, 0.5, "10", null])("rejeita direção fora de -100..100 ou não inteira: %p", (value) => {
+    const r = parseClient(drive({ throttle: 1, steering: value, pressed: true }));
+    expect(r).toMatchObject({ ok: false, code: "invalid_payload" });
+  });
+
+  test("admin.setTopology aceita single e dual e rejeita outros valores", () => {
+    const msg = (topology: unknown) =>
+      JSON.stringify({ protocolVersion: 1, type: "admin.setTopology", requestId: uuid, sentAt: 1, payload: { topology } });
+    expect(parseClient(msg("single")).ok).toBe(true);
+    expect(parseClient(msg("dual")).ok).toBe(true);
+    expect(parseClient(msg("triple"))).toMatchObject({ ok: false, code: "invalid_payload" });
   });
 
   test("rejeita campo obrigatório ausente", () => {
@@ -103,7 +121,7 @@ describe("protocolo do dispositivo", () => {
       type: "device.drive",
       requestId: uuid,
       seq: 42,
-      payload: { throttle: 1, steering: -1, speedMode: "fixed", commandTtlMs: 300 },
+      payload: { throttle: 1, steering: -60, speedMode: "fixed", commandTtlMs: 400 },
     });
     expect(ok.success).toBe(true);
     const bad = serverToDeviceSchema.safeParse({
@@ -111,9 +129,27 @@ describe("protocolo do dispositivo", () => {
       type: "device.drive",
       requestId: uuid,
       seq: 0,
-      payload: { throttle: 1, steering: -1, speedMode: "pwm", commandTtlMs: 300 },
+      payload: { throttle: 1, steering: -60, speedMode: "pwm", commandTtlMs: 400 },
     });
     expect(bad.success).toBe(false);
+  });
+
+  test("device.drive rejeita direção acima de 100", () => {
+    const bad = serverToDeviceSchema.safeParse({
+      protocolVersion: 1,
+      type: "device.drive",
+      requestId: uuid,
+      seq: 1,
+      payload: { throttle: 1, steering: 150, speedMode: "fixed", commandTtlMs: 400 },
+    });
+    expect(bad.success).toBe(false);
+  });
+
+  test("device.ack e device.telemetry levam direção proporcional", () => {
+    const ack = JSON.stringify({ protocolVersion: 1, type: "device.ack", payload: { seq: 3, throttle: 1, steering: 45 } });
+    expect(parseMessage(deviceToServerSchema, ack, DEVICE_MESSAGE_TYPES).ok).toBe(true);
+    const badAck = JSON.stringify({ protocolVersion: 1, type: "device.ack", payload: { seq: 3, throttle: 1, steering: -101 } });
+    expect(parseMessage(deviceToServerSchema, badAck, DEVICE_MESSAGE_TYPES)).toMatchObject({ ok: false, code: "invalid_payload" });
   });
 
   test("device.hello é reconhecido", () => {

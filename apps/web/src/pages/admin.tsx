@@ -1,4 +1,4 @@
-import type { CarMode } from "@hijack/protocol";
+import { type CarMode, DEMO_TOPOLOGIES } from "@hijack/protocol";
 import { Download, LogOut } from "lucide-react";
 import { Brand } from "@/components/hijack/brand";
 import { ConnectionBadge } from "@/components/hijack/connection-badge";
@@ -11,7 +11,7 @@ import { AdminLogin } from "@/features/admin/admin-login";
 import { LanAccessCard } from "@/features/admin/lan-access";
 import { ResetDialog } from "@/features/admin/reset-dialog";
 import { useHijack } from "@/hooks/use-hijack";
-import { DEMO_STATE_LABEL, STOP_REASON_LABEL } from "@/lib/labels";
+import { DEMO_STATE_LABEL, STOP_REASON_LABEL, TOPOLOGY_LABEL } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 
 export function AdminPage() {
@@ -38,14 +38,47 @@ export function AdminPage() {
             <ResetDialog disabled={state.demoState === "running"} />
           </div>
 
+          <section aria-label="Topologia da demonstração" className="flex flex-col gap-2 rounded-xl border bg-card px-4 py-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm font-semibold">Topologia</span>
+              <div className="flex gap-2">
+                {DEMO_TOPOLOGIES.map((t) => (
+                  <Button
+                    key={t}
+                    size="sm"
+                    variant={state.topology === t ? "default" : "secondary"}
+                    aria-pressed={state.topology === t}
+                    disabled={state.demoState === "running"}
+                    onClick={() => send("admin.setTopology", { topology: t })}
+                  >
+                    {TOPOLOGY_LABEL[t]}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {state.topology === "single"
+                ? "1 carrinho: equipe A pilota e defende o Carrinho A; equipe B só ataca."
+                : "2 carrinhos: cada equipe tem piloto e hacker e ataca o carrinho adversário."}
+              {state.demoState === "running" && " Pause ou encerre a partida para trocar."}
+            </p>
+          </section>
+
           <div className="grid gap-4 md:grid-cols-2">
             {state.cars.map((car) => {
               const slot = state.slots.find((s) => s.carId === car.id);
               const defense = state.defenses.find((d) => d.carId === car.id);
               return (
-                <Card key={car.id}>
+                <Card key={car.id} className={cn(!car.active && "opacity-70")}>
                   <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>{car.displayName}</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      {car.displayName}
+                      {!car.active && (
+                        <span className="rounded-md border px-1.5 py-0.5 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                          desativado
+                        </span>
+                      )}
+                    </CardTitle>
                     <div className="flex items-center gap-2">
                       <ModeBadge mode={car.mode} />
                       <span className={cn("font-mono text-xs", car.telemetry.online ? "text-primary" : "text-destructive")}>
@@ -54,6 +87,11 @@ export function AdminPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="flex flex-col gap-3 text-sm">
+                    {!car.active && (
+                      <p className="text-muted-foreground">
+                        Fora da demonstração com 1 carrinho. A senha deste carrinho é a senha de entrada do hacker da equipe B.
+                      </p>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       {(["simulated", "hardware"] as CarMode[]).map((m) => (
                         <Button
@@ -71,7 +109,7 @@ export function AdminPage() {
                       Estado: {car.moving ? "em movimento" : car.stopReason ? STOP_REASON_LABEL[car.stopReason] : "parado"}
                       {" · "}Senha: {defense?.strongPasswordEnabled ? "forte" : "padrão (1234)"}
                     </p>
-                    {(["pilot", "hacker"] as const).map((role) => {
+                    {(car.active ? (["pilot", "hacker"] as const) : (["hacker"] as const)).map((role) => {
                       const holder = slot?.[role] ?? null;
                       return (
                         <div key={role} className="flex items-center justify-between gap-2">

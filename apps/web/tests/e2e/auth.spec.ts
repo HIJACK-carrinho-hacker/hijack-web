@@ -4,11 +4,11 @@ import { loginAs, resetEnvironment } from './helpers.ts'
 test.describe.configure({ mode: 'serial' })
 
 test.beforeEach(async ({ browser }) => {
-  await resetEnvironment(browser)
+  await resetEnvironment(browser, 'dual')
 })
 
 test.afterAll(async ({ browser }) => {
-  await resetEnvironment(browser)
+  await resetEnvironment(browser, 'dual')
 })
 
 test('tela de entrada mostra a dica da senha fraca e erro neutro', async ({ page }) => {

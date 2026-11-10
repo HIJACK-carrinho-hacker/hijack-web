@@ -1,7 +1,7 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { CAR_MODES, DEFAULT_COMMAND_TTL_MS } from "@hijack/protocol";
+import { CAR_MODES, DEFAULT_COMMAND_TTL_MS, DEMO_TOPOLOGIES } from "@hijack/protocol";
 import { z } from "zod";
 
 const csv = z
@@ -24,6 +24,7 @@ const envSchema = z.object({
   DEVICE_SECRET_CAR_B: z.string().min(8).optional(),
   CAR_A_MODE: z.enum(CAR_MODES).default("simulated"),
   CAR_B_MODE: z.enum(CAR_MODES).default("simulated"),
+  DEMO_TOPOLOGY: z.enum(DEMO_TOPOLOGIES).default("single"),
   COMMAND_TTL_MS: z.coerce.number().int().min(50).max(2000).default(DEFAULT_COMMAND_TTL_MS),
   DATA_DIR: z.string().default("data"),
   STATIC_DIR: z.string().default("../web/dist"),
@@ -49,6 +50,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     ADMIN_SECRET: "admin-secret-test",
     DEVICE_SECRET_CAR_A: "device-secret-a",
     DEVICE_SECRET_CAR_B: "device-secret-b",
+    DEMO_TOPOLOGY: "dual",
     ...overrides,
   };
 }

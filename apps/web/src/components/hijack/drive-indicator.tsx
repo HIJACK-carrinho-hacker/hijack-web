@@ -1,4 +1,5 @@
-import type { DriveVector } from "@hijack/protocol";
+import { type DriveVector, STEERING_MAX } from "@hijack/protocol";
+import { describeDrive } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 
 const CELLS: { throttle: -1 | 0 | 1; steering: -1 | 0 | 1; glyph: string }[] = [
@@ -13,18 +14,16 @@ const CELLS: { throttle: -1 | 0 | 1; steering: -1 | 0 | 1; glyph: string }[] = [
   { throttle: -1, steering: 1, glyph: "↘" },
 ];
 
-const describe = (v: DriveVector) => {
-  const t = v.throttle === 1 ? "frente" : v.throttle === -1 ? "ré" : "parado";
-  const s = v.steering === 1 ? "direita" : v.steering === -1 ? "esquerda" : "centro";
-  return `${t}, direção ${s}`;
-};
+const steeringText = (s: number) => (s === 0 ? "centro" : `${s > 0 ? "D" : "E"} ${Math.abs(s)}%`);
 
 export function DriveIndicator({ label, vector, tone = "primary" }: { label: string; vector: DriveVector; tone?: "primary" | "muted" }) {
+  const share = Math.min(1, Math.abs(vector.steering) / STEERING_MAX) * 50;
+  const fill = tone === "primary" ? "bg-primary" : "bg-foreground";
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div role="img" aria-label={`${label}: ${describe(vector)}`} className="grid grid-cols-3 gap-0.5">
+    <div role="img" aria-label={`${label}: ${describeDrive(vector)}`} className="flex flex-col items-center gap-1.5">
+      <div className="grid grid-cols-3 gap-0.5">
         {CELLS.map((c) => {
-          const on = c.throttle === vector.throttle && c.steering === vector.steering;
+          const on = c.throttle === vector.throttle && c.steering === Math.sign(vector.steering);
           return (
             <span
               key={`${c.throttle}${c.steering}`}
@@ -42,6 +41,15 @@ export function DriveIndicator({ label, vector, tone = "primary" }: { label: str
           );
         })}
       </div>
+      <div className="relative h-1.5 w-[4.75rem] overflow-hidden rounded-full bg-secondary">
+        <span aria-hidden className="absolute inset-y-0 left-1/2 w-px bg-subtle" />
+        <span
+          aria-hidden
+          className={cn("absolute inset-y-0", fill)}
+          style={vector.steering >= 0 ? { left: "50%", width: `${share}%` } : { right: "50%", width: `${share}%` }}
+        />
+      </div>
+      <span className="font-mono text-[10px] text-muted-foreground tabular-nums">{steeringText(vector.steering)}</span>
       <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">{label}</span>
     </div>
   );

@@ -1,4 +1,4 @@
-import type { CarView } from "@hijack/protocol";
+import { type CarView, STEERING_MAX } from "@hijack/protocol";
 import { TEAM_COLOR_CLASS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 
@@ -8,7 +8,7 @@ function SimCar({ car }: { car: CarView }) {
   if (!car.sim) return null;
   const color = TEAM_COLOR_CLASS[car.teamId];
   const deg = (car.sim.heading * 180) / Math.PI;
-  const wheel = car.confirmed.steering * 28;
+  const wheel = (car.confirmed.steering / STEERING_MAX) * 45;
   return (
     <g transform={`translate(${car.sim.x * SIZE} ${car.sim.y * SIZE}) rotate(${deg})`}>
       <rect x={-20} y={-12} width={40} height={24} rx={5} className={cn(color.fill, !car.telemetry.online && "opacity-30")} />

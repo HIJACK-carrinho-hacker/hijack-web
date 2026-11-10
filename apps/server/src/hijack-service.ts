@@ -9,7 +9,9 @@ import {
   type Me,
   type PublicInfo,
   type PublicState,
+  SINGLE_TOPOLOGY_ATTACKER,
   type SlotView,
+  type TeamId,
 } from "@hijack/protocol";
 import { AttackManager } from "./attacks/attack-manager.ts";
 import { PasswordStore, checkStrongPassword } from "./auth/password-store.ts";
@@ -77,6 +79,7 @@ export class HijackService {
   publicInfo(): PublicInfo {
     return {
       adminAvailable: !!this.config.ADMIN_SECRET,
+      topology: this.engine.topology,
       cars: CAR_IDS.map((id) => {
         const car = this.engine.car(id);
         return {
@@ -87,12 +90,14 @@ export class HijackService {
           defaultPasswordHint: this.passwords.isDefault(id),
           pilotTaken: !!this.sessions.slotHolder(id, "pilot"),
           hackerTaken: !!this.sessions.slotHolder(id, "hacker"),
+          active: this.engine.isActive(id),
         };
       }),
     };
   }
 
   async login(req: LoginRequest, ip: string, currentToken: string | null): Promise<LoginOutcome> {
+    if (req.role === "pilot" && !this.engine.isActive(req.carId)) return { ok: false, code: "forbidden", status: 403 };
     const keys = [`ip:${ip}`, `car:${req.carId}`];
     const locked = keys.find((k) => this.loginThrottle.isLocked(k));
     if (locked) {
@@ -212,6 +217,7 @@ export class HijackService {
       case "auth.changePassword": {
         const hacker = this.requireParticipant(session, "hacker");
         if (!hacker.ok) return hacker.result;
+        if (!this.canDefend(hacker.session.teamId)) return this.attackerOnly();
         return this.changePassword(hacker.session, msg.payload.currentPassword, msg.payload.nextPassword);
       }
       case "attack.scan":
@@ -221,24 +227,55 @@ export class HijackService {
       case "attack.disable": {
         const hacker = this.requireParticipant(session, "hacker");
         if (!hacker.ok) return hacker.result;
+        if (!this.canAttack(hacker.session.teamId)) {
+          return fail("forbidden", "na topologia de 1 carrinho a equipe A defende o Carrinho A; o ataque é da equipe B");
+        }
         return this.handleAttack(hacker.session, msg);
       }
       case "defense.setIntegrityDemo":
       case "defense.setReplayDemo": {
         const hacker = this.requireParticipant(session, "hacker");
         if (!hacker.ok) return hacker.result;
+        if (!this.canDefend(hacker.session.teamId)) return this.attackerOnly();
         return this.handleDefense(hacker.session, msg);
       }
       case "admin.setDemoState":
       case "admin.stopAll":
       case "admin.resetDemo":
       case "admin.setCarMode":
+      case "admin.setTopology":
       case "admin.releaseSlot":
       case "sim.manualDrive": {
         if (session?.kind !== "admin") return session ? fail("forbidden", "ação restrita ao operador") : fail("unauthenticated", "entre para continuar");
         return this.handleAdmin(msg);
       }
     }
+  }
+
+  private canAttack(team: TeamId): boolean {
+    return this.engine.topology === "dual" || team === SINGLE_TOPOLOGY_ATTACKER;
+  }
+
+  private canDefend(team: TeamId): boolean {
+    return this.engine.topology === "dual" || team !== SINGLE_TOPOLOGY_ATTACKER;
+  }
+
+  private attackerOnly(): Result {
+    return fail("forbidden", "na topologia de 1 carrinho a equipe B só ataca; a defesa é da equipe A");
+  }
+
+  private setTopology(topology: PublicState["topology"]): Result {
+    const before = this.engine.topology;
+    const r = this.engine.setTopology(topology);
+    if (!r.ok || before === topology) return r;
+    this.attacks.reset();
+    const invalid = this.sessions
+      .all()
+      .filter((s) => s.kind === "participant" && s.role === "pilot" && !this.engine.isActive(s.carId))
+      .map((s) => s.token);
+    this.revokeTokens(invalid, "carrinho desativado: a demonstração passou a usar 1 carrinho");
+    this.onStateChanged();
+    return ok;
   }
 
   private handleAttack(session: ParticipantSession, msg: ClientMessage): Result {
@@ -254,11 +291,13 @@ export class HijackService {
     let r: Result;
     switch (msg.type) {
       case "attack.scan":
-        r = this.attacks.scan(team);
+        r = this.attacks.scan(team, CAR_IDS.filter((id) => this.engine.isActive(id)));
         if (r.ok) this.logAttack(session, "Varredura simulada: carrinhos cadastrados no servidor listados", "team");
         break;
       case "attack.selectTarget":
-        r = this.attacks.selectTarget(team, msg.payload.targetCarId);
+        r = this.engine.isActive(msg.payload.targetCarId)
+          ? this.attacks.selectTarget(team, msg.payload.targetCarId)
+          : fail("forbidden", "carrinho desativado na topologia atual");
         if (r.ok) this.logAttack(session, `Alvo escolhido: ${this.engine.car(msg.payload.targetCarId).displayName}`, "team");
         break;
       case "attack.exploitDemo": {
@@ -348,6 +387,8 @@ export class HijackService {
         return ok;
       case "admin.setCarMode":
         return this.engine.setCarMode(msg.payload.carId, msg.payload.mode);
+      case "admin.setTopology":
+        return this.setTopology(msg.payload.topology);
       case "admin.releaseSlot": {
         const holder = this.sessions.slotHolder(msg.payload.carId, msg.payload.role);
         if (holder) this.revokeTokens([holder.token], "vaga liberada pelo operador");
@@ -461,15 +502,15 @@ export class HijackService {
   }
 
   private attacksFor(viewer: Viewer): AttackView[] {
-    if (viewer.role === "admin" || viewer.role === "spectator") return this.attacks.all();
-    if (viewer.role === "hacker") return [this.attacks.view(viewer.teamId)];
+    if (viewer.role === "admin" || viewer.role === "spectator") return this.attacks.all().filter((a) => this.canAttack(a.attackerTeam));
+    if (viewer.role === "hacker") return this.canAttack(viewer.teamId) ? [this.attacks.view(viewer.teamId)] : [];
     return [];
   }
 
   private defensesFor(viewer: Viewer): DefenseView[] {
     const all = this.defenses.all((carId) => !this.passwords.isDefault(carId));
     if (viewer.role === "admin" || viewer.role === "spectator") return all;
-    if (viewer.role === "hacker") return all.filter((d) => d.carId === viewer.carId);
+    if (viewer.role === "hacker") return this.canDefend(viewer.teamId) ? all.filter((d) => d.carId === viewer.carId) : [];
     return [];
   }
 }

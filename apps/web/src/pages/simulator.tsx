@@ -7,11 +7,12 @@ import { Arena } from "@/features/simulator/arena";
 import { CarPanel } from "@/features/simulator/car-panel";
 import { ManualPad } from "@/features/simulator/manual-pad";
 import { useHijack } from "@/hooks/use-hijack";
-import { DEMO_STATE_LABEL } from "@/lib/labels";
+import { DEMO_STATE_LABEL, TOPOLOGY_LABEL } from "@/lib/labels";
 
 export function SimulatorPage() {
   const { status, state, me } = useHijack();
   const isAdmin = me?.role === "admin";
+  const cars = state?.cars.filter((c) => c.active) ?? [];
   return (
     <main className="mx-auto flex min-h-svh max-w-6xl flex-col gap-6 px-4 py-6">
       <header className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border bg-card px-4 py-3">
@@ -21,7 +22,9 @@ export function SimulatorPage() {
         </span>
         <ConnectionBadge status={status} />
         {state && (
-          <span className="text-sm text-muted-foreground">Partida: {DEMO_STATE_LABEL[state.demoState]}</span>
+          <span className="text-sm text-muted-foreground">
+            Partida: {DEMO_STATE_LABEL[state.demoState]} · {TOPOLOGY_LABEL[state.topology]}
+          </span>
         )}
       </header>
 
@@ -32,13 +35,13 @@ export function SimulatorPage() {
           {isAdmin && <DemoControls demoState={state.demoState} />}
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div className="flex flex-col gap-2">
-              <Arena cars={state.cars} />
+              <Arena cars={cars} />
               <p className="text-xs text-muted-foreground">
                 Posição apenas ilustrativa; não representa física real nem a posição do carrinho físico.
               </p>
             </div>
             <div className="flex flex-col gap-4">
-              {state.cars.map((car) => (
+              {cars.map((car) => (
                 <CarPanel key={car.id} car={car} defense={state.defenses.find((d) => d.carId === car.id)}>
                   {isAdmin && car.mode === "simulated" && (
                     <ManualPad carId={car.id} disabled={state.demoState === "running" || !car.telemetry.online} />

@@ -4,11 +4,11 @@ import { carPanel, holdJoystick, loginAs, resetEnvironment } from './helpers.ts'
 test.describe.configure({ mode: 'serial' })
 
 test.afterAll(async ({ browser }) => {
-  await resetEnvironment(browser)
+  await resetEnvironment(browser, 'dual')
 })
 
 test('antes da largada o ataque fica bloqueado', async ({ browser, page }) => {
-  await resetEnvironment(browser)
+  await resetEnvironment(browser, 'dual')
   await loginAs(page, { name: 'Bruno', role: 'Hacker', car: 'Carrinho A' })
   await expect(page.getByText('O ataque é liberado quando a partida começar.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Escanear rede' })).toBeDisabled()
@@ -16,7 +16,7 @@ test('antes da largada o ataque fica bloqueado', async ({ browser, page }) => {
 
 test('quatro etapas e inversões independentes alteram o carrinho adversário', async ({ browser }) => {
   test.setTimeout(60_000)
-  await resetEnvironment(browser, 'running')
+  await resetEnvironment(browser, 'dual', 'running')
   const viewer = await (await browser.newContext()).newPage()
   await viewer.goto('/simulator')
   const hacker = await (await browser.newContext()).newPage()
@@ -43,7 +43,7 @@ test('quatro etapas e inversões independentes alteram o carrinho adversário', 
   await hacker.getByRole('switch', { name: 'Esquerda ↔ Direita' }).click()
   await expect(hacker.getByRole('switch', { name: 'Esquerda ↔ Direita' })).toBeChecked()
   await holdJoystick(pilot, -1, -1)
-  await expect(carPanel(viewer, 'Carrinho B').getByRole('img', { name: 'Confirmado: frente, direção direita' })).toBeVisible()
+  await expect(carPanel(viewer, 'Carrinho B').getByRole('img', { name: /^Confirmado: frente, direção \d+% à direita$/ })).toBeVisible()
   await pilot.mouse.up()
   await expect(carPanel(viewer, 'Carrinho B').getByRole('img', { name: 'Confirmado: parado, direção centro' })).toBeVisible()
 

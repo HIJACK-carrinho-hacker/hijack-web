@@ -69,23 +69,23 @@ describe("ataque guiado", () => {
   test("hacker A inverte os dois eixos do carrinho B; carrinho A segue normal", async () => {
     run();
     await fullAttack(hackerA, "car-b", true, true);
-    pilotB.send("pilot.drive", { throttle: 1, steering: -1, pressed: true });
-    pilotA.send("pilot.drive", { throttle: 1, steering: -1, pressed: true });
+    pilotB.send("pilot.drive", { throttle: 1, steering: -100, pressed: true });
+    pilotA.send("pilot.drive", { throttle: 1, steering: -100, pressed: true });
     await sleep(30);
-    expect(confirmed("car-b")).toEqual({ throttle: -1, steering: 1 });
-    expect(confirmed("car-a")).toEqual({ throttle: 1, steering: -1 });
+    expect(confirmed("car-b")).toEqual({ throttle: -1, steering: 100 });
+    expect(confirmed("car-a")).toEqual({ throttle: 1, steering: -100 });
   });
 
   test("inversões são independentes", async () => {
     run();
     await fullAttack(hackerB, "car-a", false, true);
-    pilotA.send("pilot.drive", { throttle: 1, steering: -1, pressed: true });
+    pilotA.send("pilot.drive", { throttle: 1, steering: -100, pressed: true });
     await sleep(30);
-    expect(confirmed("car-a")).toEqual({ throttle: 1, steering: 1 });
+    expect(confirmed("car-a")).toEqual({ throttle: 1, steering: 100 });
     expect(await act(hackerB, "attack.configure", { invertThrottle: true, invertSteering: false })).toEqual({ ok: true });
-    pilotA.send("pilot.drive", { throttle: 1, steering: -1, pressed: true });
+    pilotA.send("pilot.drive", { throttle: 1, steering: -100, pressed: true });
     await sleep(70);
-    expect(confirmed("car-a")).toEqual({ throttle: -1, steering: -1 });
+    expect(confirmed("car-a")).toEqual({ throttle: -1, steering: -100 });
   });
 
   test("ataque não move carrinho parado e STOP não é invertido", async () => {
@@ -114,7 +114,7 @@ describe("ataque guiado", () => {
     run();
     await fullAttack(hackerA, "car-b", true, true);
     pilotB.clear();
-    pilotB.send("pilot.drive", { throttle: 1, steering: -1, pressed: true });
+    pilotB.send("pilot.drive", { throttle: 1, steering: -100, pressed: true });
     const snap = await pilotB.waitFor("state.snapshot", (m) => m.payload.state.cars.some((c) => c.id === "car-b" && c.moving));
     const car = snap.payload.state.cars.find((c) => c.id === "car-b");
     expect(car?.desired).toEqual({ throttle: 0, steering: 0 });
@@ -151,9 +151,9 @@ describe("defesa didática", () => {
     run();
     await fullAttack(hackerA, "car-b", true, true);
     expect((await act(hackerB, "defense.setIntegrityDemo", { enabled: true })).ok).toBe(true);
-    pilotB.send("pilot.drive", { throttle: 1, steering: -1, pressed: true });
+    pilotB.send("pilot.drive", { throttle: 1, steering: -100, pressed: true });
     await sleep(30);
-    expect(confirmed("car-b")).toEqual({ throttle: 1, steering: -1 });
+    expect(confirmed("car-b")).toEqual({ throttle: 1, steering: -100 });
     const m = h.server.engine.snapshot({ role: "admin" }).metrics.find((x) => x.carId === "car-b");
     expect(m?.blocked).toBeGreaterThan(0);
     expect(m?.transformed).toBe(0);

@@ -1,9 +1,9 @@
-import type { Axis, CarId, CarMode } from "@hijack/protocol";
+import type { Axis, CarId, CarMode, Steering } from "@hijack/protocol";
 
 export interface DeviceDriveCommand {
   seq: number;
   throttle: Axis;
-  steering: Axis;
+  steering: Steering;
   ttlMs: number;
 }
 
@@ -18,7 +18,7 @@ export interface DeviceTelemetry {
   rssi: number | null;
   lastSeq: number;
   throttle: Axis;
-  steering: Axis;
+  steering: Steering;
   reconnects: number;
   rejectedCommands: number;
   watchdogTrips: number;
@@ -26,7 +26,7 @@ export interface DeviceTelemetry {
 }
 
 export type DeviceEvent =
-  | { kind: "ack"; seq: number; throttle: Axis; steering: Axis; at: number }
+  | { kind: "ack"; seq: number; throttle: Axis; steering: Steering; at: number }
   | { kind: "telemetry"; telemetry: DeviceTelemetry; at: number }
   | { kind: "connection"; online: boolean; at: number }
   | { kind: "stopped"; reason: string; lastSeq: number; at: number }

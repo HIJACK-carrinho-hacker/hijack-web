@@ -14,10 +14,32 @@ import { cn } from "@/lib/utils";
 
 type Role = "pilot" | "hacker";
 
-const ROLES: { value: Role; title: string; description: string }[] = [
-  { value: "pilot", title: "Piloto", description: "Dirige o carrinho pelo celular" },
-  { value: "hacker", title: "Hacker", description: "Ataca e defende pelo notebook" },
+const ROLES: { value: Role; title: string; description: string; singleDescription: string }[] = [
+  { value: "pilot", title: "Piloto", description: "Dirige o carrinho pelo celular", singleDescription: "Dirige o Carrinho A pelo celular" },
+  {
+    value: "hacker",
+    title: "Hacker",
+    description: "Ataca e defende pelo notebook",
+    singleDescription: "Equipe A defende; equipe B ataca",
+  },
 ];
+
+const FALLBACK_CARS = [
+  { id: "car-a" as const, displayName: "Carrinho A", active: true },
+  { id: "car-b" as const, displayName: "Carrinho B", active: true },
+];
+
+function slotOptions(info: PublicInfo | null, role: Role): { id: CarId; label: string }[] {
+  const cars = info?.cars ?? FALLBACK_CARS;
+  if (info?.topology !== "single") return cars.map((c) => ({ id: c.id, label: c.displayName }));
+  const target = cars.find((c) => c.active) ?? cars[0];
+  const targetName = target?.displayName ?? "Carrinho A";
+  if (role === "pilot") return [{ id: target?.id ?? "car-a", label: targetName }];
+  return [
+    { id: "car-a", label: `Equipe A — defende o ${targetName}` },
+    { id: "car-b", label: `Equipe B — ataca o ${targetName}` },
+  ];
+}
 
 export function LoginPage() {
   const { me, meLoaded, login, revoked, clearRevoked } = useHijack();
@@ -25,7 +47,7 @@ export function LoginPage() {
   const [info, setInfo] = useState<PublicInfo | null>(null);
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>("pilot");
-  const [carId, setCarId] = useState<CarId>("car-a");
+  const [chosenCar, setCarId] = useState<CarId>("car-a");
   const [carName, setCarName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +69,11 @@ export function LoginPage() {
 
   if (meLoaded && me) return <Navigate to={homeOf(me.role)} replace />;
 
+  const single = info?.topology === "single";
+  const options = slotOptions(info, role);
+  const carId = options.some((o) => o.id === chosenCar) ? chosenCar : (options[0]?.id ?? "car-a");
   const car = info?.cars.find((c) => c.id === carId);
+  const teamOnly = single && car?.active === false;
   const slotTaken = car ? (role === "pilot" ? car.pilotTaken : car.hackerTaken) : false;
 
   const submit = async (e: FormEvent) => {
@@ -59,7 +85,7 @@ export function LoginPage() {
       return;
     }
     if (!password) {
-      setError("Informe a senha do carrinho.");
+      setError(teamOnly ? "Informe a senha da equipe." : "Informe a senha do carrinho.");
       return;
     }
     setBusy(true);
@@ -68,7 +94,7 @@ export function LoginPage() {
       role,
       carId,
       password,
-      ...(carName.trim() ? { carDisplayName: carName.trim() } : {}),
+      ...(carName.trim() && !teamOnly ? { carDisplayName: carName.trim() } : {}),
     });
     setBusy(false);
     if (r.ok) {
@@ -116,7 +142,7 @@ export function LoginPage() {
                   )}
                 >
                   <span className="font-semibold">{r.title}</span>
-                  <span className="text-xs text-muted-foreground">{r.description}</span>
+                  <span className="text-xs text-muted-foreground">{single ? r.singleDescription : r.description}</span>
                 </button>
               );
             })}
@@ -124,43 +150,42 @@ export function LoginPage() {
         </fieldset>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="car">Seu carrinho</Label>
+          <Label htmlFor="car">{single && role === "hacker" ? "Sua equipe" : "Seu carrinho"}</Label>
           <Select value={carId} onValueChange={(v) => setCarId(v as CarId)}>
             <SelectTrigger id="car" className="w-full data-[size=default]:h-11">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {(info?.cars ?? [
-                { id: "car-a" as const, displayName: "Carrinho A" },
-                { id: "car-b" as const, displayName: "Carrinho B" },
-              ]).map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.displayName}
+              {options.map((o) => (
+                <SelectItem key={o.id} value={o.id}>
+                  {o.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {slotTaken && (
             <p className="text-xs text-warning">
-              A vaga de {role === "pilot" ? "piloto" : "hacker"} deste carrinho já está ocupada.
+              A vaga de {role === "pilot" ? "piloto" : "hacker"} {teamOnly ? "desta equipe" : "deste carrinho"} já está ocupada.
             </p>
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="car-name">Nome do carrinho (opcional)</Label>
-          <Input
-            id="car-name"
-            maxLength={32}
-            placeholder={car?.displayName ?? "Carrinho A"}
-            value={carName}
-            onChange={(e) => setCarName(e.target.value)}
-            className="h-11"
-          />
-        </div>
+        {!teamOnly && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="car-name">Nome do carrinho (opcional)</Label>
+            <Input
+              id="car-name"
+              maxLength={32}
+              placeholder={car?.displayName ?? "Carrinho A"}
+              value={carName}
+              onChange={(e) => setCarName(e.target.value)}
+              className="h-11"
+            />
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="password">Senha do carrinho</Label>
+          <Label htmlFor="password">{teamOnly ? "Senha da equipe B" : "Senha do carrinho"}</Label>
           <Input
             id="password"
             type="password"

@@ -5,7 +5,7 @@ import { adminSecret, loginAs, resetEnvironment } from './helpers.ts'
 test.describe.configure({ mode: 'serial' })
 
 test.afterAll(async ({ browser }) => {
-  await resetEnvironment(browser)
+  await resetEnvironment(browser, 'dual')
 })
 
 async function audit(page: Page, name: string) {
@@ -17,7 +17,7 @@ async function audit(page: Page, name: string) {
 
 test('telas sem violações sérias de acessibilidade', async ({ browser, page }) => {
   test.setTimeout(60_000)
-  await resetEnvironment(browser, 'running')
+  await resetEnvironment(browser, 'dual', 'running')
   await page.goto('/')
   await expect(page.getByRole('button', { name: 'Conectar e entrar' })).toBeVisible()
   await audit(page, 'entrada')

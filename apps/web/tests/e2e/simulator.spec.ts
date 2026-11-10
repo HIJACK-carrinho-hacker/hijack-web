@@ -4,7 +4,7 @@ import { adminSecret, resetEnvironment } from './helpers.ts'
 test.describe.configure({ mode: 'serial' })
 
 test.beforeEach(async ({ browser }) => {
-  await resetEnvironment(browser)
+  await resetEnvironment(browser, 'dual')
 })
 
 test('simulador público mostra os dois carrinhos sem controles de operador', async ({ page }) => {

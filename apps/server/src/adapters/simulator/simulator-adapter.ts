@@ -1,4 +1,4 @@
-import type { Axis, CarId } from "@hijack/protocol";
+import { type Axis, type CarId, STEERING_MAX, type Steering } from "@hijack/protocol";
 import {
   type Clock,
   type DeviceAdapter,
@@ -29,7 +29,7 @@ export class SimulatorAdapter implements DeviceAdapter {
   private readonly telemetryTimer: ReturnType<typeof setInterval>;
   private online = true;
   private throttle: Axis = 0;
-  private steering: Axis = 0;
+  private steering: Steering = 0;
   private lastSeq = 0;
   private expiresAt = 0;
   private rejected = 0;
@@ -127,7 +127,7 @@ export class SimulatorAdapter implements DeviceAdapter {
       return;
     }
     if (this.throttle === 0) return;
-    this.pos.heading += this.steering * this.throttle * this.turnRate * dt;
+    this.pos.heading += (this.steering / STEERING_MAX) * this.throttle * this.turnRate * dt;
     let x = this.pos.x + Math.cos(this.pos.heading) * this.throttle * this.speed * dt;
     let y = this.pos.y + Math.sin(this.pos.heading) * this.throttle * this.speed * dt;
     if (x < 0.05 || x > 0.95) {

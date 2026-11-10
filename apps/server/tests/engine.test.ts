@@ -44,12 +44,12 @@ describe("HijackEngine", () => {
 
   test("comando afeta somente o carro correto", async () => {
     run();
-    engine.pilotInput("car-a", { throttle: 1, steering: -1, pressed: true });
+    engine.pilotInput("car-a", { throttle: 1, steering: -45, pressed: true });
     await sleep(20);
     const s = engine.snapshot({ role: "spectator" });
     const a = s.cars.find((c) => c.id === "car-a");
     const b = s.cars.find((c) => c.id === "car-b");
-    expect(a?.confirmed).toEqual({ throttle: 1, steering: -1 });
+    expect(a?.confirmed).toEqual({ throttle: 1, steering: -45 });
     expect(b?.confirmed).toEqual({ throttle: 0, steering: 0 });
     expect(b?.moving).toBe(false);
   });
@@ -57,12 +57,12 @@ describe("HijackEngine", () => {
   test("dois carros podem ser controlados ao mesmo tempo", async () => {
     run();
     engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true });
-    engine.pilotInput("car-b", { throttle: -1, steering: 1, pressed: true });
+    engine.pilotInput("car-b", { throttle: -1, steering: 100, pressed: true });
     await sleep(20);
     const s = engine.snapshot({ role: "spectator" });
     expect(s.cars.map((c) => c.confirmed)).toEqual([
       { throttle: 1, steering: 0 },
-      { throttle: -1, steering: 1 },
+      { throttle: -1, steering: 100 },
     ]);
   });
 
@@ -140,6 +140,24 @@ describe("HijackEngine", () => {
     expect(m?.received).toBe(1);
     expect(m?.applied).toBe(1);
     expect(m?.ackLatencyMsP50).not.toBeNull();
+  });
+
+  test("cada novo movimento alterado depois de uma parada gera novo evento", () => {
+    run();
+    engine.setAttackResolver((carId) => ({
+      effect: carId === "car-b" ? { invertThrottle: true, invertSteering: false } : null,
+      integrity: false,
+    }));
+    const count = () => engine.events.all().filter((e) => e.kind === "attack.transformed").length;
+    engine.pilotInput("car-b", { throttle: 1, steering: 0, pressed: true });
+    engine.pilotInput("car-b", { throttle: 1, steering: 0, pressed: true });
+    expect(count()).toBe(1);
+    engine.pilotStop("car-b", "pilot-stop");
+    engine.pilotInput("car-b", { throttle: 1, steering: 0, pressed: true });
+    expect(count()).toBe(2);
+    engine.pilotInput("car-b", { throttle: 1, steering: 30, pressed: true });
+    engine.pilotInput("car-b", { throttle: 1, steering: 35, pressed: true });
+    expect(count()).toBe(3);
   });
 
   test("piloto não recebe métricas", () => {

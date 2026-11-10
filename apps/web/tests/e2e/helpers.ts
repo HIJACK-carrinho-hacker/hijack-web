@@ -24,7 +24,9 @@ export async function adminSend(page: Page, messages: { type: string; payload: u
   }, { msgs: messages, host })
 }
 
-export async function resetEnvironment(browser: Browser, demoState?: 'running') {
+export type Topology = 'single' | 'dual'
+
+export async function resetEnvironment(browser: Browser, topology: Topology, demoState?: 'running') {
   const ctx = await browser.newContext()
   const page = await ctx.newPage()
   await page.goto('/admin')
@@ -37,6 +39,7 @@ export async function resetEnvironment(browser: Browser, demoState?: 'running') 
   msgs.push({ type: 'admin.setDemoState', payload: { state: 'paused' } })
   msgs.push({ type: 'admin.setDemoState', payload: { state: 'stopped' } })
   msgs.push({ type: 'admin.setDemoState', payload: { state: 'setup' } })
+  msgs.push({ type: 'admin.setTopology', payload: { topology } })
   msgs.push({ type: 'admin.resetDemo', payload: { resetAttacks: true, resetDefenses: true, resetPasswords: true } })
   if (demoState === 'running') {
     msgs.push({ type: 'admin.setDemoState', payload: { state: 'ready' } })
@@ -55,6 +58,18 @@ export async function loginAs(page: Page, opts: { name: string; role: 'Piloto' |
     await page.getByRole('option', { name: 'Carrinho B' }).click()
   }
   await page.getByLabel('Senha do carrinho').fill(opts.password ?? '1234')
+  await page.getByRole('button', { name: 'Conectar e entrar' }).click()
+}
+
+export async function loginSingle(page: Page, opts: { name: string; slot: 'pilot' | 'hackerA' | 'hackerB'; password?: string }) {
+  await page.goto('/')
+  await page.getByLabel('Seu nome').fill(opts.name)
+  await page.getByRole('radio', { name: new RegExp(opts.slot === 'pilot' ? 'Piloto' : 'Hacker') }).click()
+  if (opts.slot === 'hackerB') {
+    await page.getByLabel('Sua equipe').click()
+    await page.getByRole('option', { name: /^Equipe B — ataca/ }).click()
+  }
+  await page.getByLabel(opts.slot === 'hackerB' ? 'Senha da equipe B' : 'Senha do carrinho').fill(opts.password ?? '1234')
   await page.getByRole('button', { name: 'Conectar e entrar' }).click()
 }
 
