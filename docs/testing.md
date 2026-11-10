@@ -16,11 +16,11 @@ Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os 
 
 | Requisito | Onde |
 |---|---|
-| Transformação dos eixos e neutro inviolável (exemplos 8.1) | `apps/server/tests/pipeline.test.ts` |
-| Schemas rejeitam eixos fora de -1/0/1, campos ausentes e extras, tipo/versão/tamanho | `packages/protocol/tests/protocol.test.ts` |
-| Máquina de estados da demo, timeout, seq, coalescência, STOP | `engine.test.ts`, `car-controller.test.ts`, `simulator-adapter.test.ts` |
+| Transformação dos eixos (direção proporcional negada, sem `-0`) e neutro inviolável (exemplos 8.1 adaptados); `describeVector` com percentual | `apps/server/tests/pipeline.test.ts` |
+| Schemas rejeitam `throttle` fora de -1/0/1, `steering` fora de -100..100 ou não inteiro, campos ausentes e extras, tipo/versão/tamanho; `admin.setTopology` | `packages/protocol/tests/protocol.test.ts` |
+| Máquina de estados da demo, timeout, seq, coalescência, STOP; giro do simulador proporcional à direção | `engine.test.ts`, `car-controller.test.ts`, `simulator-adapter.test.ts` |
 | Etapas do ataque na ordem, só alvo adversário, efeito por carro | `attack-manager.test.ts` |
-| Joystick: eixos discretos, zona morta, teclas; status do piloto | `apps/web/src/features/pilot/*.test.ts` |
+| Joystick: tração -1/0/1, direção proporcional em passos de 5 limitada a ±100, zona morta, teclas ±100; status do piloto (inclusive carrinho desativado) | `apps/web/src/features/pilot/*.test.ts` |
 | CSV sem injeção de fórmula | `export.test.ts` |
 | Firmware: parse/validação, failsafe, seq, TTL, estouro de `millis` | `../esp32/test/test_core/test_main.cpp` |
 
@@ -41,6 +41,7 @@ Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os 
 | Reconexão não reexecuta comando antigo | `engine.test.ts`, `device.test.ts` |
 | ESP32: autenticação, welcome, drive válido, ack → confirmado, STOP geral, queda, substituição, watchdog relatado | `device.test.ts` |
 | Exportação restrita ao operador e sem segredos | `export.test.ts` |
+| Topologia `single`: padrão da configuração e TTL 400, `/api/public` com `active`, sem piloto do `car-b`, equipe A só defende, equipe B só ataca o `car-a`, escaneamento só de ativos, integridade da equipe A bloqueia, `admin.setTopology` (fora de `running`, revoga piloto B, reseta ataques) | `topology.test.ts` |
 
 ### E2E (Playwright, `apps/web/tests/e2e`)
 
@@ -53,7 +54,10 @@ Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os 
 | Quatro etapas e inversões independentes | `attack.spec.ts` |
 | Integridade bloqueia; repetição só gera evento | `defense.spec.ts` |
 | Simulador público × controles do operador | `simulator.spec.ts` |
+| Topologia de 1 carrinho: opções de entrada, hacker A defensor, hacker B atacante invertendo o Carrinho A, integridade bloqueando, simulador sem o Carrinho B, `/admin` com o Carrinho B desativado e seletor travado em `running` | `topology.spec.ts` |
 | Acessibilidade (axe, WCAG 2 A/AA, sem violações sérias/críticas) em todas as telas | `a11y.spec.ts` |
+
+Os testes do servidor usam `DEMO_TOPOLOGY=dual` por padrão (`testConfig`); os E2E antigos chamam `resetEnvironment(browser, 'dual', …)`, que também define a topologia pelo `admin.setTopology`.
 
 ### Hardware (manual)
 

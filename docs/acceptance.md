@@ -15,19 +15,29 @@ Revisão de 05/11/2026. Legenda: ✅ verificado · ⚠️ verificado parcialment
 | Troca real de senha altera a autenticação | ✅ | `auth.test.ts` (hash argon2id persistido, senha antiga falha, piloto revogado), `auth.spec.ts` |
 | Repetição didática não se confunde com criptografia | ✅ | só gera evento e não move o carrinho (`attack-ws.test.ts`, `defense.spec.ts`); texto e rótulo explícitos; `security-model.md` |
 | Operador faz pausa e STOP ALL | ✅ | `engine.test.ts`, `simulator-ws.test.ts`, `device.test.ts` (STOP chega ao ESP32) |
-| Testes automáticos verdes e README reproduz execução limpa | ✅ | clone limpo dos dois repositórios: `bun install`, `lint`, `typecheck`, `test` (134), `build`; `pio run`, `pio test -e native` (13). E2E: 29 + 1 pulado na cópia de trabalho |
+| Testes automáticos verdes e README reproduz execução limpa | ✅ | clone limpo dos dois repositórios: `bun install`, `lint`, `typecheck`, `test` (134), `build`; `pio run`, `pio test -e native` (13). E2E: 29 + 1 pulado na cópia de trabalho (passo 10: `test` 170, E2E 35 + 1 pulado) |
 | Métricas separam simulado e hardware | ✅ | `MetricsRegistry` indexado por carro **e** modo; coluna `mode` na exportação (`export.test.ts`) |
+
+## Atualização da especificação (10/11/2026)
+
+| Critério | Situação | Evidência |
+|---|---|---|
+| Direção proporcional -100..+100 no protocolo, servidor, simulador e telas; tração continua -1/0/1 | ✅ software | `protocol.test.ts`, `pipeline.test.ts`, `simulator-adapter.test.ts`, `joystick-math.test.ts`, E2E `attack.spec.ts` |
+| TTL padrão 400 ms | ✅ software | `topology.test.ts`, `device.test.ts` |
+| Topologia de 1 carrinho como padrão, 2 como opção | ✅ software | `topology.test.ts`, E2E `topology.spec.ts` |
+| Direção proporcional e failsafe de 400 ms no carrinho real | ⏳ | depende do firmware em `../esp32` e de teste físico |
 
 ## Pronto para demonstração física
 
 | Item | Situação | Observação |
 |---|---|---|
-| Pinos reais confirmados; servo escolhido e calibrado | ⏳ | `esp32/include/pins.h` com os pinos do pré-projeto; `SERVO_DIRECAO_SINAL_PWM` e pulsos em `calibracao.h` ainda não definidos (o ambiente com saídas ligadas recusa compilar) |
+| Pinos reais confirmados; servo escolhido e calibrado | ⏳ | pinos da equipe (especificação de 10/11/2026): servo GPIO 13; esquerdo ENA 25/IN1 26/IN2 27; direito ENB 21/IN3 18/IN4 19. Fiação física, centro e sentido do servo ainda não conferidos (ver `../esp32`) |
 | Alimentação do ESP32 e servo medida e estável sob carga | ⏳ | ver `esp32/docs/hardware.md` |
 | Tração e esterçamento testados com rodas suspensas | ⏳ | checklist em `esp32/docs/testing-hardware.md` |
 | Watchdog real para o carro em perda de WS/Wi-Fi | ⏳ | implementado e testado só em lógica (`pio test`) e com ESP32 falso; tempo real não medido |
 | STOP ALL e parada física comprovados | ⏳ | — |
-| Dois ESP32 juntos na LAN isolada | ⏳ | — |
+| Um ESP32 (topologia padrão de 1 carrinho) na LAN isolada | ⏳ | — |
+| Dois ESP32 juntos na LAN isolada (opcional, `dual`) | ⏳ | — |
 | Medições documentadas sem resultados inventados | ⏳ | nenhum número físico foi registrado |
 
 ## Pendências e riscos conhecidos

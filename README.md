@@ -1,6 +1,6 @@
 # HIJACK — aplicação web
 
-Demonstração acadêmica de segurança em sistemas ciberfísicos: dois carrinhos ESP32, dois pilotos (celular) e dois hackers (notebook) numa **LAN isolada**. O hacker faz um ataque **simulado no servidor** que inverte frente↔ré e/ou esquerda↔direita do carrinho adversário; o defensor troca a senha (efeito real) e liga defesas **didáticas**. O firmware fica no repositório irmão `../esp32`.
+Demonstração acadêmica de segurança em sistemas ciberfísicos numa **LAN isolada**, com **1 carrinho ESP32** (padrão: a equipe A pilota e defende, a equipe B só ataca) ou, opcionalmente, **2 carrinhos** (cada equipe com piloto no celular e hacker no notebook). O piloto controla frente/ré em velocidade fixa e a **direção proporcional** (-100 a +100 %). O hacker faz um ataque **simulado no servidor** que inverte frente↔ré e/ou esquerda↔direita do carrinho adversário; o defensor troca a senha (efeito real) e liga defesas **didáticas**. O firmware fica no repositório irmão `../esp32`.
 
 > Não é uma ferramenta de invasão: não há varredura, captura ou exploração real de rede. Detalhes em `docs/security-model.md`.
 
@@ -25,7 +25,8 @@ Edite `apps/server/.env` e troque **todos** os segredos de exemplo:
 | `DEVICE_SECRET_CAR_A` / `_B` | segredo que cada ESP32 envia no `device.hello` (igual ao `DEVICE_SECRET` do `secrets.h` do firmware) |
 | `CAR_A_MODE` / `CAR_B_MODE` | `simulated` ou `hardware` ao iniciar (pode mudar no `/admin`) |
 | `SERVER_PORT` | porta HTTP/WS (padrão 3000) |
-| `COMMAND_TTL_MS` | tempo sem comando até parar (padrão 300 ms, ajustar após teste físico) |
+| `DEMO_TOPOLOGY` | `single` (padrão: 1 carrinho, o Carrinho A) ou `dual` (2 carrinhos); pode mudar no `/admin` fora da partida |
+| `COMMAND_TTL_MS` | tempo sem comando até parar (padrão 400 ms; a especificação do carrinho recomenda 300–500 ms) |
 | `ALLOWED_ORIGINS` | origens extras aceitas no WebSocket (normalmente vazio) |
 | `SESSION_TTL_MS`, `MAX_EVENTS`, `DATA_DIR` | duração da sessão, tamanho do registro em memória, pasta das senhas |
 
@@ -53,10 +54,10 @@ Cada navegador guarda **uma** sessão. Para testar vários papéis num computado
 
 ## Ligando os carrinhos reais (ESP32)
 
-O passo a passo de montagem, pinagem e gravação está em [`../esp32/README.md`](../esp32/README.md). Do lado do servidor:
+O passo a passo de montagem, pinagem e gravação está em [`../esp32/README.md`](../esp32/README.md); a especificação do carrinho (servo ±45°, failsafe, pinos) está em `../esp32/docs/especificacao/`. Pinos da equipe: servo **GPIO 13**; motor esquerdo ENA **25**, IN1 **26**, IN2 **27**; motor direito ENB **21**, IN3 **18**, IN4 **19**. Do lado do servidor:
 
 1. Em `apps/server/.env`, defina `DEVICE_SECRET_CAR_A` e `DEVICE_SECRET_CAR_B` (mín. 8 caracteres) e **reinicie** o servidor.
-2. No portal Wi-Fi de cada carrinho (rede `HIJACK-…` criada pelo ESP32; segurar BOOT 3 s para reabrir), informe o IP do notebook, a porta, `car-a` ou `car-b` e o mesmo segredo do `.env`.
+2. No portal Wi-Fi de cada carrinho (com 1 carrinho, só o `car-a`) (rede `HIJACK-…` criada pelo ESP32; segurar BOOT 3 s para reabrir), informe o IP do notebook, a porta, `car-a` ou `car-b` e o mesmo segredo do `.env`.
 3. Com o servidor rodando, ligue o ESP32: ele se conecta em `ws://<IP>:3000/device` e se autentica.
 4. No `/admin`, troque o carrinho para **Hardware** (com a partida fora de "Em demonstração"). O cartão mostra **online** quando o ESP32 está conectado; os eventos do operador mostram "ESP32 de Carrinho A autenticado" ou "Conexão de dispositivo recusada".
 5. Para voltar ao simulador a qualquer momento: pausar e trocar para **Simulado**.
@@ -98,7 +99,7 @@ Para os E2E pela primeira vez: `cd apps/web && bunx playwright install chromium`
 | `/admin` diz que o segredo está errado | confira `ADMIN_SECRET` em `apps/server/.env` e reinicie o servidor (o `.env` só é lido na partida) |
 | Carrinho em "Hardware" aparece offline | ESP32 ligado? `secrets.h` com IP/porta/segredo certos? monitor serial mostra `[ws] autenticado`? |
 | O piloto mexe e nada acontece | a partida está em **Em demonstração**? o carrinho está online? |
-| Carrinho para sozinho | comportamento esperado ao soltar, trocar de aba, perder Wi-Fi ou ficar 300 ms sem comando |
+| Carrinho para sozinho | comportamento esperado ao soltar, trocar de aba, perder Wi-Fi ou ficar `COMMAND_TTL_MS` (400 ms) sem comando |
 
 ## Checklist de segurança da demonstração
 

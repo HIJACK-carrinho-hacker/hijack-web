@@ -4,7 +4,7 @@ Distingue **fatos/decisões do grupo**, **decisões técnicas do agente** e **pe
 
 ## 1. Decisões do grupo (pré-projeto + plano mestre)
 
-- Dois carrinhos (A e B), ESP32 + L298N + 2 motores DC + servo de direção; velocidade fixa; curva só pelo servo.
+- Dois carrinhos (A e B), ESP32 + L298N + 2 motores DC + servo de direção; velocidade fixa; curva só pelo servo. **Atualizado em 10/11/2026:** a primeira construção é de 1 carrinho; ver seção 5.
 - Dois times, cada um com piloto (celular) e hacker (notebook); sem pontuação, vencedor ou tempo limite.
 - Servidor local no notebook; navegadores e ESP32 na mesma Wi-Fi; servidor↔ESP32 por WebSocket.
 - Ataque em 4 etapas guiadas simuladas; inversões independentes frente↔ré e esquerda↔direita.
@@ -57,4 +57,29 @@ Distingue **fatos/decisões do grupo**, **decisões técnicas do agente** e **pe
 - Pino de sinal do servo e pulsos esquerda/centro/direita (µs).
 - Alimentação do ESP32 e do servo (5 V da L298N não validado; provável buck externo).
 - Geometria mecânica da direção; polaridade real dos motores.
-- Timeout de 300 ms é valor inicial, sujeito a medição.
+- Timeout de 400 ms (faixa 300–500 ms) é valor inicial, sujeito a medição.
+
+## 5. Atualização da especificação do carrinho — 10/11/2026
+
+A equipe do carrinho consolidou a especificação do hardware a partir do modelo mecânico final (Fusion v6). Ela fica em `../esp32/docs/especificacao/` (servo SG90 limitado a ±45° do centro calibrado, failsafe, tração, alimentação 2S sem BMS, pinos). Para a aplicação web, ela **substitui** os seguintes pontos do plano mestre (`PLANO_IMPLEMENTACAO_HIJACK.md`):
+
+| Plano mestre | Agora |
+|---|---|
+| `steering` discreto -1/0/1 | **inteiro de -100 a +100** (direção proporcional; positivo = direita). `throttle` continua -1/0/1 (velocidade fixa; o piloto nunca controla velocidade proporcional) |
+| TTL do comando 300 ms | **400 ms** (`DEFAULT_COMMAND_TTL_MS` e padrão de `COMMAND_TTL_MS`; faixa 300–500 ms) |
+| Sempre 2 carrinhos, 2 equipes completas | **1 carrinho primeiro** (`DEMO_TOPOLOGY=single`, padrão); 2 carrinhos (`dual`) como opção |
+| Exemplos 8.1 com ±1 | Inversão de direção nega o percentual: `(1,-100)` → `(1,100)`; `(1,-60)` com ambas → `(-1,60)`; `(0,0)` intacto |
+
+O firmware (`../esp32`) está sendo alterado em paralelo para o mesmo contrato.
+
+Decisões técnicas desta atualização:
+
+- **Joystick:** fora da zona morta, `steering = sinal × (|x| − zona) / (1 − zona) × 100`, quantizado em passos de 5 (evita enviar uma mensagem a cada pixel) e limitado a ±100; tração pela zona morta vertical. Teclado A/D/setas = ±100. O envio continua imediato a cada mudança, com refresh de 100 ms; a coalescência do servidor (≤ 20 cmd/s) não mudou.
+- **Registro de comando alterado:** o evento "Comando alterado: frente + esquerda 60% → ré + direita 60%" é emitido quando muda o **sentido** (sinal) dos eixos, não a cada variação de percentual, para não inundar o registro.
+- **Indicador de direção:** a grade 3×3 acende pelo sinal da direção; abaixo, uma barra a partir do centro e o percentual (`E 60%`, `centro`, `D 100%`). O `aria-label` é "Confirmado: frente, direção 60% à direita" / "direção centro".
+- **Arena do simulador:** ângulo visual das rodas = `steering/100 × 45°`; giro do carrinho simulado proporcional a `steering/100`.
+- **Topologia `single`:** só o `car-a` é ativo. O `car-b` continua cadastrado (adaptador, senha, segredo do dispositivo), mas não recebe comandos e não aparece no simulador. A "senha da equipe B" é a senha guardada para o `car-b`; o hacker B entra com `carId: "car-b"` (sessão da equipe B) e o alvo do ataque é o `car-a` (`OPPONENT_CAR`). O servidor recusa `attack.*` da equipe A e `defense.*`/`auth.changePassword` da equipe B; o hacker B não pode trocar a própria senha nesta topologia (o operador reseta senhas pelo `/admin`).
+- **Troca de topologia:** só fora de `running`; para todos os carros, reseta **todos** os ataques e revoga só os pilotos de carrinhos desativados (o hacker B continua logado e vira atacante). Hackers e pilotos da equipe A não são afetados.
+- **Visibilidade em `single`:** hacker A não recebe ataques no snapshot (a aba Ataque explica que a equipe A defende); hacker B não recebe defesas (aba Defesa e indicador de segurança ocultos); operador e espectador veem só o ataque da equipe B.
+- **Login em `single`:** piloto só vê o Carrinho A; hacker escolhe "Equipe A — defende o Carrinho A" ou "Equipe B — ataca o Carrinho A"; o rótulo da senha da equipe B é "Senha da equipe B" e o campo "Nome do carrinho" some para ela.
+- **Testes:** `testConfig` do servidor usa `dual` para manter os testes de 2 carrinhos; `topology.test.ts` e `topology.spec.ts` cobrem `single`.

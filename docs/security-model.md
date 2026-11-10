@@ -10,6 +10,7 @@ O HIJACK roda em uma **LAN isolada de laboratório**. Este documento separa o qu
 | Política de senha forte | Mínimo de 8 caracteres, letras e números, diferente de `1234` e da senha atual, não pode repetir um só caractere. |
 | Revogação na troca | Quando o hacker troca a senha do próprio carrinho, a sessão do **piloto** daquele carrinho é revogada (`session.revoked`) e o carrinho para. O hacker que trocou continua logado. |
 | Sessão | Token aleatório de 256 bits em cookie `HttpOnly; SameSite=Strict; Path=/`, expira em `SESSION_TTL_MS` (padrão 4 h). Uma sessão por navegador: novo login no mesmo navegador revoga a anterior. |
+| Topologia | Em `single` (padrão) só o Carrinho A é ativo: não há vaga de piloto do `car-b` (login → 403); o servidor recusa `attack.*` da equipe A e `defense.*`/`auth.changePassword` da equipe B, mesmo que o navegador envie. Trocar a topologia (`admin.setTopology`, só operador e fora de `running`) para os carros, reseta ataques e revoga pilotos de carrinhos desativados. |
 | Vagas exclusivas | Um piloto e um hacker por carrinho. Outro navegador não ocupa a vaga sem o operador liberá-la (`admin.releaseSlot`) ou a sessão expirar ou sair. |
 | Autorização por mensagem | Toda mensagem WebSocket consulta a sessão de novo. Time, papel e carro vêm **só** da sessão; payloads com campos extras são rejeitados. |
 | Operador | Login separado com `ADMIN_SECRET` (comparação em tempo constante), diferente da senha dos carrinhos. |

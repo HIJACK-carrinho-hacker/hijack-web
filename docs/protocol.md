@@ -7,9 +7,9 @@ Fonte de verdade em código: `packages/protocol/src/schema.ts` (schemas Zod) e `
 | Caminho | Quem conecta | Autenticação |
 |---|---|---|
 | `GET /health` | qualquer | nenhuma; não expõe dados sensíveis |
-| `GET /api/public` | qualquer | carrinhos, modo, se a dica de senha padrão aparece, vagas ocupadas, se há admin |
+| `GET /api/public` | qualquer | `topology`, carrinhos (modo, `active`, dica de senha padrão, vagas ocupadas), se há admin |
 | `GET /api/session` | navegador | `me` da sessão atual ou 401 |
-| `POST /api/session` | navegador | `{name, role, carId, carDisplayName?, password}` → cookie `hijack_session` (`HttpOnly; SameSite=Strict`). Erros: 400 `invalid_payload`, 401 `invalid_credentials`, 409 `slot_taken`, 429 `rate_limited` (com `Retry-After`) |
+| `POST /api/session` | navegador | `{name, role, carId, carDisplayName?, password}` → cookie `hijack_session` (`HttpOnly; SameSite=Strict`). Erros: 400 `invalid_payload`, 401 `invalid_credentials`, 403 `forbidden` (piloto de carrinho desativado pela topologia), 409 `slot_taken`, 429 `rate_limited` (com `Retry-After`) |
 | `DELETE /api/session` | navegador | sai, libera a vaga e apaga o cookie |
 | `POST /api/admin/session` | operador | `{secret}` → mesmo cookie, sessão de operador |
 | `WS /ws` | navegador | `Origin` igual ao `Host` ou listado em `ALLOWED_ORIGINS`; cookie de sessão; autorização por mensagem |
@@ -40,21 +40,25 @@ Ordem e códigos de erro devolvidos em `system.error`:
 2. JSON inválido ou não-objeto → `bad_request`.
 3. `protocolVersion` diferente de 1 → `unsupported_version`.
 4. `type` desconhecido → `unknown_type`.
-5. Schema falhou (eixo fora de -1/0/1, campo ausente, **campo extra**) → `invalid_payload`.
+5. Schema falhou (`throttle` fora de -1/0/1, `steering` fora de -100..100 ou não inteiro, campo ausente, **campo extra**) → `invalid_payload`.
 
 Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` enviados pelo navegador) são rejeitados. O servidor nunca usa time, papel ou carro vindos da mensagem; usa sempre a sessão.
 
 ## Eixos
 
-- `throttle`: -1 ré, 0 neutro, 1 frente.
-- `steering`: -1 esquerda, 0 centro, 1 direita.
-- Velocidade fixa; não há valor proporcional.
+- `throttle`: -1 ré, 0 neutro, 1 frente. **Velocidade fixa**: o piloto nunca controla velocidade proporcional.
+- `steering`: **inteiro de -100 a +100** (percentual de direção proporcional; **positivo = direita**, negativo = esquerda, 0 = centro). Vale em `pilot.drive`, `sim.manualDrive`, `requested`/`desired`/`confirmed`, `device.drive`, `device.ack` e `device.telemetry`. O firmware mapeia ±100 para o curso validado do servo (até ±45° em torno do centro calibrado).
+- Neutro = `throttle 0` e `steering 0` (vira STOP). `throttle 0` com `steering ≠ 0` é comando válido: o servo vira e os motores ficam parados.
+- O analógico do piloto gera `steering` em passos de 5 (zona morta ajustável); teclado A/D/setas mandam ±100.
+- TTL padrão do comando: **400 ms** (`DEFAULT_COMMAND_TTL_MS`; faixa recomendada 300–500 ms).
 
 ## Estado público (`state.snapshot`)
 
 | Campo | Significado |
 |---|---|
 | `demoState` | `setup`, `ready`, `running`, `paused`, `stopped` |
+| `topology` | `single` (1 carrinho, só o `car-a` ativo) ou `dual` (2 carrinhos) |
+| `cars[].active` | se o carrinho participa da topologia atual (o `car-b` fica `false` em `single`) |
 | `me` | sessão de quem está vendo (null = visitante) |
 | `cars[].desired` | comando calculado pelo servidor depois do pipeline (ataque, defesa, segurança) |
 | `cars[].confirmed` | estado relatado pelo dispositivo (simulador ou ESP32); não é prova física de movimento |
@@ -70,13 +74,15 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 
 | Mensagem | Exige | Efeito |
 |---|---|---|
-| `attack.scan` | `running` | lista os carrinhos cadastrados (sem varredura real) |
-| `attack.selectTarget {targetCarId}` | `running`, etapa ≥ `scan`, alvo = carrinho adversário | define o alvo |
+| `attack.scan` | `running` | lista os carrinhos **ativos** cadastrados (sem varredura real) |
+| `attack.selectTarget {targetCarId}` | `running`, etapa ≥ `scan`, alvo = carrinho adversário e ativo | define o alvo |
 | `attack.exploitDemo` | `running`, etapa ≥ `target` | gera o relatório simulado |
 | `attack.configure {invertThrottle, invertSteering}` | `running`, etapa ≥ `exploit` | liga/desliga cada inversão; `active` = alguma ligada |
 | `attack.disable` | qualquer estado | desliga as inversões (progresso mantido) |
 
-Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria equipe). Pausar preserva o progresso. A troca de senha **não** bloqueia a inversão (pré-projeto: a senha forte "não impede por si só alterações nos comandos feitas por um componente autorizado"); só a integridade didática bloqueia.
+A inversão de direção **nega o percentual** (−60 → 60, −100 → 100; 0 continua 0, sem `-0`) e preserva a intensidade; a inversão de tração troca 1 ↔ −1. Exemplos: `(1,-100)` com inversão de direção → `(1,100)`; `(1,-60)` com ambas → `(-1,60)`; `(0,0)` nunca muda.
+
+Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria equipe, carrinho desativado ou equipe sem papel de ataque na topologia). Pausar preserva o progresso. A troca de senha **não** bloqueia a inversão (pré-projeto: a senha forte "não impede por si só alterações nos comandos feitas por um componente autorizado"); só a integridade didática bloqueia.
 
 ## Defesa didática
 
@@ -107,6 +113,17 @@ Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria 
 | `attack.*`, `defense.*`, `auth.changePassword` | hacker (`auth.changePassword` altera o carro da sessão) |
 | `admin.*`, `sim.manualDrive` | operador |
 
+### Topologia de 1 carrinho (`single`)
+
+| Participante | Sessão | Pode |
+|---|---|---|
+| Piloto do Carrinho A | `car-a`, equipe A | dirigir o `car-a` |
+| Hacker da equipe A | `car-a`, equipe A | **só defender** o `car-a` (`defense.*`, `auth.changePassword`); `attack.*` → `forbidden` ("a equipe A defende") |
+| Hacker da equipe B | `car-b`, equipe B (entra com a senha guardada para o `car-b`, a "senha da equipe B") | **só atacar** o `car-a`; `defense.*` e `auth.changePassword` → `forbidden` |
+| Piloto do `car-b` | — | não existe: login → 403 `forbidden` |
+
+O snapshot do hacker A não traz ataques; o do hacker B não traz defesas; operador e espectador veem só o ataque da equipe B. Em `dual` tudo funciona como antes.
+
 Sem sessão → `unauthenticated`; papel errado → `forbidden`. `pilot.drive` aceito não gera `action.ok` (evita ruído a 10 Hz); recusado gera `pilot.commandRejected`.
 
 Ao abrir a conexão, o servidor envia `session.accepted` (se houver sessão) e um `state.snapshot`. Sessão revogada → `session.revoked {reason}`, e a conexão passa a ser de visitante.
@@ -114,6 +131,7 @@ Ao abrir a conexão, o servidor envia `session.accepted` (se houver sessão) e u
 ## Mensagens de operação
 
 - `sim.manualDrive {carId, throttle, steering}`: teste manual de um carro **simulado** fora de `running` (admin).
+- `admin.setTopology {topology}`: só fora de `running`; para todos os carros, reseta os ataques e revoga sessões de piloto de carrinhos que ficaram desativados.
 - `admin.setCarMode {carId, mode}`, `admin.releaseSlot {carId, role}`, `admin.setDemoState`, `admin.stopAll`, `admin.resetDemo {resetAttacks, resetDefenses, resetPasswords}` (só fora de `running`; senhas só voltam a `1234` com `resetPasswords: true`).
 - O servidor responde `action.ok {type}` (com `requestId`) quando a ação é aceita, ou `system.error`.
 

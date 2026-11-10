@@ -14,6 +14,7 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 | 7. Firmware + Esp32Adapter | ✅ software | Firmware em `../esp32` compila e passa 13 testes nativos; pinos descritivos em `include/pins.h` (DevKit 38 pinos) com checagem em compilação; `DeviceHub` + `Esp32Adapter` testados com ESP32 falso. **Hardware não testado** — aguardando checklist físico do grupo |
 | 8. Robustez e apresentação | ✅ | Exportação CSV/JSON (só operador, sem segredos, anti-fórmula), `bun run demo` (servidor entrega o build), QR code e endereços da LAN no `/admin`, auditoria axe sem violações sérias, README com LAN/firewall/solução de problemas/checklist, `testing.md`, `demo-script.md` |
 | 9. Revisão final | ✅ | Clone limpo dos dois repositórios verificado; `docs/acceptance.md` com a Definition of Done item a item e pendências físicas |
+| 10. Especificação do carrinho (10/11/2026) | ✅ software | Direção proporcional -100..+100 (protocolo, pipeline, simulador, joystick, indicador, arena), TTL 400 ms, topologia `single` (padrão) / `dual` com `admin.setTopology`, regras de equipe A defensora e equipe B atacante; ver `assumptions.md` seção 5. Firmware alterado em paralelo em `../esp32`. **Hardware não testado** |
 
 ## Testes executados
 
@@ -44,10 +45,13 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 
 - Fase 9 (05/11/2026): clone limpo do `web` — `bun install` (428 pacotes), `lint` ✅, `typecheck` ✅ (5 projetos), `test` ✅ 134, `build` ✅. Clone limpo do `esp32` — `pio run` ✅ (RAM 14,8%, flash 38,9%), `pio test -e native` ✅ 13. E2E na cópia de trabalho: 29 ✅ + 1 pulado.
 
+- Passo 10 (10/11/2026): typecheck ✅ (5 projetos), lint ✅ (0 avisos), `bun run test` ✅ 170 (protocolo 33, servidor 117, web 20), build ✅, Playwright ✅ 35 + 1 pulado (desktop + mobile, inclui `topology.spec.ts`), rodado duas vezes seguidas contra o mesmo servidor.
+- Correção no passo 10: o registro "Comando alterado" deixava de aparecer quando o mesmo tipo de alteração se repetia depois de um `pilot.stop` (a chave de deduplicação só era limpa ao soltar pelo `pilot.drive`); agora qualquer parada limpa a chave.
+
 ## Bloqueios reais
 
 _(nenhum)_
 
 ## Próximo passo
 
-Software simulado concluído. Próximo marco: testes físicos com o grupo seguindo `../esp32/docs/testing-hardware.md`, preenchendo `esp32/include/pins.h` (servo) e `esp32/include/calibracao.h`, e registrando medições reais em `docs/acceptance.md`.
+Integrar com o firmware atualizado para o mesmo contrato (direção proporcional, TTL 400 ms) e testar com 1 carrinho físico, seguindo a ordem de testes de `../esp32/docs/especificacao/05_requisitos_firmware.md` e `../esp32/docs/testing-hardware.md`, registrando medições reais em `docs/acceptance.md`.

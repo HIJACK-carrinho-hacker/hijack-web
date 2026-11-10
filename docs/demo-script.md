@@ -1,47 +1,52 @@
 # Roteiro da apresentação
 
-Duração livre, sem pontuação nem vencedor. Duas equipes (A e B), cada uma com piloto (celular) e hacker (notebook). Um operador conduz pelo `/admin` e o `/simulator` fica no projetor.
+Duração livre, sem pontuação nem vencedor. Um operador conduz pelo `/admin` e o `/simulator` fica no projetor.
+
+**Padrão — 1 carrinho (`DEMO_TOPOLOGY=single`):** equipe A = piloto do Carrinho A (celular) + hacker que **defende** (notebook); equipe B = hacker que **ataca** o Carrinho A (notebook). **Opção — 2 carrinhos (`dual`):** cada equipe tem piloto e hacker e ataca o carrinho adversário; as diferenças estão em "Variante com 2 carrinhos" no fim.
+
+O piloto controla frente/ré em velocidade fixa e a direção **proporcional** (quanto mais o analógico vai para o lado, mais o servo esterça, até ±45° no carrinho real).
 
 ## Preparação (antes do público)
 
 1. `bun run demo` no notebook servidor; anotar o endereço da LAN (aparece no terminal e no `/admin`).
 2. `/admin`: entrar com o segredo do operador.
-   - Modo de cada carrinho: **Hardware** se o ESP32 estiver pronto e testado; senão **Simulado**.
+   - **Topologia:** conferir "1 carrinho" (ou escolher "2 carrinhos"); só dá para trocar fora da partida.
+   - Modo do Carrinho A (e do B, se `dual`): **Hardware** se o ESP32 estiver pronto e testado; senão **Simulado**.
    - **Resetar demonstração** marcando ataques, defesas e **senhas** (volta ao `1234`).
 3. Projetor em `/simulator`.
-4. Pilotos entram em `/` pelo QR code do `/admin`: nome, **Piloto**, carrinho da equipe, senha `1234`.
-5. Hackers entram em `/` nos notebooks: nome, **Hacker**, carrinho da equipe, senha `1234`.
-6. Conferir no `/admin` as quatro vagas ocupadas e os carrinhos online.
+4. Piloto entra em `/` pelo QR code do `/admin`: nome, **Piloto**, Carrinho A, senha `1234`.
+5. Hackers entram em `/` nos notebooks: nome, **Hacker**, equipe ("Equipe A — defende o Carrinho A" ou "Equipe B — ataca o Carrinho A"), senha `1234` (a da equipe B é a senha guardada para o Carrinho B).
+6. Conferir no `/admin` as três vagas ocupadas (piloto A, hacker A, hacker B) e o Carrinho A online; o Carrinho B aparece "desativado".
 
 ## 1. Largada (≈ 2 min)
 
 - Operador: **Pronto** → **Iniciar**. Pilotos veem "Em demonstração".
-- Pilotos dirigem livremente. No projetor, **Solicitado** e **Confirmado** são iguais.
+- O piloto dirige livremente; no projetor a direção aparece em percentual (ex.: "D 60%"). No projetor, **Solicitado** e **Confirmado** são iguais.
 - Mostrar a segurança física: piloto solta o joystick → carrinho para. Operador aperta **STOP ALL** → tudo para.
 
 ## 2. Ataque guiado (≈ 4 min)
 
-Hacker A ataca o carrinho B (e/ou o hacker B ataca o A), explicando cada etapa:
+O hacker B ataca o Carrinho A, explicando cada etapa (o hacker A vê na aba Ataque que, com 1 carrinho, sua equipe defende):
 
-1. **Escanear rede** — lista só os carrinhos cadastrados no servidor; nenhuma varredura real.
-2. **Identificar o adversário** — só o carrinho da outra equipe pode ser escolhido.
+1. **Escanear rede** — lista só os carrinhos ativos cadastrados no servidor; nenhuma varredura real.
+2. **Identificar o adversário** — só o Carrinho A (o alvo) pode ser escolhido.
 3. **Explorar vulnerabilidade** — relatório simulado: senha padrão `1234` e comandos sem verificação de integridade.
-4. **Modificar comandos** — ligar **Frente ↔ Ré**. O piloto B tenta ir para frente e o carrinho vai de ré.
+4. **Modificar comandos** — ligar **Frente ↔ Ré**. O piloto A tenta ir para frente e o carrinho vai de ré.
    - Projetor: **Solicitado: frente**, **Confirmado: ré**, faixa "COMANDO ALTERADO NO CAMINHO".
-   - Depois ligar também **Esquerda ↔ Direita** e mostrar a curva invertida.
+   - Depois ligar também **Esquerda ↔ Direita**: a direção é espelhada com a mesma intensidade (pedido "E 60%" vira "D 60%").
 
 Ponto didático: a inversão nunca move um carrinho parado e nunca impede o STOP.
 
 ## 3. Defesa (≈ 4 min)
 
-Hacker B na aba **Defesa**:
+Hacker A na aba **Defesa**:
 
 1. **Autenticação (real):** trocar `1234` por uma senha forte.
-   - O piloto B é desconectado e precisa entrar com a nova senha; `1234` deixa de funcionar.
+   - O piloto A é desconectado e precisa entrar com a nova senha; `1234` deixa de funcionar.
    - **Mostrar que a inversão continua acontecendo**: senha forte impede acesso indevido, mas não protege contra alterações feitas por um componente já autorizado (o servidor, nesta simulação).
 2. **Integridade (simulada, não HMAC):** ligar.
-   - O piloto B volta a ir para frente; o projetor mostra Solicitado = Confirmado.
-   - O hacker A vê "Alteração bloqueada pela integridade (simulada)".
+   - O piloto A volta a ir para frente; o projetor mostra Solicitado = Confirmado.
+   - O hacker B vê "Alteração bloqueada pela integridade (simulada)".
 3. **Repetição (simulada, não validação no firmware):** ligar e gerar um exemplo.
    - O registro mostra um comando antigo reapresentado e recusado, sem mover o carrinho.
 4. Indicador de segurança chega a 3/3 — lembrar que conta **camadas demonstradas**, não segurança real.
@@ -54,6 +59,12 @@ Hacker B na aba **Defesa**:
   - senha padrão é risco real e trocá-la tem efeito real;
   - integridade e proteção contra repetição precisam de mecanismos criptográficos de verdade (HMAC, contadores), aqui só ilustrados;
   - a parada segura no próprio carrinho funciona independentemente do software de ataque.
+
+## Variante com 2 carrinhos (`dual`)
+
+- `/admin` → Topologia **2 carrinhos** antes de **Pronto**. Quatro vagas: piloto e hacker por carrinho, todos com o carrinho da própria equipe no login.
+- Cada hacker ataca o carrinho adversário e defende o próprio; o roteiro acima vale trocando os papéis (por exemplo, hacker A ataca o Carrinho B e o hacker B defende).
+- Cada ESP32 precisa do próprio `deviceId` (`car-a`/`car-b`) e segredo.
 
 ## Plano B
 
