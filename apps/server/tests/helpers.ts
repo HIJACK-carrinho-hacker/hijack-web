@@ -1,7 +1,7 @@
 import type { ServerMessage } from "@hijack/protocol";
 import { WebSocket } from "ws";
 import { type Config, testConfig } from "../src/config/env.ts";
-import { type HijackServer, createHijackServer } from "../src/server.ts";
+import { type HijackServer, type ServerOptions, createHijackServer } from "../src/server.ts";
 
 export interface Harness {
   server: HijackServer;
@@ -11,9 +11,9 @@ export interface Harness {
   close(): Promise<void>;
 }
 
-export async function startServer(overrides: Partial<Config> = {}): Promise<Harness> {
+export async function startServer(overrides: Partial<Config> = {}, serverOptions: ServerOptions = {}): Promise<Harness> {
   const config = testConfig(overrides);
-  const server = createHijackServer(config);
+  const server = createHijackServer(config, serverOptions);
   const port = await server.listen(0, "127.0.0.1");
   return {
     server,

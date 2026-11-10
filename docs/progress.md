@@ -50,6 +50,8 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 
 - Correção na integração com o ESP32 (10/11/2026): `crypto.randomUUID` não existe em contexto inseguro (HTTP pelo IP da LAN), então toda mensagem enviada pelo navegador (Pronto no `/admin`, joystick do `/pilot`) lançava `TypeError`. `newRequestId` (`apps/web/src/lib/request-id.ts`) usa `randomUUID` quando existe e cai para `getRandomValues` com UUID v4. typecheck ✅, lint ✅, `bun run test` ✅ 174 (4 novos), build ✅. Verificado no Chrome em `http://192.168.0.198:3000/admin`: Pronto → "Aguardando largada". Playwright não foi reexecutado (roda em localhost, contexto seguro).
 
+- Quedas do WebSocket do ESP32 (10/11/2026): com RSSI −82 dBm, o WebSocket do ESP32 caía a cada 1 a 2 minutos sem o Wi-Fi cair, porque o servidor encerrava a conexão na primeira falha de pong (ping de 2 s). `DeviceHub` agora tolera 3 pings seguidos sem pong (`DeviceKeepAlive`, ≈ 6 s, configurável por `ServerOptions`); o firmware passou a pingar a cada 2 s e desconectar após 3 falhas. A parada do movimento continua sendo a TTL de 400 ms. typecheck ✅, lint ✅, `bun run test` ✅ 177 (3 novos em `device.test.ts`), build ✅. **Aguardando novo teste na placa**.
+
 ## Bloqueios reais
 
 _(nenhum)_

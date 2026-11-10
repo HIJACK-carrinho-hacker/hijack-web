@@ -14,8 +14,14 @@ import type { Config } from "../config/env.ts";
 import { FailureThrottle } from "../safety/throttle.ts";
 
 const HELLO_TIMEOUT_MS = 3000;
-const PING_INTERVAL_MS = 2000;
 const DEVICE_MAX_BYTES = 1024;
+
+export interface DeviceKeepAlive {
+  intervalMs: number;
+  maxMissedPongs: number;
+}
+
+export const DEFAULT_DEVICE_KEEPALIVE: DeviceKeepAlive = { intervalMs: 2000, maxMissedPongs: 3 };
 
 export const DEVICE_CLOSE = { authFailed: 4401, helloTimeout: 4408, replaced: 4409, rateLimited: 4429 } as const;
 
@@ -23,7 +29,7 @@ interface DeviceConn {
   socket: WebSocket;
   ip: string;
   carId: CarId | null;
-  alive: boolean;
+  missedPongs: number;
 }
 
 export interface DeviceHubEvents {
@@ -45,11 +51,13 @@ export class DeviceHub {
   private readonly config: Config;
   private readonly throttle = new FailureThrottle({ maxFailures: 5, windowMs: 60_000, baseLockMs: 10_000, maxLockMs: 120_000 });
   private readonly pingTimer: ReturnType<typeof setInterval>;
+  private readonly keepAlive: DeviceKeepAlive;
   private events: DeviceHubEvents = { onAuthFailed() {}, onConnected() {}, onDisconnected() {} };
 
-  constructor(config: Config) {
+  constructor(config: Config, keepAlive: DeviceKeepAlive = DEFAULT_DEVICE_KEEPALIVE) {
     this.config = config;
-    this.pingTimer = setInterval(() => this.pingAll(), PING_INTERVAL_MS);
+    this.keepAlive = keepAlive;
+    this.pingTimer = setInterval(() => this.pingAll(), keepAlive.intervalMs);
   }
 
   setEvents(events: DeviceHubEvents): void {
@@ -82,12 +90,12 @@ export class DeviceHub {
       socket.close(DEVICE_CLOSE.rateLimited, "rate limited");
       return;
     }
-    const conn: DeviceConn = { socket, ip, carId: null, alive: true };
+    const conn: DeviceConn = { socket, ip, carId: null, missedPongs: 0 };
     const helloTimer = setTimeout(() => {
       if (!conn.carId) socket.close(DEVICE_CLOSE.helloTimeout, "hello timeout");
     }, HELLO_TIMEOUT_MS);
     socket.on("pong", () => {
-      conn.alive = true;
+      conn.missedPongs = 0;
     });
     socket.on("message", (data, isBinary) => {
       if (isBinary) {
@@ -151,11 +159,11 @@ export class DeviceHub {
 
   private pingAll(): void {
     for (const c of this.sockets.values()) {
-      if (!c.alive) {
+      if (c.missedPongs >= this.keepAlive.maxMissedPongs) {
         c.socket.terminate();
         continue;
       }
-      c.alive = false;
+      c.missedPongs++;
       c.socket.ping();
     }
   }

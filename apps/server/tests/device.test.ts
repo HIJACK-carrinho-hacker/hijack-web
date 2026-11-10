@@ -8,15 +8,19 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 class FakeEsp32 {
   readonly received: Record<string, unknown>[] = [];
   closeCode: number | null = null;
+  pings = 0;
   private constructor(readonly ws: WebSocket) {
     ws.on("message", (d) => this.received.push(JSON.parse(d.toString())));
+    ws.on("ping", () => {
+      this.pings++;
+    });
     ws.on("close", (code) => {
       this.closeCode = code;
     });
   }
 
-  static async connect(port: number): Promise<FakeEsp32> {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/device`);
+  static async connect(port: number, opts: { autoPong?: boolean } = {}): Promise<FakeEsp32> {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/device`, { autoPong: opts.autoPong ?? true });
     await new Promise((r, j) => {
       ws.once("open", r);
       ws.once("error", j);
@@ -212,5 +216,43 @@ describe("comandos para o ESP32", () => {
     expect(d.closeCode).toBeNull();
     expect((await fetch(`${h.base}/health`)).status).toBe(200);
     d.close();
+  });
+});
+
+describe("keep-alive do ESP32", () => {
+  const keepAlive = { intervalMs: 40, maxMissedPongs: 3 };
+
+  const connectAuthenticated = async () => {
+    await h.close();
+    h = await startServer({}, { deviceKeepAlive: keepAlive });
+    const d = await FakeEsp32.connect(h.port, { autoPong: false });
+    d.hello("car-a", "device-secret-a");
+    await d.waitFor("device.welcome");
+    return d;
+  };
+
+  test("quem responde aos pings continua conectado", async () => {
+    const d = await connectAuthenticated();
+    d.ws.on("ping", () => d.ws.pong());
+    await sleep(keepAlive.intervalMs * 10);
+    expect(d.closeCode).toBeNull();
+    expect(h.server.deviceHub.isConnected("car-a")).toBe(true);
+    d.close();
+  });
+
+  test("sem nenhum pong, só derruba depois de 3 pings sem resposta", async () => {
+    const d = await connectAuthenticated();
+    await d.waitClose();
+    expect(d.pings).toBe(3);
+    expect(h.server.deviceHub.isConnected("car-a")).toBe(false);
+  });
+
+  test("um pong no meio zera a contagem de falhas", async () => {
+    const d = await connectAuthenticated();
+    d.ws.on("ping", () => {
+      if (d.pings === 2) d.ws.pong();
+    });
+    await d.waitClose();
+    expect(d.pings).toBe(5);
   });
 });

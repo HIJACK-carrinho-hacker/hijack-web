@@ -141,7 +141,7 @@ Servidor → dispositivo: `device.welcome`, `device.drive` (`seq` positivo, `spe
 Dispositivo → servidor: `device.hello`, `device.ack`, `device.telemetry`, `device.fault`, `device.stopped`.
 
 - `device.welcome {carId, commandTtlMs}` é enviado após o `hello` válido; o firmware só aceita `device.drive` depois dele e zera `lastSeq` a cada conexão.
-- O servidor envia `device.heartbeat` a cada 1 s e ping WebSocket a cada 2 s (encerra conexões sem pong).
+- O servidor envia `device.heartbeat` a cada 1 s e ping WebSocket a cada 2 s; encerra a conexão depois de 3 pings seguidos sem pong (≈ 6 s). A parada do movimento não depende disso: sem `device.drive` válido a TTL de 400 ms para o carrinho. O firmware pinga o servidor a cada 2 s e desconecta depois de 3 pongs perdidos de 2 s.
 - `seq <= lastSeq` é descartado pelo firmware.
 - A TTL conta a partir do recebimento, no relógio monotônico do ESP32.
 - `device.heartbeat` não prolonga o watchdog de movimento.

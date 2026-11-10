@@ -9,7 +9,7 @@ import { createApiRouter } from "./http/api.ts";
 import { createHttpApp } from "./http/app.ts";
 import { BrowserHub } from "./ws/browser-hub.ts";
 import { SnapshotBroadcaster } from "./ws/broadcaster.ts";
-import { DeviceHub } from "./ws/device-hub.ts";
+import { DeviceHub, type DeviceKeepAlive } from "./ws/device-hub.ts";
 import { isOriginAllowed } from "./ws/origin.ts";
 
 export interface HijackServer {
@@ -25,10 +25,11 @@ export interface HijackServer {
 export interface ServerOptions {
   adapterFactory?: AdapterFactory;
   broadcastIntervalMs?: number;
+  deviceKeepAlive?: DeviceKeepAlive;
 }
 
 export function createHijackServer(config: Config, opts: ServerOptions = {}): HijackServer {
-  const deviceHub = new DeviceHub(config);
+  const deviceHub = new DeviceHub(config, opts.deviceKeepAlive);
   const adapterFactory: AdapterFactory =
     opts.adapterFactory ??
     ((carId, mode) =>
