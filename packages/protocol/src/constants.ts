@@ -40,6 +40,10 @@ export const DEFAULT_COMMAND_TTL_MS = 400;
 export const STEERING_MAX = 100;
 export const PILOT_REFRESH_MS = 100;
 export const MAX_DEVICE_COMMANDS_PER_SECOND = 20;
+export const MAX_BROWSER_MESSAGES_PER_SECOND = 10;
+export const BROWSER_MESSAGE_BURST = 20;
+export const MAX_PILOT_MESSAGES_PER_SECOND = 40;
+export const RATE_LIMIT_NOTICE_MS = 1000;
 
 export const DEFAULT_CAR_PASSWORD = "1234";
 export const MIN_STRONG_PASSWORD_LENGTH = 8;

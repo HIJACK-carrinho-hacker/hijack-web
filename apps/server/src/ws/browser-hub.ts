@@ -1,16 +1,21 @@
 import type { IncomingMessage } from "node:http";
 import {
+  BROWSER_MESSAGE_BURST,
   CLIENT_MESSAGE_TYPES,
   type ClientMessage,
   type ErrorCode,
+  MAX_BROWSER_MESSAGES_PER_SECOND,
   MAX_MESSAGE_BYTES,
+  MAX_PILOT_MESSAGES_PER_SECOND,
   PROTOCOL_VERSION,
+  RATE_LIMIT_NOTICE_MS,
   type ServerMessage,
   type ServerMessageType,
   clientMessageSchema,
   parseMessage,
 } from "@hijack/protocol";
 import { WebSocket, WebSocketServer } from "ws";
+import { RateLimiter } from "./rate-limiter.ts";
 
 export interface BrowserConn {
   readonly id: number;
@@ -42,13 +47,27 @@ export class BrowserHub {
   accept(socket: WebSocket, _req: IncomingMessage, auth: { sessionToken: string | null }): void {
     const conn: BrowserConn = { id: this.nextId++, socket, ...auth };
     this.conns.add(conn);
+    const control = new RateLimiter(MAX_BROWSER_MESSAGES_PER_SECOND, BROWSER_MESSAGE_BURST);
+    const pilot = new RateLimiter(MAX_PILOT_MESSAGES_PER_SECOND, MAX_PILOT_MESSAGES_PER_SECOND);
+    let lastNotice = 0;
+    const allowed = (type: string | null, requestId?: string): boolean => {
+      const limiter = type?.startsWith("pilot.") ? pilot : control;
+      if (limiter.take()) return true;
+      const at = Date.now();
+      if (at - lastNotice >= RATE_LIMIT_NOTICE_MS) {
+        lastNotice = at;
+        this.sendError(conn, "rate_limited", "muitas mensagens; aguarde um instante", requestId);
+      }
+      return false;
+    };
     socket.on("message", (data, isBinary) => {
       if (isBinary) {
-        this.sendError(conn, "bad_request", "mensagens binárias não são aceitas");
+        if (allowed(null)) this.sendError(conn, "bad_request", "mensagens binárias não são aceitas");
         return;
       }
       const raw = data.toString();
       const parsed = parseMessage(clientMessageSchema, raw, CLIENT_MESSAGE_TYPES);
+      if (!allowed(parsed.ok ? parsed.value.type : null, parsed.ok ? parsed.value.requestId : undefined)) return;
       if (!parsed.ok) {
         this.sendError(conn, parsed.code, parsed.message);
         return;
