@@ -36,9 +36,9 @@ Revisão de 05/11/2026. Legenda: ✅ verificado · ⚠️ verificado parcialment
 | Defesas: senha real, Integridade e Repetição (rotuladas como simulação) | ✅ | Chrome; `defense.spec.ts`, `auth.test.ts` |
 | Inversão de tração (Frente↔Ré) chega ao ESP32 real e a Integridade a bloqueia | ⚠️ saídas desligadas | serial: `esquerdo=-1 direito=-1` (ré) com ataque, `esquerdo=1 direito=1` com Integridade; não há roda para observar. A inversão de direção não tem evidência no ESP32 real (o servo ainda não chegou e o log só mostra a tração) |
 | Reinício do ESP32 com ataque ativo não retoma movimento | ⚠️ saídas desligadas | serial: só `INICIANDO → PARADO` até o novo `device.drive` |
-| STOP ALL e Pausar com o piloto ainda dirigindo | ✅ software | STOP ALL passou a pausar a partida (`engine.test.ts`, `simulator-ws.test.ts`); parada física ainda ⏳ |
+| STOP ALL e Pausar com o piloto ainda dirigindo | ✅ software | STOP ALL passou a pausar a partida (`engine.test.ts`, `simulator-ws.test.ts`, `device.test.ts` com ESP32 falso); parada física no ESP32 real ainda ⏳ |
 | Exportação restrita ao operador, sem segredos, métricas por modo | ✅ | 401 sem sessão; busca por senhas/segredos/hash sem ocorrências |
-| Regressão automática | ✅ | `bun run test` 181 (depois da correção do STOP ALL), Playwright 35 + 1 pulado (rodado antes e de novo depois da correção), `pio test -e native` 28 |
+| Regressão automática | ✅ | `bun run test` 193 (depois das correções da revisão), Playwright 35 + 1 pulado (rodado antes e de novo depois da correção), `pio test -e native` 28 |
 
 Em aberto: a rede do ESP32 (RSSI −65 a −73 dBm, 20 % de perda, failsafe expirando várias vezes por condução) segue abaixo do necessário; ver `progress.md`.
 
