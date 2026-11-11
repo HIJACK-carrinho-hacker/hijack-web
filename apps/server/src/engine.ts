@@ -122,6 +122,7 @@ export class HijackEngine {
     if (this.demo === "running") return fail("forbidden", "pause ou encerre a demonstração antes de trocar a topologia");
     if (next === this.topologyValue) return ok;
     this.stopAll("admin-stop-all", false);
+    this.releaseRequired.clear();
     this.topologyValue = next;
     this.log({
       kind: "demo.topology",
@@ -158,6 +159,7 @@ export class HijackEngine {
     }
     const prev = this.demo;
     this.demo = next;
+    if (next !== "running" && next !== "paused") this.releaseRequired.clear();
     if (!allowsMovement(next)) this.stopAll("demo-not-running", false);
     this.log({
       kind: "demo.state",
@@ -188,6 +190,7 @@ export class HijackEngine {
     if (car.mode === mode) return ok;
     if (this.demo === "running") return fail("forbidden", "pause a demonstração antes de trocar o modo");
     car.controller.stop("mode-change");
+    this.releaseRequired.delete(carId);
     car.unsubscribe();
     car.controller.device.dispose();
     const adapter = this.adapterFactory(carId, mode);

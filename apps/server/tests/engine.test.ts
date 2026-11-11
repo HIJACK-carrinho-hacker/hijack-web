@@ -158,6 +158,34 @@ describe("HijackEngine", () => {
     expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(true);
   });
 
+  test("a exigência de soltar não atravessa a troca de rodada", () => {
+    run();
+    engine.setDemoState("paused");
+    engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true });
+    engine.setDemoState("stopped");
+    engine.setDemoState("ready");
+    engine.setDemoState("running");
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(true);
+  });
+
+  test("a exigência de soltar não atravessa a troca de topologia", () => {
+    run();
+    engine.setDemoState("paused");
+    engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true });
+    expect(engine.setTopology("single").ok).toBe(true);
+    engine.setDemoState("running");
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(true);
+  });
+
+  test("a exigência de soltar não atravessa a troca de modo do carrinho", () => {
+    run();
+    engine.setDemoState("paused");
+    engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true });
+    expect(engine.setCarMode("car-a", "hardware").ok).toBe(true);
+    engine.setDemoState("running");
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(true);
+  });
+
   test("STOP ALL fora da partida não muda o estado da demonstração", () => {
     engine.emergencyStop();
     expect(engine.demoState).toBe("setup");
