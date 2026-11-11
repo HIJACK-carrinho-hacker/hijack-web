@@ -132,7 +132,7 @@ Ao abrir a conexão, o servidor envia `session.accepted` (se houver sessão) e u
 
 - `sim.manualDrive {carId, throttle, steering}`: teste manual de um carro **simulado** fora de `running` (admin).
 - `admin.setTopology {topology}`: só fora de `running`; para todos os carros, reseta os ataques e revoga sessões de piloto de carrinhos que ficaram desativados.
-- `admin.setCarMode {carId, mode}`, `admin.releaseSlot {carId, role}`, `admin.setDemoState`, `admin.stopAll`, `admin.resetDemo {resetAttacks, resetDefenses, resetPasswords}` (só fora de `running`; senhas só voltam a `1234` com `resetPasswords: true`).
+- `admin.setCarMode {carId, mode}`, `admin.releaseSlot {carId, role}`, `admin.setDemoState`, `admin.stopAll` (para todos os carros e, se a partida estiver em `running`, muda para `paused`; sem isso o piloto que segue segurando o joystick retomaria o movimento em ~100 ms), `admin.resetDemo {resetAttacks, resetDefenses, resetPasswords}` (só fora de `running`; senhas só voltam a `1234` com `resetPasswords: true`).
 - O servidor responde `action.ok {type}` (com `requestId`) quando a ação é aceita, ou `system.error`.
 
 ## Servidor ↔ ESP32

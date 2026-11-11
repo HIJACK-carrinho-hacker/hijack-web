@@ -27,6 +27,21 @@ Revisão de 05/11/2026. Legenda: ✅ verificado · ⚠️ verificado parcialment
 | Topologia de 1 carrinho como padrão, 2 como opção | ✅ software | `topology.test.ts`, E2E `topology.spec.ts` |
 | Direção proporcional e failsafe de 400 ms no carrinho real | ⚠️ | firmware `../esp32` (`1e637ba`) implementa o mesmo contrato (steering -100..100, `FAILSAFE_MS` 400, ±45°, rampa) com 26 testes nativos; falta teste físico |
 
+## Validação do hacker (11/11/2026)
+
+| Critério | Situação | Evidência |
+|---|---|---|
+| Entrada, vagas e autorização do hacker (defensor só defende, atacante só ataca, sem trocar papel/carro por mensagem) | ✅ | Chrome + WebSocket: `forbidden` em `attack.*`/`defense.*`/`pilot.*`/`admin.*` fora do papel; 409, 400 e 403 no login; `auth.test.ts`, `topology.test.ts` |
+| Quatro etapas e duas inversões independentes, em `single` e `dual` | ✅ | Chrome com `/simulator`; `attack.spec.ts`, `topology.spec.ts` |
+| Defesas: senha real, Integridade e Repetição (rotuladas como simulação) | ✅ | Chrome; `defense.spec.ts`, `auth.test.ts` |
+| Inversão chega ao ESP32 real e a Integridade a bloqueia | ⚠️ saídas desligadas | serial: `esquerdo=-1 direito=-1` (ré) com ataque, `esquerdo=1 direito=1` com Integridade; não há roda para observar |
+| Reinício do ESP32 com ataque ativo não retoma movimento | ⚠️ saídas desligadas | serial: só `INICIANDO → PARADO` até o novo `device.drive` |
+| STOP ALL e Pausar com o piloto ainda dirigindo | ✅ software | STOP ALL passou a pausar a partida (`engine.test.ts`, `simulator-ws.test.ts`); parada física ainda ⏳ |
+| Exportação restrita ao operador, sem segredos, métricas por modo | ✅ | 401 sem sessão; busca por senhas/segredos/hash sem ocorrências |
+| Regressão automática | ✅ | `bun run test` 181, Playwright 35 + 1 pulado, `pio test -e native` 28 |
+
+Em aberto: a rede do ESP32 (RSSI −65 a −73 dBm, 20 % de perda, failsafe expirando várias vezes por condução) segue abaixo do necessário; ver `progress.md`.
+
 ## Pronto para demonstração física
 
 | Item | Situação | Observação |
