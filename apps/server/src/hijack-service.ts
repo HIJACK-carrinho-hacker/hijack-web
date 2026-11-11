@@ -383,7 +383,11 @@ export class HijackService {
         const before = this.engine.demoState;
         const r = this.engine.setDemoState(msg.payload.state);
         if (r.ok && before === "stopped") {
+          const hadProgress = this.attacks.all().some((a) => a.step !== "locked");
           this.attacks.reset();
+          if (hadProgress) {
+            this.engine.log({ kind: "attack.reset", actorRole: "admin", visibility: "public", message: "Ataques zerados para a nova largada" });
+          }
           this.onStateChanged();
         }
         return r;

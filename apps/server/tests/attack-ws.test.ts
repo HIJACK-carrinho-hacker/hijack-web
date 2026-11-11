@@ -61,6 +61,19 @@ describe("ciclo de vida do ataque", () => {
     pilotB.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
     await sleep(30);
     expect(confirmed("car-b")).toEqual({ throttle: 1, steering: 0 });
+    const events = h.server.engine.snapshot({ role: "admin" }).events;
+    expect(events.filter((e) => e.kind === "attack.reset")).toHaveLength(1);
+  });
+
+  test("nova largada sem ataque em andamento não gera evento de reset", async () => {
+    run();
+    const admin = await connectAs(h, (await adminLogin(h.base)).cookie);
+    for (const state of ["stopped", "ready", "running"]) {
+      expect((await act(admin, "admin.setDemoState", { state })).ok).toBe(true);
+    }
+    admin.close();
+    const events = h.server.engine.snapshot({ role: "admin" }).events;
+    expect(events.some((e) => e.kind === "attack.reset")).toBe(false);
   });
 
   test("hacker que perde a vaga deixa o ataque desativado", async () => {
