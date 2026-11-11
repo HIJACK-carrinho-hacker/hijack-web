@@ -35,6 +35,8 @@ Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os 
 | Integridade de B bloqueia ataque de A sem bloquear o piloto B | `attack-ws.test.ts` |
 | Repetição didática não injeta movimento | `attack-ws.test.ts` |
 | STOP não invertido; ataque não move carro parado | `attack-ws.test.ts` |
+| Ataque zerado ao iniciar nova largada e quando o hacker atacante sai (logout ou vaga liberada) | `attack-ws.test.ts` |
+| Depois da pausa ou do STOP ALL o piloto que segurou o joystick só volta a mover depois de soltar (engine e WebSocket); STOP ALL em `ready`/`paused`/`stopped`, com 1 carrinho e com o ESP32 falso | `engine.test.ts`, `simulator-ws.test.ts`, `device.test.ts` |
 | STOP ALL durante a partida pausa a demonstração (WebSocket) e recusa o piloto que continua segurando o joystick (engine) | `simulator-ws.test.ts`, `engine.test.ts` |
 | Perda do WebSocket do piloto para o carro | `auth.test.ts` |
 | Restart: estado de movimento não restaurado | `engine.test.ts` |

@@ -82,7 +82,7 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 
 A inversão de direção **nega o percentual** (−60 → 60, −100 → 100; 0 continua 0, sem `-0`) e preserva a intensidade; a inversão de tração troca 1 ↔ −1. Exemplos: `(1,-100)` com inversão de direção → `(1,100)`; `(1,-60)` com ambas → `(-1,60)`; `(0,0)` nunca muda.
 
-Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria equipe, carrinho desativado ou equipe sem papel de ataque na topologia). Pausar preserva o progresso. A troca de senha **não** bloqueia a inversão (pré-projeto: a senha forte "não impede por si só alterações nos comandos feitas por um componente autorizado"); só a integridade didática bloqueia.
+Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria equipe, carrinho desativado ou equipe sem papel de ataque na topologia). Pausar preserva o progresso. O ataque de uma equipe é zerado ao sair de `stopped` (nova largada) e desativado quando o hacker dessa equipe sai (logout, `admin.releaseSlot` ou nova entrada). A troca de senha **não** bloqueia a inversão (pré-projeto: a senha forte "não impede por si só alterações nos comandos feitas por um componente autorizado"); só a integridade didática bloqueia.
 
 ## Defesa didática
 
@@ -124,7 +124,7 @@ Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria 
 
 O snapshot do hacker A não traz ataques; o do hacker B não traz defesas; operador e espectador veem só o ataque da equipe B. Em `dual` tudo funciona como antes.
 
-Sem sessão → `unauthenticated`; papel errado → `forbidden`. `pilot.drive` aceito não gera `action.ok` (evita ruído a 10 Hz); recusado gera `pilot.commandRejected`.
+Sem sessão → `unauthenticated`; papel errado → `forbidden`. `pilot.drive` aceito não gera `action.ok` (evita ruído a 10 Hz); recusado gera `pilot.commandRejected`. Um comando ativo recusado com a partida em `paused` marca o carro: depois de retomar, comandos ativos geram `pilot.commandRejected` com `bad_request` até chegar um comando neutro (`pressed: false` ou `throttle 0` e `steering 0`).
 
 Ao abrir a conexão, o servidor envia `session.accepted` (se houver sessão) e um `state.snapshot`. Sessão revogada → `session.revoked {reason}`, e a conexão passa a ser de visitante.
 

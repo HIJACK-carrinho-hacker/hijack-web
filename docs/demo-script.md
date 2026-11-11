@@ -22,7 +22,7 @@ O piloto controla frente/ré em velocidade fixa e a direção **proporcional** (
 
 - Operador: **Pronto** → **Iniciar**. Pilotos veem "Em demonstração".
 - O piloto dirige livremente; no projetor a direção aparece em percentual (ex.: "D 60%"). No projetor, **Solicitado** e **Confirmado** são iguais.
-- Mostrar a segurança física: piloto solta o joystick → carrinho para. Operador aperta **STOP ALL** → tudo para e a partida fica **Pausada**: comandos de piloto são recusados enquanto estiver pausada. Peça ao piloto para soltar o joystick antes de **Retomar** (a tela do piloto zera o joystick na pausa, mas ainda não foi testado o que acontece se ele tocar nos controles durante a pausa).
+- Mostrar a segurança física: piloto solta o joystick → carrinho para. Operador aperta **STOP ALL** → tudo para e a partida fica **Pausada**: comandos de piloto são recusados enquanto estiver pausada. Depois de **Retomar**, o piloto que estava segurando ou tocou nos controles durante a pausa precisa soltar e tocar de novo antes de o carrinho voltar a andar.
 
 ## 2. Ataque guiado (≈ 4 min)
 

@@ -83,3 +83,13 @@ Decisões técnicas desta atualização:
 - **Visibilidade em `single`:** hacker A não recebe ataques no snapshot (a aba Ataque explica que a equipe A defende); hacker B não recebe defesas (aba Defesa e indicador de segurança ocultos); operador e espectador veem só o ataque da equipe B.
 - **Login em `single`:** piloto só vê o Carrinho A; hacker escolhe "Equipe A — defende o Carrinho A" ou "Equipe B — ataca o Carrinho A"; o rótulo da senha da equipe B é "Senha da equipe B" e o campo "Nome do carrinho" some para ela.
 - **Testes:** `testConfig` do servidor usa `dual` para manter os testes de 2 carrinhos; `topology.test.ts` e `topology.spec.ts` cobrem `single`.
+
+## 6. Revisão da validação do hacker (11/11/2026)
+
+Decisões tomadas depois da revisão independente (`progress.md`, passo 11):
+
+- **STOP ALL pausa a partida:** com a partida em `running`, o `admin.stopAll` para os carros e muda para `paused`. Antes era só um pulso e o piloto que seguia segurando o joystick retomava o movimento em ~100 ms. Fora de `running` continua sendo só parada.
+- **Retomar exige soltar:** um `pilot.drive` ativo recusado enquanto a partida está `paused` (`demo_not_running`) marca o carro; ao retomar, comandos ativos são recusados com `bad_request` ("solte o joystick e toque de novo") até chegar um comando neutro (`pressed: false` ou `throttle 0` e `steering 0`) ou a sessão do piloto ser revogada. Vale também para clientes por script; fora da pausa (por exemplo, antes da largada) nada muda. A tela do piloto também ignora entradas enquanto está desabilitada.
+- **Ataque não sobrevive à rodada nem ao atacante:** os ataques são zerados ao sair de `stopped` (nova largada) e o ataque de uma equipe é desativado quando o hacker dessa equipe sai (logout, vaga liberada pelo operador ou nova entrada). Antes a inversão da rodada anterior continuava ativa sem dono e o operador não conseguia desligá-la em `running`.
+- **Eventos `staff`:** os hackers dos dois times veem os eventos de ataque e defesa um do outro (o defensor vê "Equipe B: Inversão ativa", o atacante vê "Integridade ativada"). Considerado intencional e didático; não foi alterado.
+- **Em aberto, sem decisão:** defesas continuam valendo depois de trocar a topologia (só os ataques são resetados); um script autenticado pode inundar o registro de eventos (sem limite de taxa por conexão); o relatório de exploração fica congelado no momento em que foi gerado; corrida possível entre um login e a troca de senha do mesmo carrinho (não reproduzida).
