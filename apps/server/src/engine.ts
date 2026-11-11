@@ -250,7 +250,7 @@ export class HijackEngine {
     }
     if (this.releaseRequired.has(carId)) {
       this.metrics.inc(carId, car.mode, "rejected");
-      return fail("bad_request", "solte o joystick e toque de novo para voltar a mover");
+      return fail("release_required", "solte o joystick e toque de novo para voltar a mover");
     }
     if (!car.online) {
       this.metrics.inc(carId, car.mode, "rejected");

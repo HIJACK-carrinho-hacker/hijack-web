@@ -124,7 +124,7 @@ describe("HijackEngine", () => {
     engine.setDemoState("paused");
     expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(false);
     engine.setDemoState("running");
-    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true })).toMatchObject({ ok: false, code: "bad_request" });
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true })).toMatchObject({ ok: false, code: "release_required" });
     expect(engine.car("car-a").controller.moving).toBe(false);
     expect(engine.pilotInput("car-a", { throttle: 0, steering: 0, pressed: false }).ok).toBe(true);
     expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(true);

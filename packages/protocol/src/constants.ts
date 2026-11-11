@@ -67,5 +67,6 @@ export const ERROR_CODES = [
   "attack_step_invalid",
   "weak_password",
   "car_offline",
+  "release_required",
   "internal",
 ] as const;

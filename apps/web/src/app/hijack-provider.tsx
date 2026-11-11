@@ -45,6 +45,11 @@ export function HijackProvider({ children }: { children: ReactNode }) {
           case "system.error":
             if (msg.payload.code !== "unauthenticated") toast.error(msg.payload.message);
             break;
+          case "pilot.commandRejected":
+            if (msg.payload.code === "release_required") {
+              toast.warning("Solte o joystick e toque de novo para voltar a mover.", { id: "release-required" });
+            }
+            break;
           case "system.stopAll":
             toast.warning(`STOP geral: ${msg.payload.reason}`);
             break;

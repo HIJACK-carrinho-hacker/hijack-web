@@ -65,7 +65,7 @@ describe("simulador via WebSocket", () => {
     await c.waitFor("state.snapshot", (m) => m.payload.state.demoState === "running");
     pilot.clear();
     pilot.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
-    expect((await pilot.waitFor("pilot.commandRejected")).payload.code).toBe("bad_request");
+    expect((await pilot.waitFor("pilot.commandRejected")).payload.code).toBe("release_required");
 
     c.clear();
     pilot.send("pilot.stop", { reason: "release" });
