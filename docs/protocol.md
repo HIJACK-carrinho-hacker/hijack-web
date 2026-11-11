@@ -82,7 +82,7 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 
 A inversão de direção **nega o percentual** (−60 → 60, −100 → 100; 0 continua 0, sem `-0`) e preserva a intensidade; a inversão de tração troca 1 ↔ −1. Exemplos: `(1,-100)` com inversão de direção → `(1,100)`; `(1,-60)` com ambas → `(-1,60)`; `(0,0)` nunca muda.
 
-Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria equipe, carrinho desativado ou equipe sem papel de ataque na topologia). Pausar preserva o progresso. O ataque de uma equipe é zerado ao sair de `stopped` (nova largada) e desativado quando o hacker dessa equipe sai (logout, `admin.releaseSlot` ou nova entrada). A troca de senha **não** bloqueia a inversão (pré-projeto: a senha forte "não impede por si só alterações nos comandos feitas por um componente autorizado"); só a integridade didática bloqueia.
+Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria equipe, carrinho desativado ou equipe sem papel de ataque na topologia). Pausar preserva o progresso. O ataque de uma equipe é zerado ao sair de `stopped` (nova largada, com o evento "Ataques zerados para a nova largada" se havia progresso) e desativado quando o hacker dessa equipe sai (logout, `admin.releaseSlot`, nova entrada ou expiração da sessão). A troca de senha **não** bloqueia a inversão (pré-projeto: a senha forte "não impede por si só alterações nos comandos feitas por um componente autorizado"); só a integridade didática bloqueia.
 
 ## Defesa didática
 
@@ -124,7 +124,7 @@ Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria 
 
 O snapshot do hacker A não traz ataques; o do hacker B não traz defesas; operador e espectador veem só o ataque da equipe B. Em `dual` tudo funciona como antes.
 
-Sem sessão → `unauthenticated`; papel errado → `forbidden`. `pilot.drive` aceito não gera `action.ok` (evita ruído a 10 Hz); recusado gera `pilot.commandRejected`. Um comando ativo recusado com a partida em `paused` marca o carro: depois de retomar, comandos ativos geram `pilot.commandRejected` com `bad_request` até chegar um comando neutro (`pressed: false` ou `throttle 0` e `steering 0`).
+Sem sessão → `unauthenticated`; papel errado → `forbidden`. **Limite por conexão do navegador** (token bucket): mensagens `pilot.*` até 40/s; as demais até 10/s com rajada de 20. O excedente é descartado e a conexão recebe `rate_limited` (no máximo um aviso por segundo). `pilot.drive` aceito não gera `action.ok` (evita ruído a 10 Hz); recusado gera `pilot.commandRejected`. Um comando ativo recusado com a partida em `paused` marca o carro: a marca é limpa por qualquer comando neutro, por `pilot.stop`, pela queda do WebSocket do piloto, pela revogação ou expiração da sessão e ao trocar a rodada, a topologia ou o modo do carro; depois de retomar, comandos ativos geram `pilot.commandRejected` com `release_required` até chegar um comando neutro (`pressed: false` ou `throttle 0` e `steering 0`).
 
 Ao abrir a conexão, o servidor envia `session.accepted` (se houver sessão) e um `state.snapshot`. Sessão revogada → `session.revoked {reason}`, e a conexão passa a ser de visitante.
 
