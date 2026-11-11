@@ -39,6 +39,7 @@ export function usePilotDrive(enabled: boolean) {
 
   const update = useCallback(
     (next: Axes, pressed: boolean) => {
+      if (!enabledRef.current) return;
       const active = pressed && !isNeutralAxes(next);
       const changed = !sameAxes(next, axesRef.current) || active !== pressedRef.current;
       axesRef.current = next;

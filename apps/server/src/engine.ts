@@ -84,6 +84,7 @@ export class HijackEngine {
   private readonly adapterFactory: AdapterFactory;
   private readonly cars = new Map<CarId, CarRuntime>();
   private readonly listeners = new Set<() => void>();
+  private readonly releaseRequired = new Set<CarId>();
   private readonly tickTimer: ReturnType<typeof setInterval>;
   private demo: DemoState = "setup";
   private topologyValue: DemoTopology;
@@ -228,6 +229,7 @@ export class HijackEngine {
     const car = this.mustCar(carId);
     this.metrics.inc(carId, car.mode, "received");
     if (!input.pressed || isNeutral(input)) {
+      this.releaseRequired.delete(carId);
       car.lastTransformKey = null;
       car.controller.stop("pilot-release");
       return ok;
@@ -238,9 +240,14 @@ export class HijackEngine {
       return fail("forbidden", "carrinho desativado na topologia atual");
     }
     if (!allowsMovement(this.demo)) {
+      if (this.demo === "paused") this.releaseRequired.add(carId);
       car.controller.stop("demo-not-running");
       this.metrics.inc(carId, car.mode, "rejected");
       return fail("demo_not_running", "a demonstração não está em andamento");
+    }
+    if (this.releaseRequired.has(carId)) {
+      this.metrics.inc(carId, car.mode, "rejected");
+      return fail("bad_request", "solte o joystick e toque de novo para voltar a mover");
     }
     if (!car.online) {
       this.metrics.inc(carId, car.mode, "rejected");
@@ -258,6 +265,7 @@ export class HijackEngine {
   }
 
   pilotStop(carId: CarId, reason: StopReason = "pilot-stop"): void {
+    this.releaseRequired.delete(carId);
     this.mustCar(carId).controller.stop(reason);
   }
 

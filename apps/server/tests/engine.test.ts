@@ -119,6 +119,45 @@ describe("HijackEngine", () => {
     expect(engine.car("car-a").controller.moving).toBe(false);
   });
 
+  test("comando ativo recusado durante a pausa exige soltar antes de mover ao retomar", () => {
+    run();
+    engine.setDemoState("paused");
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(false);
+    engine.setDemoState("running");
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true })).toMatchObject({ ok: false, code: "bad_request" });
+    expect(engine.car("car-a").controller.moving).toBe(false);
+    expect(engine.pilotInput("car-a", { throttle: 0, steering: 0, pressed: false }).ok).toBe(true);
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(true);
+    expect(engine.car("car-a").controller.moving).toBe(true);
+  });
+
+  test("piloto que segurou o joystick durante o STOP ALL só volta a mover depois de soltar", () => {
+    run();
+    engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true });
+    engine.emergencyStop();
+    engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true });
+    engine.setDemoState("running");
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(false);
+    engine.pilotInput("car-a", { throttle: 0, steering: 0, pressed: false });
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(true);
+  });
+
+  test("piloto que não tocou nos controles durante a pausa move normalmente ao retomar", () => {
+    run();
+    engine.setDemoState("paused");
+    engine.setDemoState("running");
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(true);
+  });
+
+  test("sessão de piloto revogada limpa a exigência de soltar", () => {
+    run();
+    engine.setDemoState("paused");
+    engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true });
+    engine.setDemoState("running");
+    engine.pilotStop("car-a", "session-revoked");
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(true);
+  });
+
   test("STOP ALL fora da partida não muda o estado da demonstração", () => {
     engine.emergencyStop();
     expect(engine.demoState).toBe("setup");
