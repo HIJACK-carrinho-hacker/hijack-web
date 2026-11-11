@@ -467,16 +467,21 @@ export class HijackService {
     return { ok: true, session };
   }
 
+  private onSessionEnded(s: Session): void {
+    if (s.kind !== "participant") return;
+    if (s.role === "pilot") this.engine.pilotStop(s.carId, "session-revoked");
+    if (s.role === "hacker" && this.attacks.view(s.teamId).active) {
+      this.attacks.disable(s.teamId);
+      this.logAttack(s, "Ataque desativado: o hacker saiu");
+    }
+  }
+
   private revokeTokens(tokens: string[], reason: string): void {
     if (tokens.length === 0) return;
     const set = new Set(tokens);
     for (const t of tokens) {
       const s = this.sessions.revoke(t);
-      if (s?.kind === "participant" && s.role === "pilot") this.engine.pilotStop(s.carId, "session-revoked");
-      if (s?.kind === "participant" && s.role === "hacker" && this.attacks.view(s.teamId).active) {
-        this.attacks.disable(s.teamId);
-        this.logAttack(s, "Ataque desativado: o hacker saiu");
-      }
+      if (s) this.onSessionEnded(s);
     }
     for (const conn of this.hub.connections()) {
       if (conn.sessionToken && set.has(conn.sessionToken)) {
@@ -489,9 +494,7 @@ export class HijackService {
 
   private sweep(): void {
     const expired = this.sessions.sweepExpired();
-    for (const s of expired) {
-      if (s.kind === "participant" && s.role === "pilot") this.engine.pilotStop(s.carId, "session-revoked");
-    }
+    for (const s of expired) this.onSessionEnded(s);
     if (expired.length) {
       const tokens = new Set(expired.map((s) => s.token));
       for (const conn of this.hub.connections()) {

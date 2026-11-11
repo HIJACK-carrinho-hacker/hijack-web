@@ -74,6 +74,18 @@ describe("ciclo de vida do ataque", () => {
     expect(confirmed("car-b")).toEqual({ throttle: 1, steering: 0 });
   });
 
+  test("hacker cuja sessão expira deixa o ataque desativado", async () => {
+    run();
+    await fullAttack(hackerA, "car-b", true, false);
+    for (const s of h.server.service.sessions.all()) {
+      if (s.kind === "participant" && s.role === "hacker") s.expiresAt = 0;
+    }
+    (h.server.service as unknown as { sweep(): void }).sweep();
+    pilotB.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await sleep(30);
+    expect(confirmed("car-b")).toEqual({ throttle: 1, steering: 0 });
+  });
+
   test("hacker que sai pelo logout deixa o ataque desativado", async () => {
     run();
     await fullAttack(hackerA, "car-b", true, false);
