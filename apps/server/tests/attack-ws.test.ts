@@ -49,6 +49,42 @@ const confirmed = (carId: "car-a" | "car-b") => {
   return car?.confirmed;
 };
 
+describe("ciclo de vida do ataque", () => {
+  test("encerrar e iniciar nova largada zera o ataque", async () => {
+    run();
+    await fullAttack(hackerA, "car-b", true, false);
+    const admin = await connectAs(h, (await adminLogin(h.base)).cookie);
+    for (const state of ["stopped", "ready", "running"]) {
+      expect((await act(admin, "admin.setDemoState", { state })).ok).toBe(true);
+    }
+    admin.close();
+    pilotB.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await sleep(30);
+    expect(confirmed("car-b")).toEqual({ throttle: 1, steering: 0 });
+  });
+
+  test("hacker que perde a vaga deixa o ataque desativado", async () => {
+    run();
+    await fullAttack(hackerA, "car-b", true, false);
+    const admin = await connectAs(h, (await adminLogin(h.base)).cookie);
+    expect((await act(admin, "admin.releaseSlot", { carId: "car-a", role: "hacker" })).ok).toBe(true);
+    admin.close();
+    pilotB.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await sleep(30);
+    expect(confirmed("car-b")).toEqual({ throttle: 1, steering: 0 });
+  });
+
+  test("hacker que sai pelo logout deixa o ataque desativado", async () => {
+    run();
+    await fullAttack(hackerA, "car-b", true, false);
+    hackerA.send("session.logout", {});
+    await sleep(30);
+    pilotB.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await sleep(30);
+    expect(confirmed("car-b")).toEqual({ throttle: 1, steering: 0 });
+  });
+});
+
 describe("ataque guiado", () => {
   test("bloqueado fora de RUNNING", async () => {
     expect(await act(hackerA, "attack.scan", {})).toEqual({ ok: false, code: "demo_not_running" });

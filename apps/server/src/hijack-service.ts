@@ -379,8 +379,15 @@ export class HijackService {
 
   private handleAdmin(msg: ClientMessage): Result {
     switch (msg.type) {
-      case "admin.setDemoState":
-        return this.engine.setDemoState(msg.payload.state);
+      case "admin.setDemoState": {
+        const before = this.engine.demoState;
+        const r = this.engine.setDemoState(msg.payload.state);
+        if (r.ok && before === "stopped") {
+          this.attacks.reset();
+          this.onStateChanged();
+        }
+        return r;
+      }
       case "admin.stopAll":
         this.engine.emergencyStop();
         this.hub.broadcast("system.stopAll", { reason: msg.payload.reason || "operador" });
@@ -466,6 +473,10 @@ export class HijackService {
     for (const t of tokens) {
       const s = this.sessions.revoke(t);
       if (s?.kind === "participant" && s.role === "pilot") this.engine.pilotStop(s.carId, "session-revoked");
+      if (s?.kind === "participant" && s.role === "hacker" && this.attacks.view(s.teamId).active) {
+        this.attacks.disable(s.teamId);
+        this.logAttack(s, "Ataque desativado: o hacker saiu");
+      }
     }
     for (const conn of this.hub.connections()) {
       if (conn.sessionToken && set.has(conn.sessionToken)) {
