@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { serverToDeviceSchema } from "@hijack/protocol";
 import { WebSocket } from "ws";
-import { type Harness, type TestClient, connectAs, login, startServer } from "./helpers.ts";
+import { type Harness, type TestClient, adminLogin, connectAs, login, startServer } from "./helpers.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -161,6 +161,30 @@ describe("comandos para o ESP32", () => {
     h.server.engine.stopAll();
     const stop = await d.waitFor("device.stop");
     expect(stop.payload).toEqual({ reason: "admin-stop-all" });
+    d.close();
+  });
+
+  test("STOP ALL do operador durante a partida para o ESP32 e deixa a partida pausada", async () => {
+    toHardware();
+    const d = await FakeEsp32.connect(h.port);
+    d.hello("car-a", "device-secret-a");
+    await d.waitFor("device.welcome");
+    run();
+    pilotA = await connectAs(h, (await login(h.base, { role: "pilot", carId: "car-a" })).cookie);
+    pilotA.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await d.waitFor("device.drive");
+    const admin = await connectAs(h, (await adminLogin(h.base)).cookie);
+    const stopsBefore = d.received.filter((m) => m.type === "device.stop").length;
+    admin.send("admin.stopAll", { reason: "teste" });
+    await sleep(150);
+    const stops = d.received.filter((m) => m.type === "device.stop").slice(stopsBefore);
+    expect(stops.map((s) => s.payload)).toContainEqual({ reason: "admin-stop-all" });
+    expect(h.server.engine.demoState).toBe("paused");
+    const drivesBefore = d.received.filter((m) => m.type === "device.drive").length;
+    pilotA.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await sleep(150);
+    expect(d.received.filter((m) => m.type === "device.drive").length).toBe(drivesBefore);
+    admin.close();
     d.close();
   });
 

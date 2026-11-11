@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { type Harness, type TestClient, adminLogin, connectAs, startServer } from "./helpers.ts";
+import { type Harness, type TestClient, adminLogin, connectAs, login, startServer } from "./helpers.ts";
 
 let h: Harness;
 let c: TestClient;
@@ -43,6 +43,35 @@ describe("simulador via WebSocket", () => {
     c.clear();
     c.send("admin.stopAll", { reason: "teste" });
     await c.waitFor("state.snapshot", (m) => m.payload.state.demoState === "paused");
+  });
+
+  test("depois do STOP ALL o piloto é recusado e só volta a mover depois de retomar e soltar", async () => {
+    const pilot = await connectAs(h, (await login(h.base, { role: "pilot", carId: "car-a" })).cookie);
+    c.send("admin.setDemoState", { state: "ready" });
+    c.send("admin.setDemoState", { state: "running" });
+    await c.waitFor("state.snapshot", (m) => m.payload.state.demoState === "running");
+    pilot.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await c.waitFor("state.snapshot", (m) => m.payload.state.cars.some((car) => car.id === "car-a" && car.moving));
+    c.clear();
+    c.send("admin.stopAll", { reason: "teste" });
+    await c.waitFor("state.snapshot", (m) => m.payload.state.demoState === "paused");
+
+    pilot.clear();
+    pilot.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    expect((await pilot.waitFor("pilot.commandRejected")).payload.code).toBe("demo_not_running");
+
+    c.clear();
+    c.send("admin.setDemoState", { state: "running" });
+    await c.waitFor("state.snapshot", (m) => m.payload.state.demoState === "running");
+    pilot.clear();
+    pilot.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    expect((await pilot.waitFor("pilot.commandRejected")).payload.code).toBe("bad_request");
+
+    c.clear();
+    pilot.send("pilot.stop", { reason: "release" });
+    pilot.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await c.waitFor("state.snapshot", (m) => m.payload.state.cars.some((car) => car.id === "car-a" && car.moving));
+    pilot.close();
   });
 
   test("stateRevision é monotônica", async () => {

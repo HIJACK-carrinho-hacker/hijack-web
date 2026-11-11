@@ -163,6 +163,42 @@ describe("HijackEngine", () => {
     expect(engine.demoState).toBe("setup");
   });
 
+  test("STOP ALL em ready, paused e stopped mantém o estado", () => {
+    engine.setDemoState("ready");
+    engine.emergencyStop();
+    expect(engine.demoState).toBe("ready");
+    engine.setDemoState("running");
+    engine.setDemoState("paused");
+    engine.emergencyStop();
+    expect(engine.demoState).toBe("paused");
+    engine.setDemoState("stopped");
+    engine.emergencyStop();
+    expect(engine.demoState).toBe("stopped");
+  });
+
+  test("depois do STOP ALL, retomar sem toque na pausa aceita o piloto de novo", () => {
+    run();
+    engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true });
+    engine.emergencyStop();
+    engine.setDemoState("running");
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(true);
+    expect(engine.car("car-a").controller.moving).toBe(true);
+  });
+
+  test("com 1 carrinho o STOP ALL para o carrinho ativo e pausa a partida", () => {
+    const single = new HijackEngine({
+      config: testConfig({ COMMAND_TTL_MS: 120, DEMO_TOPOLOGY: "single" }),
+      adapterFactory: (carId) => new SimulatorAdapter(carId, { tickMs: 10, telemetryMs: 50 }),
+    });
+    single.setDemoState("ready");
+    single.setDemoState("running");
+    single.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true });
+    single.emergencyStop();
+    expect(single.demoState).toBe("paused");
+    expect(single.car("car-a").controller.moving).toBe(false);
+    single.dispose();
+  });
+
   test("transição inválida é recusada", () => {
     expect(engine.setDemoState("running")).toMatchObject({ ok: false });
     expect(engine.demoState).toBe("setup");
