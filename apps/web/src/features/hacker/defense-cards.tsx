@@ -15,9 +15,19 @@ function SimBadge({ children }: { children: string }) {
   );
 }
 
+function ErrorNote({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <p role="alert" className="text-sm text-destructive">
+      {message}
+    </p>
+  );
+}
+
 export function IntegrityCard({ defense }: { defense: DefenseView | undefined }) {
   const { request } = useHijack();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const enabled = defense?.integrityDemoEnabled ?? false;
   return (
     <Card>
@@ -31,20 +41,25 @@ export function IntegrityCard({ defense }: { defense: DefenseView | undefined })
           piloto continua dirigindo normalmente.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex items-center justify-between gap-4">
-        <Label htmlFor="integrity" className="text-base">
-          {enabled ? "Bloqueando alterações" : "Desligada"}
-        </Label>
-        <Switch
-          id="integrity"
-          checked={enabled}
-          disabled={busy}
-          onCheckedChange={async (v) => {
-            setBusy(true);
-            await request("defense.setIntegrityDemo", { enabled: v });
-            setBusy(false);
-          }}
-        />
+      <CardContent className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor="integrity" className="text-base">
+            {enabled ? "Bloqueando alterações" : "Desligada"}
+          </Label>
+          <Switch
+            id="integrity"
+            checked={enabled}
+            disabled={busy}
+            onCheckedChange={async (v) => {
+              setBusy(true);
+              setError(null);
+              const r = await request("defense.setIntegrityDemo", { enabled: v });
+              setBusy(false);
+              if (!r.ok) setError(r.message);
+            }}
+          />
+        </div>
+        <ErrorNote message={error} />
       </CardContent>
     </Card>
   );
@@ -53,11 +68,14 @@ export function IntegrityCard({ defense }: { defense: DefenseView | undefined })
 export function ReplayCard({ defense }: { defense: DefenseView | undefined }) {
   const { request } = useHijack();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const enabled = defense?.replayDemoEnabled ?? false;
   const set = async (v: boolean) => {
     setBusy(true);
-    await request("defense.setReplayDemo", { enabled: v });
+    setError(null);
+    const r = await request("defense.setReplayDemo", { enabled: v });
     setBusy(false);
+    if (!r.ok) setError(r.message);
   };
   return (
     <Card>
@@ -83,6 +101,7 @@ export function ReplayCard({ defense }: { defense: DefenseView | undefined }) {
             Gerar outro exemplo
           </Button>
         )}
+        <ErrorNote message={error} />
       </CardContent>
     </Card>
   );
