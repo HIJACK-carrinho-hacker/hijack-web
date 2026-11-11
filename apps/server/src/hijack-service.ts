@@ -382,7 +382,7 @@ export class HijackService {
       case "admin.setDemoState":
         return this.engine.setDemoState(msg.payload.state);
       case "admin.stopAll":
-        this.engine.stopAll("admin-stop-all");
+        this.engine.emergencyStop();
         this.hub.broadcast("system.stopAll", { reason: msg.payload.reason || "operador" });
         return ok;
       case "admin.setCarMode":

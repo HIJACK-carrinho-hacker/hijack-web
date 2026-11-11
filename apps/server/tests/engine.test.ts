@@ -109,6 +109,21 @@ describe("HijackEngine", () => {
     expect(engine.car("car-b").controller.moving).toBe(false);
   });
 
+  test("STOP ALL durante a partida pausa e recusa o piloto que continua segurando", () => {
+    run();
+    engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true });
+    engine.emergencyStop();
+    expect(engine.demoState).toBe("paused");
+    expect(engine.car("car-a").controller.moving).toBe(false);
+    expect(engine.pilotInput("car-a", { throttle: 1, steering: 0, pressed: true }).ok).toBe(false);
+    expect(engine.car("car-a").controller.moving).toBe(false);
+  });
+
+  test("STOP ALL fora da partida não muda o estado da demonstração", () => {
+    engine.emergencyStop();
+    expect(engine.demoState).toBe("setup");
+  });
+
   test("transição inválida é recusada", () => {
     expect(engine.setDemoState("running")).toMatchObject({ ok: false });
     expect(engine.demoState).toBe("setup");

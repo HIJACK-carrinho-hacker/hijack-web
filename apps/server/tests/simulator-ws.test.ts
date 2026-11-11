@@ -36,6 +36,15 @@ describe("simulador via WebSocket", () => {
     expect(snap.payload.state.cars.every((car) => car.confirmed.throttle === 0)).toBe(true);
   });
 
+  test("STOP geral durante a partida pausa a demonstração", async () => {
+    c.send("admin.setDemoState", { state: "ready" });
+    c.send("admin.setDemoState", { state: "running" });
+    await c.waitFor("state.snapshot", (m) => m.payload.state.demoState === "running");
+    c.clear();
+    c.send("admin.stopAll", { reason: "teste" });
+    await c.waitFor("state.snapshot", (m) => m.payload.state.demoState === "paused");
+  });
+
   test("stateRevision é monotônica", async () => {
     c.send("sim.manualDrive", { carId: "car-a", throttle: 1, steering: 0 });
     await c.waitFor("state.snapshot", (m) => m.payload.state.cars.some((car) => car.moving));

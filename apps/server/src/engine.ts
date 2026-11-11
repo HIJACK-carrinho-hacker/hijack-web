@@ -173,6 +173,11 @@ export class HijackEngine {
     this.changed();
   }
 
+  emergencyStop(): void {
+    this.stopAll("admin-stop-all");
+    if (this.demo === "running") this.setDemoState("paused");
+  }
+
   stopCar(carId: CarId, reason: StopReason): void {
     this.mustCar(carId).controller.stop(reason);
   }
