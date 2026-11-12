@@ -74,7 +74,7 @@ export function usePilotDrive(enabled: boolean) {
       transmitPaced();
       if (!timer.current) timer.current = setInterval(transmitPaced, PILOT_REFRESH_MS);
     },
-    [clearTimer, send, transmit, transmitPaced],
+    [clearTimer, send, transmitPaced],
   );
 
   useEffect(() => {
