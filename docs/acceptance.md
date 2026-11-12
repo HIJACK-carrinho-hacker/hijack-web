@@ -51,7 +51,7 @@ Em aberto: a rede do ESP32 (RSSI −65 a −73 dBm, 20 % de perda, failsafe expi
 | Tração e esterçamento testados com rodas suspensas | ⏳ | checklist em `esp32/docs/testing-hardware.md` |
 | Watchdog real para o carro em perda de WS/Wi-Fi | ⚠️ | com o ESP32 real e as saídas desligadas: rede presa por 3 s (`esp32dev_trava`), failsafe parou em 347, 367, 385 e 399 ms (log serial); falta medir até as rodas pararem, que exige a L298N |
 | STOP ALL e parada física comprovados | ⏳ | — |
-| Um ESP32 (topologia padrão de 1 carrinho) na LAN isolada | ⚠️ | ESP32 autenticado e pilotado pelo protocolo real (saídas desligadas); 10 min sem queda a −36 a −55 dBm numa mesh doméstica. Falta o roteador dedicado da demonstração |
+| Um ESP32 (topologia padrão de 1 carrinho) na LAN isolada | ⚠️ | ESP32 autenticado e pilotado pelo protocolo real (saídas desligadas); 10 min sem queda a −36 a −55 dBm numa mesh doméstica. Em 12/11/2026 três apagões de 3,7 a 9,8 s, coincidindo com a troca de chave da mesh, derrubaram o WebSocket; o firmware passou a perceber junto com o servidor em 5 s (monitor de silêncio), mas no apagão de 9,8 s a tarefa de rede ficou bloqueada (causa ainda não medida; o log `[rede] tarefa bloqueada` existe no código e não foi gravado na placa). Falta o roteador dedicado da demonstração (2,4 GHz, sem mesh) e 30 a 60 min contínuos |
 | Dois ESP32 juntos na LAN isolada (opcional, `dual`) | ⏳ | — |
 | Medições documentadas sem resultados inventados | ⚠️ | medições de 10/11/2026 em `../esp32/docs/testing-hardware.md` e `../esp32/docs/progress.md`; motores e servo sem números |
 
