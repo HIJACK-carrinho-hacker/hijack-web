@@ -253,6 +253,14 @@ describe("motivo da parada", () => {
     expect(stopReason()).toBe("demo-not-running");
   });
 
+  test("voltar à configuração também troca o motivo por demo-not-running", () => {
+    drive();
+    engine.car("car-a").controller.stop("watchdog");
+    engine.setDemoState("stopped");
+    engine.setDemoState("setup");
+    expect(stopReason()).toBe("demo-not-running");
+  });
+
   test("pausar e retomar não troca o motivo da parada de segurança", () => {
     drive();
     engine.car("car-a").controller.stop("watchdog");
