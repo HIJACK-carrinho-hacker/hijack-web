@@ -48,4 +48,20 @@ describe("pilotStatus", () => {
     const offline = car({ telemetry: { ...car().telemetry, online: false } });
     expect(pilotStatus("open", "running", offline)).toMatchObject({ label: "Carrinho desconectado", canDrive: false });
   });
+
+  test("só os motivos de segurança viram parada de segurança em running", () => {
+    for (const reason of ["watchdog", "admin-stop-all", "device-disconnected", "fault"] as const) {
+      expect(pilotStatus("open", "running", car({ stopReason: reason }))).toMatchObject({ label: "Parada de segurança", canDrive: true });
+    }
+    for (const reason of ["demo-not-running", "pilot-release", "pilot-stop", "pilot-disconnected", "session-revoked", "boot", "server-restart", "mode-change"] as const) {
+      expect(pilotStatus("open", "running", car({ stopReason: reason }))).toMatchObject({ label: "Em demonstração" });
+    }
+  });
+  test("andando não é parada de segurança mesmo com motivo antigo", () => {
+    expect(pilotStatus("open", "running", car({ moving: true, stopReason: "watchdog" }))).toMatchObject({ label: "Em demonstração" });
+  });
+  test("depois de uma parada de segurança, setup e ready voltam a aguardar a largada", () => {
+    expect(pilotStatus("open", "setup", car({ stopReason: "demo-not-running" }))).toMatchObject({ label: "Aguardando a largada…" });
+    expect(pilotStatus("open", "ready", car({ stopReason: "watchdog" }))).toMatchObject({ label: "Aguardando a largada…" });
+  });
 });

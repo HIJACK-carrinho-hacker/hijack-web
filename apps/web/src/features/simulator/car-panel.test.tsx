@@ -32,4 +32,11 @@ describe("CarPanel", () => {
     expect(html).toContain("sem dados");
     expect(html).not.toContain("COMANDO ALTERADO NO CAMINHO");
   });
+
+  test("parado mostra o motivo da parada com o rótulo certo", () => {
+    const parado = (stopReason: CarView["stopReason"]) => car({ moving: false, stopReason, confirmed: { throttle: 0, steering: 0 } });
+    expect(renderToStaticMarkup(<CarPanel car={parado("demo-not-running")} />)).toContain("Demonstração parada");
+    expect(renderToStaticMarkup(<CarPanel car={parado("admin-stop-all")} />)).toContain("STOP geral");
+    expect(renderToStaticMarkup(<CarPanel car={parado(null)} />)).not.toContain("Demonstração parada");
+  });
 });
