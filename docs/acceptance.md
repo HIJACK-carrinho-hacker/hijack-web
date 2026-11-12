@@ -38,7 +38,7 @@ Revisão de 05/11/2026. Legenda: ✅ verificado · ⚠️ verificado parcialment
 | Reinício do ESP32 com ataque ativo não retoma movimento | ⚠️ saídas desligadas | serial: só `INICIANDO → PARADO` até o novo `device.drive` |
 | STOP ALL e Pausar com o piloto ainda dirigindo | ✅ software | STOP ALL passou a pausar a partida (`engine.test.ts`, `simulator-ws.test.ts`, `device.test.ts` com ESP32 falso); parada física no ESP32 real ainda ⏳ |
 | Exportação restrita ao operador, sem segredos, métricas por modo | ✅ | 401 sem sessão; busca por senhas/segredos/hash sem ocorrências |
-| Regressão automática | ✅ | `bun run test` 204 (depois das correções da revisão), Playwright 35 + 1 pulado (rodado antes e de novo depois da correção), `pio test -e native` 28 |
+| Regressão automática | ✅ | `bun run test` 212 (depois das correções da revisão), Playwright 35 + 1 pulado (rodado antes e de novo depois da correção), `pio test -e native` 28 |
 
 Em aberto: a rede do ESP32 (RSSI −65 a −73 dBm, 20 % de perda, failsafe expirando várias vezes por condução) segue abaixo do necessário; ver `progress.md`.
 

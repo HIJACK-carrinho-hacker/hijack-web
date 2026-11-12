@@ -36,7 +36,7 @@ Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os 
 | Repetição didática não injeta movimento | `attack-ws.test.ts` |
 | STOP não invertido; ataque não move carro parado | `attack-ws.test.ts` |
 | Ataque zerado ao iniciar nova largada (com evento) e quando o hacker atacante sai (logout, vaga liberada ou expiração da sessão) | `attack-ws.test.ts` |
-| Limite de mensagens por conexão: token bucket, rajada recebe `rate_limited` com um aviso por segundo, uso normal e piloto a 10 Hz não são limitados | `rate-limiter.test.ts`, `rate-limit-ws.test.ts` |
+| Limite de mensagens por conexão: token bucket, rajada recebe `rate_limited` com um aviso por segundo, uso normal não é limitado, piloto sem aviso de erro; `pilot.stop`, comando neutro, `pressed: false` e `admin.stopAll` depois de uma rajada são obedecidos na hora; regra de tempo do joystick (50 ms) em `send-throttle.test.ts` | `rate-limiter.test.ts`, `rate-limit-ws.test.ts` |
 | Depois da pausa ou do STOP ALL o piloto que segurou o joystick só volta a mover depois de soltar (engine e WebSocket); a marca não atravessa a troca de rodada, topologia ou modo; STOP ALL em `ready`/`paused`/`stopped`, com 1 carrinho e com o ESP32 falso | `engine.test.ts`, `simulator-ws.test.ts`, `device.test.ts` |
 | STOP ALL durante a partida pausa a demonstração (WebSocket) e recusa o piloto que continua segurando o joystick (engine) | `simulator-ws.test.ts`, `engine.test.ts` |
 | Perda do WebSocket do piloto para o carro | `auth.test.ts` |
