@@ -3,25 +3,30 @@ import { testConfig } from "../src/config/env.ts";
 import type { DeviceAdapter, DeviceDriveCommand, DeviceEvent } from "../src/devices/types.ts";
 import { HijackEngine } from "../src/engine.ts";
 
+let echoStops = false;
+
 function fakeDevice(carId: "car-a" | "car-b") {
   const listeners = new Set<(e: DeviceEvent) => void>();
   const drives: DeviceDriveCommand[] = [];
   const stops: { reason: string; seq: number }[] = [];
+  const emit = (e: DeviceEvent) => {
+    for (const l of listeners) l(e);
+  };
   const adapter: DeviceAdapter = {
     carId,
     mode: "hardware",
     isOnline: () => true,
     drive: (c) => drives.push(c),
-    stop: (reason, seq) => stops.push({ reason, seq }),
+    stop: (reason, seq) => {
+      stops.push({ reason, seq });
+      if (echoStops) emit({ kind: "stopped", reason, lastSeq: seq, at: Date.now() });
+    },
     pose: () => null,
     onEvent: (l) => {
       listeners.add(l);
       return () => listeners.delete(l);
     },
     dispose: () => {},
-  };
-  const emit = (e: DeviceEvent) => {
-    for (const l of listeners) l(e);
   };
   return { adapter, drives, stops, emit };
 }
@@ -32,6 +37,7 @@ let engine: HijackEngine;
 let devices: Map<string, Fake>;
 
 beforeEach(() => {
+  echoStops = false;
   devices = new Map();
   engine = new HijackEngine({
     config: testConfig({ COMMAND_TTL_MS: 5000 }),
@@ -153,5 +159,33 @@ describe("watchdog do dispositivo", () => {
     engine.car("car-a").controller.stop("watchdog");
     expect(watchdogTrips()).toBe(1);
     expect(kinds("safety.watchdog")).toBe(1);
+  });
+
+  test("o eco do firmware ao stop de watchdog do servidor não conta como watchdog do carrinho", () => {
+    echoStops = true;
+    drive();
+    engine.car("car-a").controller.stop("watchdog");
+    expect(watchdogTrips()).toBe(1);
+    expect(kinds("safety.watchdog")).toBe(1);
+    expect(kinds("safety.deviceWatchdog")).toBe(0);
+  });
+
+  test("com o eco ligado, uma expiração do firmware ainda conta uma vez", () => {
+    echoStops = true;
+    drive();
+    const driveSeq = dev().drives[0]?.seq ?? 0;
+    dev().emit({ kind: "stopped", reason: "watchdog", lastSeq: driveSeq, at: at() });
+    expect(watchdogTrips()).toBe(1);
+    expect(kinds("safety.deviceWatchdog")).toBe(1);
+    expect(kinds("safety.watchdog")).toBe(0);
+  });
+
+  test("o eco de outros motivos de parada não conta nem registra watchdog", () => {
+    echoStops = true;
+    drive();
+    release();
+    engine.stopAll();
+    expect(watchdogTrips()).toBe(0);
+    expect(kinds("safety.deviceWatchdog")).toBe(0);
   });
 });

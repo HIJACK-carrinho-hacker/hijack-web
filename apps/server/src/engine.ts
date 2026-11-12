@@ -430,16 +430,20 @@ export class HijackEngine {
       case "stopped": {
         car.lastSeenAt = e.at;
         const stale = e.lastSeq < car.controller.lastDriveSeq;
+        const echo = e.lastSeq === car.controller.lastStopSeq;
         if (!stale) car.confirmed = { throttle: 0, steering: 0 };
-        if (e.reason === "watchdog") {
+        if (e.reason === "watchdog" && !echo) {
           this.metrics.inc(car.id, car.mode, "watchdogTrips");
           car.watchdogTrips++;
           this.log({ kind: "safety.deviceWatchdog", carId: car.id, mode: car.mode, message: "Watchdog do carrinho parou a tração" });
         }
         if (!stale && car.controller.moving) {
           car.stopFromDevice = true;
-          car.controller.stop(e.reason === "watchdog" ? "watchdog" : toStopReason(e.reason));
-          car.stopFromDevice = false;
+          try {
+            car.controller.stop(e.reason === "watchdog" ? "watchdog" : toStopReason(e.reason));
+          } finally {
+            car.stopFromDevice = false;
+          }
         }
         break;
       }
