@@ -207,6 +207,25 @@ describe("comandos para o ESP32", () => {
     d.close();
   });
 
+  test("parar, andar e parar de novo em menos de 50 ms envia os dois device.stop", async () => {
+    toHardware();
+    const d = await FakeEsp32.connect(h.port);
+    d.hello("car-a", "device-secret-a");
+    await d.waitFor("device.welcome");
+    run();
+    pilotA = await connectAs(h, (await login(h.base, { role: "pilot", carId: "car-a" })).cookie);
+    pilotA.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await d.waitFor("device.drive");
+    await sleep(80);
+    const stopsBefore = d.received.filter((m) => m.type === "device.stop").length;
+    pilotA.send("pilot.stop", { reason: "release" });
+    pilotA.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    pilotA.send("pilot.stop", { reason: "release" });
+    await sleep(150);
+    expect(d.received.filter((m) => m.type === "device.stop").length - stopsBefore).toBe(2);
+    d.close();
+  });
+
   test("queda do ESP32 para o carrinho e reconexão não retoma movimento", async () => {
     toHardware();
     let d = await FakeEsp32.connect(h.port);
