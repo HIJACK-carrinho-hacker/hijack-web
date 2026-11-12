@@ -16,7 +16,7 @@ export interface CarControllerHooks {
 
 const ZERO: DriveVector = { throttle: 0, steering: 0 };
 const MIN_STOP_REPEAT_MS = 50;
-const MAX_TRACKED_STOP_SEQS = 32;
+const MAX_TRACKED_STOP_SEQS = 256;
 
 export class CarController {
   readonly carId: CarId;

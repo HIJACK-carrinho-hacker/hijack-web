@@ -210,8 +210,33 @@ describe("motivo da parada", () => {
     drive();
     engine.car("car-a").controller.stop("watchdog");
     expect(stopReason()).toBe("watchdog");
-    engine.stopAll();
+    engine.emergencyStop();
     expect(stopReason()).toBe("admin-stop-all");
+  });
+
+  test("STOP ALL com a partida pausada também grava o motivo", () => {
+    drive();
+    engine.car("car-a").controller.stop("watchdog");
+    engine.setDemoState("paused");
+    engine.emergencyStop();
+    expect(stopReason()).toBe("admin-stop-all");
+  });
+
+  test("STOP ALL fora de running e paused não grava o motivo, para a largada seguinte não começar em parada de segurança", () => {
+    drive();
+    engine.car("car-a").controller.stop("watchdog");
+    engine.setDemoState("stopped");
+    engine.setDemoState("ready");
+    engine.emergencyStop();
+    expect(stopReason()).toBe("watchdog");
+  });
+
+  test("stopAll sem argumentos registra no log mas não grava o motivo", () => {
+    drive();
+    engine.car("car-a").controller.stop("watchdog");
+    engine.stopAll();
+    expect(stopReason()).toBe("watchdog");
+    expect(kinds("safety.stopAll")).toBe(1);
   });
 
   test("reset e troca de topologia não gravam o motivo de STOP ALL em carros parados", () => {

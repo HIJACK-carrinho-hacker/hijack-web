@@ -97,6 +97,18 @@ describe("CarController: paradas repetidas", () => {
     expect(ctl.stopReason).toBe("watchdog");
   });
 
+  test("a janela de stops lembrados é maior que 32", () => {
+    const { ctl, stops, time } = makeWithClock();
+    ctl.command(v(1, 0));
+    ctl.stop("pilot-release");
+    const first = stops[0]?.seq ?? 0;
+    for (let i = 0; i < 100; i++) {
+      time.value += 60;
+      ctl.stop("pilot-release");
+    }
+    expect(ctl.isStopSeq(first)).toBe(true);
+  });
+
   test("lembra os seq dos stops enviados e esquece os mais antigos", () => {
     const { ctl, stops, time } = makeWithClock();
     ctl.command(v(1, 0));
@@ -104,7 +116,7 @@ describe("CarController: paradas repetidas", () => {
     const first = stops[0]?.seq ?? 0;
     expect(ctl.isStopSeq(first)).toBe(true);
     expect(ctl.isStopSeq(first + 1000)).toBe(false);
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 300; i++) {
       time.value += 60;
       ctl.stop("pilot-release");
     }

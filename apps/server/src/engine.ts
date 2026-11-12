@@ -171,14 +171,14 @@ export class HijackEngine {
     return ok;
   }
 
-  stopAll(reason: StopReason = "admin-stop-all", logIt = true): void {
-    for (const car of this.cars.values()) car.controller.stop(reason, logIt);
+  stopAll(reason: StopReason = "admin-stop-all", logIt = true, recordReason = false): void {
+    for (const car of this.cars.values()) car.controller.stop(reason, recordReason);
     if (logIt) this.log({ kind: "safety.stopAll", actorRole: "admin", message: "STOP geral acionado" });
     this.changed();
   }
 
   emergencyStop(): void {
-    this.stopAll("admin-stop-all");
+    this.stopAll("admin-stop-all", true, this.demo === "running" || this.demo === "paused");
     if (this.demo === "running") this.setDemoState("paused");
   }
 
