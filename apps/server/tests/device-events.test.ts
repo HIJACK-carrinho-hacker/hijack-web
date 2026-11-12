@@ -366,6 +366,27 @@ describe("confirmado sem dados", () => {
     expect(staleOf({ role: "pilot", displayName: "p", teamId: "A", carId: "car-a" })).toBe(false);
   });
 
+  test("um fault não tira a marca, porque não traz estado do carro", async () => {
+    dev().emit(telemetry());
+    now += 1600;
+    await sleep(70);
+    expect(staleOf()).toBe(true);
+    dev().emit({ kind: "fault", code: "teste", detail: "x", at: now });
+    expect(staleOf()).toBe(true);
+  });
+
+  test("trocar o modo do carrinho recomeça a contagem em vez de herdar a marca antiga", async () => {
+    dev().emit(telemetry());
+    now += 1600;
+    await sleep(70);
+    expect(staleOf()).toBe(true);
+    engine.setDemoState("paused");
+    const target = engine.car("car-a").mode === "hardware" ? "simulated" : "hardware";
+    engine.setCarMode("car-a", target);
+    await sleep(70);
+    expect(staleOf()).toBe(false);
+  });
+
   test("a virada é transmitida uma vez, sem mensagens repetidas enquanto continua calado", async () => {
     dev().emit(telemetry());
     let changes = 0;

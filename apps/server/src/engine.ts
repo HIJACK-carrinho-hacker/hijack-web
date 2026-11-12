@@ -202,7 +202,7 @@ export class HijackEngine {
     car.online = adapter.isOnline();
     car.confirmed = { throttle: 0, steering: 0 };
     car.confirmedStale = false;
-    car.lastSeenAt = null;
+    car.lastSeenAt = car.online ? this.clock.now() : null;
     car.unsubscribe = adapter.onEvent((e) => this.onDeviceEvent(car, e));
     this.log({ kind: "car.mode", carId, mode, actorRole: "admin", message: `Modo alterado para ${mode === "simulated" ? "simulado" : "hardware"}` });
     this.changed();
@@ -218,7 +218,7 @@ export class HijackEngine {
     car.mode = adapter.mode;
     car.online = adapter.isOnline();
     car.confirmedStale = false;
-    car.lastSeenAt = null;
+    car.lastSeenAt = car.online ? this.clock.now() : null;
     car.unsubscribe = adapter.onEvent((e) => this.onDeviceEvent(car, e));
     this.changed();
   }
