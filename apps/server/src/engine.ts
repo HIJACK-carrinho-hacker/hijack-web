@@ -161,7 +161,7 @@ export class HijackEngine {
     const prev = this.demo;
     this.demo = next;
     if (next !== "running" && next !== "paused") this.releaseRequired.clear();
-    if (!allowsMovement(next)) this.stopAll("demo-not-running", false);
+    if (!allowsMovement(next)) this.stopAll("demo-not-running", false, next === "setup" || next === "ready");
     this.log({
       kind: "demo.state",
       actorRole,

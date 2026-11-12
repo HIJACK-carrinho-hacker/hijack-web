@@ -228,6 +228,36 @@ describe("motivo da parada", () => {
     engine.setDemoState("stopped");
     engine.setDemoState("ready");
     engine.emergencyStop();
+    expect(stopReason()).toBe("demo-not-running");
+  });
+
+  test("o motivo de parada de segurança não vaza para a largada seguinte depois de STOP ALL com a partida pausada", () => {
+    drive();
+    engine.car("car-a").controller.stop("watchdog");
+    engine.setDemoState("paused");
+    engine.emergencyStop();
+    expect(stopReason()).toBe("admin-stop-all");
+    engine.setDemoState("stopped");
+    engine.setDemoState("ready");
+    engine.setDemoState("running");
+    expect(stopReason()).toBe("demo-not-running");
+  });
+
+  test("o motivo de parada de segurança não vaza para a largada seguinte depois de STOP ALL com o carro andando", () => {
+    drive();
+    engine.emergencyStop();
+    expect(stopReason()).toBe("admin-stop-all");
+    engine.setDemoState("stopped");
+    engine.setDemoState("ready");
+    engine.setDemoState("running");
+    expect(stopReason()).toBe("demo-not-running");
+  });
+
+  test("pausar e retomar não troca o motivo da parada de segurança", () => {
+    drive();
+    engine.car("car-a").controller.stop("watchdog");
+    engine.setDemoState("paused");
+    engine.setDemoState("running");
     expect(stopReason()).toBe("watchdog");
   });
 
