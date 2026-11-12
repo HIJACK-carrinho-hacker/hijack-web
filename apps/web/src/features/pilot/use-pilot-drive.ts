@@ -1,7 +1,8 @@
-import { PILOT_REFRESH_MS, type ClientPayload } from "@hijack/protocol";
+import { PILOT_REFRESH_MS, PILOT_SEND_MIN_INTERVAL_MS, type ClientPayload } from "@hijack/protocol";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHijack } from "@/hooks/use-hijack";
 import { type Axes, NEUTRAL, isNeutralAxes, sameAxes } from "./joystick-math.ts";
+import { delayUntilNextSend } from "./send-throttle.ts";
 
 type StopReason = ClientPayload<"pilot.stop">["reason"];
 
@@ -11,18 +12,37 @@ export function usePilotDrive(enabled: boolean) {
   const pressedRef = useRef(false);
   const enabledRef = useRef(enabled);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const trailing = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSentAt = useRef(0);
   const [axes, setAxes] = useState<Axes>(NEUTRAL);
   const [resetKey, setResetKey] = useState(0);
 
   const clearTimer = useCallback(() => {
     if (timer.current) clearInterval(timer.current);
     timer.current = null;
+    if (trailing.current) clearTimeout(trailing.current);
+    trailing.current = null;
   }, []);
 
   const transmit = useCallback(() => {
     if (!enabledRef.current) return;
+    lastSentAt.current = Date.now();
     send("pilot.drive", { ...axesRef.current, pressed: pressedRef.current });
   }, [send]);
+
+  const transmitPaced = useCallback(() => {
+    const wait = delayUntilNextSend(Date.now(), lastSentAt.current, PILOT_SEND_MIN_INTERVAL_MS);
+    if (wait === 0) {
+      transmit();
+      return;
+    }
+    if (!trailing.current) {
+      trailing.current = setTimeout(() => {
+        trailing.current = null;
+        transmit();
+      }, wait);
+    }
+  }, [transmit]);
 
   const stop = useCallback(
     (reason: StopReason) => {
@@ -51,10 +71,10 @@ export function usePilotDrive(enabled: boolean) {
         send("pilot.stop", { reason: "release" });
         return;
       }
-      transmit();
-      if (!timer.current) timer.current = setInterval(transmit, PILOT_REFRESH_MS);
+      transmitPaced();
+      if (!timer.current) timer.current = setInterval(transmitPaced, PILOT_REFRESH_MS);
     },
-    [clearTimer, send, transmit],
+    [clearTimer, send, transmit, transmitPaced],
   );
 
   useEffect(() => {

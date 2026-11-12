@@ -39,6 +39,7 @@ export const STOP_REASONS = [
 export const DEFAULT_COMMAND_TTL_MS = 400;
 export const STEERING_MAX = 100;
 export const PILOT_REFRESH_MS = 100;
+export const PILOT_SEND_MIN_INTERVAL_MS = 50;
 export const MAX_DEVICE_COMMANDS_PER_SECOND = 20;
 export const MAX_BROWSER_MESSAGES_PER_SECOND = 10;
 export const BROWSER_MESSAGE_BURST = 20;
