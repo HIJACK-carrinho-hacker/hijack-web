@@ -60,6 +60,7 @@ interface CarRuntime {
   rejectedCommands: number;
   lastSeq: number;
   watchdogTrips: number;
+  stopFromDevice: boolean;
   lastTransformKey: string | null;
   requested: DriveVector;
   lastMove: { vector: DriveVector; at: number } | null;
@@ -364,6 +365,7 @@ export class HijackEngine {
       rejectedCommands: 0,
       lastSeq: 0,
       watchdogTrips: 0,
+      stopFromDevice: false,
       lastTransformKey: null,
       requested: { throttle: 0, steering: 0 },
       lastMove: null,
@@ -377,7 +379,7 @@ export class HijackEngine {
         onSent: ({ seq, at }) => this.metrics.recordSend(id, runtime.mode, seq, at),
         onStopped: (reason) => {
           runtime.lastTransformKey = null;
-          if (reason === "watchdog") {
+          if (reason === "watchdog" && !runtime.stopFromDevice) {
             this.metrics.inc(id, runtime.mode, "watchdogTrips");
             this.log({ kind: "safety.watchdog", carId: id, mode: runtime.mode, message: "Watchdog do servidor parou a tração" });
           }
@@ -392,7 +394,7 @@ export class HijackEngine {
   private onDeviceEvent(car: CarRuntime, e: DeviceEvent): void {
     switch (e.kind) {
       case "ack":
-        car.confirmed = { throttle: e.throttle, steering: e.steering };
+        if (e.seq >= car.controller.lastStopSeq) car.confirmed = { throttle: e.throttle, steering: e.steering };
         car.lastSeenAt = e.at;
         car.lastSeq = e.seq;
         this.metrics.inc(car.id, car.mode, "applied");
@@ -406,7 +408,9 @@ export class HijackEngine {
         car.reconnects = e.telemetry.reconnects;
         car.rejectedCommands = e.telemetry.rejectedCommands;
         car.watchdogTrips = e.telemetry.watchdogTrips;
-        car.confirmed = { throttle: e.telemetry.throttle, steering: e.telemetry.steering };
+        if (e.telemetry.lastSeq >= car.controller.lastStopSeq) {
+          car.confirmed = { throttle: e.telemetry.throttle, steering: e.telemetry.steering };
+        }
         break;
       case "connection":
         car.online = e.online;
@@ -423,18 +427,22 @@ export class HijackEngine {
           message: e.online ? "Carrinho conectado" : "Carrinho desconectado; tração parada",
         });
         break;
-      case "stopped":
-        car.confirmed = { throttle: 0, steering: 0 };
+      case "stopped": {
         car.lastSeenAt = e.at;
+        const stale = e.lastSeq < car.controller.lastDriveSeq;
+        if (!stale) car.confirmed = { throttle: 0, steering: 0 };
         if (e.reason === "watchdog") {
           this.metrics.inc(car.id, car.mode, "watchdogTrips");
           car.watchdogTrips++;
-          if (car.controller.moving) car.controller.stop("watchdog");
           this.log({ kind: "safety.deviceWatchdog", carId: car.id, mode: car.mode, message: "Watchdog do carrinho parou a tração" });
-        } else if (car.controller.moving) {
-          car.controller.stop(toStopReason(e.reason));
+        }
+        if (!stale && car.controller.moving) {
+          car.stopFromDevice = true;
+          car.controller.stop(e.reason === "watchdog" ? "watchdog" : toStopReason(e.reason));
+          car.stopFromDevice = false;
         }
         break;
+      }
       case "fault":
         car.controller.stop("fault");
         this.log({ kind: "car.fault", carId: car.id, mode: car.mode, visibility: "admin", message: `Falha relatada: ${e.code}` });

@@ -30,6 +30,8 @@ export class CarController {
   private pendingVec: DriveVector | null = null;
   private stopReasonValue: StopReason | null = "boot";
   private lastStopAt = Number.NEGATIVE_INFINITY;
+  private lastDriveSeqValue = 0;
+  private lastStopSeqValue = 0;
 
   constructor(carId: CarId, adapter: DeviceAdapter, opts: CarControllerOptions, hooks: CarControllerHooks) {
     this.carId = carId;
@@ -52,6 +54,14 @@ export class CarController {
 
   get moving(): boolean {
     return !isNeutral(this.desiredVec);
+  }
+
+  get lastDriveSeq(): number {
+    return this.lastDriveSeqValue;
+  }
+
+  get lastStopSeq(): number {
+    return this.lastStopSeqValue;
   }
 
   replaceAdapter(adapter: DeviceAdapter): void {
@@ -94,6 +104,7 @@ export class CarController {
     if (wasMoving || now - this.lastStopAt >= MIN_STOP_REPEAT_MS) {
       this.seq++;
       this.lastStopAt = now;
+      this.lastStopSeqValue = this.seq;
       this.adapter.stop(reason, this.seq);
     }
     if (wasMoving || this.stopReasonValue === null) {
@@ -114,6 +125,7 @@ export class CarController {
 
   private send(vec: DriveVector): void {
     this.seq++;
+    this.lastDriveSeqValue = this.seq;
     const at = this.opts.clock.now();
     this.lastSentAt = at;
     this.hooks.onSent({ seq: this.seq, vector: { ...vec }, at });
