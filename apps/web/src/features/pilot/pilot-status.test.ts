@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { CarView } from "@hijack/protocol";
+import { STOP_REASONS, type CarView, type StopReason } from "@hijack/protocol";
 import { pilotStatus } from "./pilot-status.ts";
 
 const car = (over: Partial<CarView> = {}): CarView => ({
@@ -50,17 +50,20 @@ describe("pilotStatus", () => {
   });
 
   test("só os motivos de segurança viram parada de segurança em running", () => {
-    for (const reason of ["watchdog", "admin-stop-all", "device-disconnected", "fault"] as const) {
-      expect(pilotStatus("open", "running", car({ stopReason: reason }))).toMatchObject({ label: "Parada de segurança", canDrive: true });
-    }
-    for (const reason of ["demo-not-running", "pilot-release", "pilot-stop", "pilot-disconnected", "session-revoked", "boot", "server-restart", "mode-change"] as const) {
-      expect(pilotStatus("open", "running", car({ stopReason: reason }))).toMatchObject({ label: "Em demonstração" });
+    const seguranca: readonly StopReason[] = ["watchdog", "admin-stop-all", "device-disconnected", "fault"];
+    for (const reason of STOP_REASONS) {
+      const status = pilotStatus("open", "running", car({ stopReason: reason }));
+      if (seguranca.includes(reason)) {
+        expect(status).toMatchObject({ label: "Parada de segurança", tone: "warning", canDrive: true });
+      } else {
+        expect(status).toMatchObject({ label: "Em demonstração", tone: "primary", canDrive: true });
+      }
     }
   });
   test("andando não é parada de segurança mesmo com motivo antigo", () => {
     expect(pilotStatus("open", "running", car({ moving: true, stopReason: "watchdog" }))).toMatchObject({ label: "Em demonstração" });
   });
-  test("depois de uma parada de segurança, setup e ready voltam a aguardar a largada", () => {
+  test("setup e ready mostram a espera da largada qualquer que seja o motivo da parada", () => {
     expect(pilotStatus("open", "setup", car({ stopReason: "demo-not-running" }))).toMatchObject({ label: "Aguardando a largada…" });
     expect(pilotStatus("open", "ready", car({ stopReason: "watchdog" }))).toMatchObject({ label: "Aguardando a largada…" });
   });

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { CarView } from "@hijack/protocol";
 import { renderToStaticMarkup } from "react-dom/server";
+import { STOP_REASON_LABEL } from "@/lib/labels";
 import { CarPanel } from "./car-panel.tsx";
 
 const car = (over: Partial<CarView> = {}): CarView => ({
@@ -37,6 +38,14 @@ describe("CarPanel", () => {
     const parado = (stopReason: CarView["stopReason"]) => car({ moving: false, stopReason, confirmed: { throttle: 0, steering: 0 } });
     expect(renderToStaticMarkup(<CarPanel car={parado("demo-not-running")} />)).toContain("Demonstração parada");
     expect(renderToStaticMarkup(<CarPanel car={parado("admin-stop-all")} />)).toContain("STOP geral");
-    expect(renderToStaticMarkup(<CarPanel car={parado(null)} />)).not.toContain("Demonstração parada");
+    const semMotivo = renderToStaticMarkup(<CarPanel car={parado(null)} />);
+    expect(semMotivo).toContain("—");
+    for (const rotulo of Object.values(STOP_REASON_LABEL)) expect(semMotivo).not.toContain(rotulo);
+  });
+
+  test("andando mostra em movimento mesmo com motivo de parada antigo", () => {
+    const html = renderToStaticMarkup(<CarPanel car={car({ moving: true, stopReason: "watchdog" })} />);
+    expect(html).toContain("em movimento");
+    expect(html).not.toContain(STOP_REASON_LABEL.watchdog);
   });
 });
