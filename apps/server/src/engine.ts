@@ -430,7 +430,7 @@ export class HijackEngine {
       case "stopped": {
         car.lastSeenAt = e.at;
         const stale = e.lastSeq < car.controller.lastDriveSeq;
-        const echo = e.lastSeq === car.controller.lastStopSeq;
+        const echo = car.controller.isStopSeq(e.lastSeq);
         if (!stale) car.confirmed = { throttle: 0, steering: 0 };
         if (e.reason === "watchdog" && !echo) {
           this.metrics.inc(car.id, car.mode, "watchdogTrips");

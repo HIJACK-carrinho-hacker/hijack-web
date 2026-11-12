@@ -16,6 +16,7 @@ export interface CarControllerHooks {
 
 const ZERO: DriveVector = { throttle: 0, steering: 0 };
 const MIN_STOP_REPEAT_MS = 50;
+const MAX_TRACKED_STOP_SEQS = 32;
 
 export class CarController {
   readonly carId: CarId;
@@ -32,6 +33,7 @@ export class CarController {
   private lastStopAt = Number.NEGATIVE_INFINITY;
   private lastDriveSeqValue = 0;
   private lastStopSeqValue = 0;
+  private readonly stopSeqs = new Set<number>();
 
   constructor(carId: CarId, adapter: DeviceAdapter, opts: CarControllerOptions, hooks: CarControllerHooks) {
     this.carId = carId;
@@ -62,6 +64,10 @@ export class CarController {
 
   get lastStopSeq(): number {
     return this.lastStopSeqValue;
+  }
+
+  isStopSeq(seq: number): boolean {
+    return this.stopSeqs.has(seq);
   }
 
   replaceAdapter(adapter: DeviceAdapter): void {
@@ -105,9 +111,10 @@ export class CarController {
       this.seq++;
       this.lastStopAt = now;
       this.lastStopSeqValue = this.seq;
+      this.trackStopSeq(this.seq);
       this.adapter.stop(reason, this.seq);
     }
-    if (wasMoving || this.stopReasonValue === null) {
+    if (wasMoving || this.stopReasonValue === null || reason === "admin-stop-all") {
       this.stopReasonValue = reason;
       this.hooks.onStopped(reason);
     }
@@ -130,6 +137,13 @@ export class CarController {
     this.lastSentAt = at;
     this.hooks.onSent({ seq: this.seq, vector: { ...vec }, at });
     this.adapter.drive({ seq: this.seq, throttle: vec.throttle, steering: vec.steering, ttlMs: this.opts.ttlMs });
+  }
+
+  private trackStopSeq(seq: number): void {
+    this.stopSeqs.add(seq);
+    if (this.stopSeqs.size <= MAX_TRACKED_STOP_SEQS) return;
+    const oldest = this.stopSeqs.values().next().value;
+    if (oldest !== undefined) this.stopSeqs.delete(oldest);
   }
 
   private clearPending(): void {

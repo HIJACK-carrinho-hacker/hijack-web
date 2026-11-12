@@ -79,6 +79,30 @@ describe("CarController: paradas repetidas", () => {
     expect(stops).toHaveLength(1);
   });
 
+  test("STOP ALL grava o motivo mesmo com o carro já parado por outro motivo", () => {
+    const { ctl, time } = makeWithClock();
+    ctl.command(v(1, 0));
+    ctl.stop("watchdog");
+    time.value += 60;
+    ctl.stop("admin-stop-all");
+    expect(ctl.stopReason).toBe("admin-stop-all");
+  });
+
+  test("lembra os seq dos stops enviados e esquece os mais antigos", () => {
+    const { ctl, stops, time } = makeWithClock();
+    ctl.command(v(1, 0));
+    ctl.stop("pilot-release");
+    const first = stops[0]?.seq ?? 0;
+    expect(ctl.isStopSeq(first)).toBe(true);
+    expect(ctl.isStopSeq(first + 1000)).toBe(false);
+    for (let i = 0; i < 40; i++) {
+      time.value += 60;
+      ctl.stop("pilot-release");
+    }
+    expect(ctl.isStopSeq(first)).toBe(false);
+    expect(ctl.isStopSeq(stops.at(-1)?.seq ?? 0)).toBe(true);
+  });
+
   test("trocar o adaptador libera o próximo stop mesmo dentro do intervalo", () => {
     const { ctl, stops } = makeWithClock();
     ctl.command(v(1, 0));

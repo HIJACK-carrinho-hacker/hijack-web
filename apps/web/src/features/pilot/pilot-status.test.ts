@@ -31,6 +31,9 @@ describe("pilotStatus", () => {
   test("parada de segurança após watchdog", () => {
     expect(pilotStatus("open", "running", car({ stopReason: "watchdog" }))).toMatchObject({ label: "Parada de segurança" });
   });
+  test("sessão revogada deixa a tela sem carro e sem poder dirigir, mesmo em running", () => {
+    expect(pilotStatus("open", "running", undefined)).toMatchObject({ label: "Carregando…", canDrive: false });
+  });
   test("pausado não dirige", () => {
     expect(pilotStatus("open", "paused", car())).toMatchObject({ label: "Pausado", canDrive: false });
   });

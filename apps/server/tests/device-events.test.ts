@@ -94,7 +94,7 @@ describe("eventos do dispositivo fora de ordem", () => {
   test("stopped atrasado de uma soltura anterior não para o movimento novo", async () => {
     drive();
     release();
-    const stopSeq = dev().stops[0]?.seq ?? 0;
+    const stopSeq = dev().stops.at(-1)?.seq ?? 0;
     await driveAgain();
     expect(engine.car("car-a").controller.moving).toBe(true);
     dev().emit({ kind: "stopped", reason: "pilot-release", lastSeq: stopSeq, at: at() });
@@ -187,5 +187,37 @@ describe("watchdog do dispositivo", () => {
     engine.stopAll();
     expect(watchdogTrips()).toBe(0);
     expect(kinds("safety.deviceWatchdog")).toBe(0);
+  });
+
+  test("eco atrasado de um stop anterior, depois de um segundo stop, não conta como watchdog do carrinho", async () => {
+    drive();
+    engine.car("car-a").controller.stop("watchdog");
+    const firstStopSeq = dev().stops.at(-1)?.seq ?? 0;
+    const before = dev().stops.length;
+    await sleep(70);
+    engine.car("car-a").controller.stop("pilot-release");
+    expect(dev().stops).toHaveLength(before + 1);
+    dev().emit({ kind: "stopped", reason: "watchdog", lastSeq: firstStopSeq, at: at() });
+    expect(watchdogTrips()).toBe(1);
+    expect(kinds("safety.deviceWatchdog")).toBe(0);
+  });
+});
+
+describe("motivo da parada", () => {
+  const stopReason = () => engine.snapshot({ role: "spectator" }).cars.find((c) => c.id === "car-a")?.stopReason;
+
+  test("STOP ALL grava o motivo mesmo com o carro já parado por watchdog", () => {
+    drive();
+    engine.car("car-a").controller.stop("watchdog");
+    expect(stopReason()).toBe("watchdog");
+    engine.stopAll();
+    expect(stopReason()).toBe("admin-stop-all");
+  });
+
+  test("outros motivos não sobrescrevem o motivo de um carro já parado", () => {
+    drive();
+    engine.car("car-a").controller.stop("watchdog");
+    engine.car("car-a").controller.stop("pilot-release");
+    expect(stopReason()).toBe("watchdog");
   });
 });
