@@ -62,6 +62,7 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 | `me` | sessão de quem está vendo (null = visitante) |
 | `cars[].desired` | comando calculado pelo servidor depois do pipeline (ataque, defesa, segurança) |
 | `cars[].confirmed` | estado relatado pelo dispositivo (simulador ou ESP32); não é prova física de movimento |
+| `cars[].confirmedStale` | `true` quando o carro está online, já enviou algum dado e o dispositivo não manda nenhum evento (ack, telemetria, parada, conexão) há mais de 1500 ms (`CONFIRMED_STALE_MS`); a tela mostra "sem dados" no lugar do último valor e esconde o alerta de comando alterado. Qualquer evento novo volta para `false` na hora; o piloto sempre recebe `false` |
 | `cars[].mode` | `simulated` ou `hardware`, exibido em toda a UI |
 | `cars[].sim` | posição meramente ilustrativa no simulador |
 | `attacks` | hacker vê o próprio ataque; admin e simulador veem todos |
@@ -141,7 +142,7 @@ Servidor → dispositivo: `device.welcome`, `device.drive` (`seq` positivo, `spe
 Dispositivo → servidor: `device.hello`, `device.ack`, `device.telemetry`, `device.fault`, `device.stopped`.
 
 - `device.welcome {carId, commandTtlMs}` é enviado após o `hello` válido; o firmware só aceita `device.drive` depois dele e zera `lastSeq` a cada conexão.
-- O servidor envia `device.heartbeat` a cada 1 s e ping WebSocket a cada 2 s; encerra a conexão depois de 3 pings seguidos sem pong (≈ 6 s). A parada do movimento não depende disso: sem `device.drive` válido a TTL de 400 ms para o carrinho. O firmware pinga o servidor a cada 2 s e desconecta depois de 3 pongs perdidos de 2 s.
+- O servidor envia `device.heartbeat` a cada 1 s e ping WebSocket a cada 2 s; encerra a conexão depois de 3 pings seguidos sem pong (≈ 6 s). A parada do movimento não depende disso: sem `device.drive` válido a TTL de 400 ms para o carrinho. O firmware pinga o servidor a cada 2 s e desconecta depois de 3 pongs perdidos de 2 s, e além disso tem um monitor de silêncio: sem nenhum quadro do servidor (texto, ping ou pong) por 3 s ele fecha a conexão e reconecta, e a partir de 1,5 s de silêncio deixa de enviar telemetria para um socket que parece morto (o `write` do `WiFiClient` bloqueia quando o buffer TCP enche, o que atrasava a detecção da queda em 11 a 26 s).
 - `seq <= lastSeq` é descartado pelo firmware.
 - O servidor numera com o mesmo `seq` crescente os `device.drive` e os `device.stop` de um carro. Eventos do dispositivo que chegam atrasados não valem sobre o estado mais novo: `device.ack` e `device.telemetry` com `seq`/`lastSeq` menor que o do último `device.stop` enviado não alteram o "Confirmado"; `device.stopped` com `lastSeq` menor que o do último `device.drive` enviado não para o movimento nem zera o confirmado. O contador e o registro de watchdog do carrinho valem mesmo para um `stopped` atrasado, mas não para o eco: o firmware responde a todo `device.stop` com `device.stopped` (motivo recebido e `lastSeq` igual ao `seq` do stop), e um `stopped` cujo `lastSeq` é o `seq` de um dos últimos 256 `device.stop` enviados (o servidor os lembra) não é contado como watchdog do carrinho, mesmo que chegue depois de um stop mais novo. Um watchdog legítimo do firmware carrega o `seq` de um `device.drive`.
 - A TTL conta a partir do recebimento, no relógio monotônico do ESP32.
