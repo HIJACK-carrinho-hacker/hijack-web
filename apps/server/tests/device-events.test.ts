@@ -214,6 +214,13 @@ describe("motivo da parada", () => {
     expect(stopReason()).toBe("admin-stop-all");
   });
 
+  test("reset e troca de topologia não gravam o motivo de STOP ALL em carros parados", () => {
+    drive();
+    engine.car("car-a").controller.stop("watchdog");
+    engine.stopAll("admin-stop-all", false);
+    expect(stopReason()).toBe("watchdog");
+  });
+
   test("outros motivos não sobrescrevem o motivo de um carro já parado", () => {
     drive();
     engine.car("car-a").controller.stop("watchdog");

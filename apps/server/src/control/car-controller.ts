@@ -102,7 +102,7 @@ export class CarController {
     this.hooks.onChange();
   }
 
-  stop(reason: StopReason): void {
+  stop(reason: StopReason, recordReason = false): void {
     this.clearPending();
     const wasMoving = this.moving;
     const now = this.opts.clock.now();
@@ -114,7 +114,7 @@ export class CarController {
       this.trackStopSeq(this.seq);
       this.adapter.stop(reason, this.seq);
     }
-    if (wasMoving || this.stopReasonValue === null || reason === "admin-stop-all") {
+    if (wasMoving || this.stopReasonValue === null || recordReason) {
       this.stopReasonValue = reason;
       this.hooks.onStopped(reason);
     }

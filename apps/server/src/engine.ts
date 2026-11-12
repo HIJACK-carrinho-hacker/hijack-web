@@ -172,7 +172,7 @@ export class HijackEngine {
   }
 
   stopAll(reason: StopReason = "admin-stop-all", logIt = true): void {
-    for (const car of this.cars.values()) car.controller.stop(reason);
+    for (const car of this.cars.values()) car.controller.stop(reason, logIt);
     if (logIt) this.log({ kind: "safety.stopAll", actorRole: "admin", message: "STOP geral acionado" });
     this.changed();
   }

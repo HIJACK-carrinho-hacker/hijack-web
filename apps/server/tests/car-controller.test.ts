@@ -84,8 +84,17 @@ describe("CarController: paradas repetidas", () => {
     ctl.command(v(1, 0));
     ctl.stop("watchdog");
     time.value += 60;
-    ctl.stop("admin-stop-all");
+    ctl.stop("admin-stop-all", true);
     expect(ctl.stopReason).toBe("admin-stop-all");
+  });
+
+  test("sem pedir para gravar o motivo, um carro já parado mantém o motivo anterior", () => {
+    const { ctl, time } = makeWithClock();
+    ctl.command(v(1, 0));
+    ctl.stop("watchdog");
+    time.value += 60;
+    ctl.stop("admin-stop-all");
+    expect(ctl.stopReason).toBe("watchdog");
   });
 
   test("lembra os seq dos stops enviados e esquece os mais antigos", () => {
