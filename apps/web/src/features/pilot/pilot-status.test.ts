@@ -11,6 +11,7 @@ const car = (over: Partial<CarView> = {}): CarView => ({
   requested: { throttle: 0, steering: 0 },
   desired: { throttle: 0, steering: 0 },
   confirmed: { throttle: 0, steering: 0 },
+  confirmedStale: false,
   moving: false,
   stopReason: null,
   telemetry: { online: true, lastSeenAt: null, uptimeMs: null, rssi: null, reconnects: 0, rejectedCommands: 0, lastSeq: 0, watchdogTrips: 0 },

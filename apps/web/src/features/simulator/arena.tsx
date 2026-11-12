@@ -8,10 +8,10 @@ function SimCar({ car }: { car: CarView }) {
   if (!car.sim) return null;
   const color = TEAM_COLOR_CLASS[car.teamId];
   const deg = (car.sim.heading * 180) / Math.PI;
-  const wheel = (car.confirmed.steering / STEERING_MAX) * 45;
+  const wheel = car.confirmedStale ? 0 : (car.confirmed.steering / STEERING_MAX) * 45;
   return (
     <g transform={`translate(${car.sim.x * SIZE} ${car.sim.y * SIZE}) rotate(${deg})`}>
-      <rect x={-20} y={-12} width={40} height={24} rx={5} className={cn(color.fill, !car.telemetry.online && "opacity-30")} />
+      <rect x={-20} y={-12} width={40} height={24} rx={5} className={cn(color.fill, !car.telemetry.online && "opacity-30", car.confirmedStale && "opacity-50")} />
       <rect x={-17} y={-9} width={14} height={18} rx={2} className="fill-background/40" />
       {[-12, 12].map((dy) => (
         <line
@@ -26,7 +26,7 @@ function SimCar({ car }: { car: CarView }) {
           strokeLinecap="round"
         />
       ))}
-      {car.confirmed.throttle !== 0 && (
+      {!car.confirmedStale && car.confirmed.throttle !== 0 && (
         <path
           d={car.confirmed.throttle === 1 ? "M26 0 l8 -5 v10 z" : "M-26 0 l-8 -5 v10 z"}
           className="fill-foreground"

@@ -1,0 +1,35 @@
+import { describe, expect, test } from "bun:test";
+import type { CarView } from "@hijack/protocol";
+import { renderToStaticMarkup } from "react-dom/server";
+import { CarPanel } from "./car-panel.tsx";
+
+const car = (over: Partial<CarView> = {}): CarView => ({
+  id: "car-a",
+  teamId: "A",
+  displayName: "Carrinho A",
+  mode: "hardware",
+  active: true,
+  requested: { throttle: 1, steering: 0 },
+  desired: { throttle: 1, steering: 0 },
+  confirmed: { throttle: -1, steering: 0 },
+  confirmedStale: false,
+  moving: true,
+  stopReason: null,
+  telemetry: { online: true, lastSeenAt: null, uptimeMs: null, rssi: null, reconnects: 0, rejectedCommands: 0, lastSeq: 0, watchdogTrips: 0 },
+  sim: null,
+  ...over,
+});
+
+describe("CarPanel", () => {
+  test("com dados recentes mostra o confirmado e o alerta de comando alterado", () => {
+    const html = renderToStaticMarkup(<CarPanel car={car()} />);
+    expect(html).toContain("COMANDO ALTERADO NO CAMINHO");
+    expect(html).not.toContain("sem dados");
+  });
+
+  test("com o confirmado sem dados mostra o aviso e não acusa comando alterado", () => {
+    const html = renderToStaticMarkup(<CarPanel car={car({ confirmedStale: true })} />);
+    expect(html).toContain("sem dados");
+    expect(html).not.toContain("COMANDO ALTERADO NO CAMINHO");
+  });
+});

@@ -138,6 +138,7 @@ export const carViewSchema = z.strictObject({
   requested: driveVectorSchema,
   desired: driveVectorSchema,
   confirmed: driveVectorSchema,
+  confirmedStale: z.boolean(),
   moving: z.boolean(),
   stopReason: stopReasonSchema.nullable(),
   telemetry: telemetrySchema,

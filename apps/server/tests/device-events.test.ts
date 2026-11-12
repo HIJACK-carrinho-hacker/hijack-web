@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { testConfig } from "../src/config/env.ts";
-import type { DeviceAdapter, DeviceDriveCommand, DeviceEvent } from "../src/devices/types.ts";
+import type { Clock, DeviceAdapter, DeviceDriveCommand, DeviceEvent } from "../src/devices/types.ts";
 import { HijackEngine } from "../src/engine.ts";
 
 let echoStops = false;
@@ -36,11 +36,11 @@ type Fake = ReturnType<typeof fakeDevice>;
 let engine: HijackEngine;
 let devices: Map<string, Fake>;
 
-beforeEach(() => {
-  echoStops = false;
+const makeEngine = (clock?: Clock) => {
   devices = new Map();
   engine = new HijackEngine({
     config: testConfig({ COMMAND_TTL_MS: 5000 }),
+    ...(clock ? { clock } : {}),
     adapterFactory: (carId) => {
       const d = fakeDevice(carId);
       devices.set(carId, d);
@@ -49,6 +49,11 @@ beforeEach(() => {
   });
   engine.setDemoState("ready");
   engine.setDemoState("running");
+};
+
+beforeEach(() => {
+  echoStops = false;
+  makeEngine();
 });
 
 afterEach(() => engine.dispose());
@@ -289,5 +294,87 @@ describe("motivo da parada", () => {
     engine.car("car-a").controller.stop("watchdog");
     engine.car("car-a").controller.stop("pilot-release");
     expect(stopReason()).toBe("watchdog");
+  });
+});
+
+describe("confirmado sem dados", () => {
+  let now = 1_000_000;
+  const staleOf = (viewer: Parameters<HijackEngine["snapshot"]>[0] = { role: "spectator" }) =>
+    engine.snapshot(viewer).cars.find((c) => c.id === "car-a")?.confirmedStale;
+  const telemetry = (): DeviceEvent => ({
+    kind: "telemetry",
+    telemetry: {
+      uptimeMs: 1000,
+      rssi: -40,
+      lastSeq: 0,
+      throttle: 0,
+      steering: 0,
+      reconnects: 0,
+      rejectedCommands: 0,
+      watchdogTrips: 0,
+      stopReason: null,
+    },
+    at: now,
+  });
+
+  beforeEach(() => {
+    engine.dispose();
+    now = 1_000_000;
+    makeEngine({ now: () => now });
+  });
+
+  test("com dados recentes o confirmado não é marcado como sem dados", async () => {
+    dev().emit(telemetry());
+    now += 1000;
+    await sleep(70);
+    expect(staleOf()).toBe(false);
+  });
+
+  test("online e calado por mais de 1,5 s marca o confirmado como sem dados", async () => {
+    dev().emit(telemetry());
+    now += 1600;
+    await sleep(70);
+    expect(staleOf()).toBe(true);
+  });
+
+  test("qualquer evento novo do dispositivo tira a marca na hora", async () => {
+    dev().emit(telemetry());
+    now += 1600;
+    await sleep(70);
+    expect(staleOf()).toBe(true);
+    dev().emit({ kind: "ack", seq: 1, throttle: 0, steering: 0, at: now });
+    expect(staleOf()).toBe(false);
+  });
+
+  test("carrinho offline não é marcado como sem dados, o estado offline já aparece", async () => {
+    dev().emit({ kind: "connection", online: false, at: now });
+    now += 5000;
+    await sleep(70);
+    expect(staleOf()).toBe(false);
+  });
+
+  test("sem nenhum dado recebido ainda, não há o que marcar como velho", async () => {
+    now += 5000;
+    await sleep(70);
+    expect(staleOf()).toBe(false);
+  });
+
+  test("o piloto nunca vê a marca, porque não vê o confirmado", async () => {
+    dev().emit(telemetry());
+    now += 1600;
+    await sleep(70);
+    expect(staleOf({ role: "pilot", displayName: "p", teamId: "A", carId: "car-a" })).toBe(false);
+  });
+
+  test("a virada é transmitida uma vez, sem mensagens repetidas enquanto continua calado", async () => {
+    dev().emit(telemetry());
+    let changes = 0;
+    engine.onChange(() => changes++);
+    now += 1600;
+    await sleep(70);
+    const afterFlip = changes;
+    expect(afterFlip).toBeGreaterThanOrEqual(1);
+    await sleep(150);
+    expect(changes).toBe(afterFlip);
   });
 });

@@ -10,6 +10,7 @@ const fmtUptime = (ms: number | null) => (ms === null ? "—" : `${Math.floor(ms
 export function CarPanel({ car, defense, children }: { car: CarView; defense?: DefenseView; children?: React.ReactNode }) {
   const color = TEAM_COLOR_CLASS[car.teamId];
   const altered =
+    !car.confirmedStale &&
     car.moving &&
     (car.requested.throttle !== car.confirmed.throttle || car.requested.steering !== car.confirmed.steering) &&
     (car.confirmed.throttle !== 0 || car.confirmed.steering !== 0);
@@ -31,7 +32,7 @@ export function CarPanel({ car, defense, children }: { car: CarView; defense?: D
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-start justify-around gap-4">
           <DriveIndicator label="Solicitado" vector={car.requested} tone="muted" />
-          <DriveIndicator label="Confirmado" vector={car.confirmed} />
+          <DriveIndicator label="Confirmado" vector={car.confirmed} unavailable={car.confirmedStale} />
         </div>
         {altered && (
           <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-center font-mono text-xs text-destructive">

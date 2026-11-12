@@ -3,6 +3,7 @@ import {
   type CarId,
   type CarMode,
   type CarView,
+  CONFIRMED_STALE_MS,
   type DemoState,
   type DemoTopology,
   type DriveVector,
@@ -52,6 +53,7 @@ interface CarRuntime {
   controller: CarController;
   unsubscribe: () => void;
   confirmed: DriveVector;
+  confirmedStale: boolean;
   online: boolean;
   lastSeenAt: number | null;
   uptimeMs: number | null;
@@ -199,6 +201,8 @@ export class HijackEngine {
     car.mode = mode;
     car.online = adapter.isOnline();
     car.confirmed = { throttle: 0, steering: 0 };
+    car.confirmedStale = false;
+    car.lastSeenAt = null;
     car.unsubscribe = adapter.onEvent((e) => this.onDeviceEvent(car, e));
     this.log({ kind: "car.mode", carId, mode, actorRole: "admin", message: `Modo alterado para ${mode === "simulated" ? "simulado" : "hardware"}` });
     this.changed();
@@ -213,6 +217,8 @@ export class HijackEngine {
     car.controller.replaceAdapter(adapter);
     car.mode = adapter.mode;
     car.online = adapter.isOnline();
+    car.confirmedStale = false;
+    car.lastSeenAt = null;
     car.unsubscribe = adapter.onEvent((e) => this.onDeviceEvent(car, e));
     this.changed();
   }
@@ -328,6 +334,7 @@ export class HijackEngine {
       requested: redact || !c.controller.moving ? { ...hidden } : { ...c.requested },
       desired: redact ? { ...hidden } : c.controller.desired,
       confirmed: redact ? { ...hidden } : { ...c.confirmed },
+      confirmedStale: redact ? false : c.confirmedStale,
       moving: c.controller.moving,
       stopReason: c.controller.stopReason,
       telemetry: {
@@ -357,6 +364,7 @@ export class HijackEngine {
       displayName: id === "car-a" ? "Carrinho A" : "Carrinho B",
       mode,
       confirmed: { throttle: 0, steering: 0 },
+      confirmedStale: false,
       online: adapter.isOnline(),
       lastSeenAt: null,
       uptimeMs: null,
@@ -452,6 +460,7 @@ export class HijackEngine {
         this.log({ kind: "car.fault", carId: car.id, mode: car.mode, visibility: "admin", message: `Falha relatada: ${e.code}` });
         break;
     }
+    if (e.kind !== "fault") car.confirmedStale = false;
     this.changed();
   }
 
@@ -495,12 +504,18 @@ export class HijackEngine {
   }
 
   private tick(): void {
-    let moving = false;
+    let dirty = false;
+    const now = this.clock.now();
     for (const car of this.cars.values()) {
       car.controller.checkWatchdog();
-      if (car.controller.moving || !isNeutral(car.confirmed)) moving = true;
+      if (car.controller.moving || !isNeutral(car.confirmed)) dirty = true;
+      const stale = car.online && car.lastSeenAt !== null && now - car.lastSeenAt > CONFIRMED_STALE_MS;
+      if (stale !== car.confirmedStale) {
+        car.confirmedStale = stale;
+        dirty = true;
+      }
     }
-    if (moving) this.changed();
+    if (dirty) this.changed();
   }
 
   private changed(): void {
