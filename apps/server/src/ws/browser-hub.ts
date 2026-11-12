@@ -29,6 +29,19 @@ export interface BrowserHubHandlers {
   onClose(conn: BrowserConn): void;
 }
 
+function isStopMessage(msg: ClientMessage): boolean {
+  switch (msg.type) {
+    case "pilot.stop":
+    case "admin.stopAll":
+    case "session.logout":
+      return true;
+    case "pilot.drive":
+      return !msg.payload.pressed || (msg.payload.throttle === 0 && msg.payload.steering === 0);
+    default:
+      return false;
+  }
+}
+
 type PayloadOf<T extends ServerMessageType> = Extract<ServerMessage, { type: T }>["payload"];
 
 export class BrowserHub {
@@ -51,8 +64,10 @@ export class BrowserHub {
     const pilot = new RateLimiter(MAX_PILOT_MESSAGES_PER_SECOND, MAX_PILOT_MESSAGES_PER_SECOND);
     let lastNotice = 0;
     const allowed = (type: string | null, requestId?: string): boolean => {
-      const limiter = type?.startsWith("pilot.") ? pilot : control;
+      const isPilot = type?.startsWith("pilot.") ?? false;
+      const limiter = isPilot ? pilot : control;
       if (limiter.take()) return true;
+      if (isPilot) return false;
       const at = Date.now();
       if (at - lastNotice >= RATE_LIMIT_NOTICE_MS) {
         lastNotice = at;
@@ -67,7 +82,8 @@ export class BrowserHub {
       }
       const raw = data.toString();
       const parsed = parseMessage(clientMessageSchema, raw, CLIENT_MESSAGE_TYPES);
-      if (!allowed(parsed.ok ? parsed.value.type : null, parsed.ok ? parsed.value.requestId : undefined)) return;
+      const exempt = parsed.ok && isStopMessage(parsed.value);
+      if (!exempt && !allowed(parsed.ok ? parsed.value.type : null, parsed.ok ? parsed.value.requestId : undefined)) return;
       if (!parsed.ok) {
         this.sendError(conn, parsed.code, parsed.message);
         return;
