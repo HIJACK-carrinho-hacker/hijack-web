@@ -35,6 +35,62 @@ function make(ttlMs = 300, rate = 20) {
 
 const v = (throttle: -1 | 0 | 1, steering: -1 | 0 | 1): DriveVector => ({ throttle, steering });
 
+function makeWithClock() {
+  const f = fakeAdapter();
+  const time = { value: 1_000_000 };
+  const clock = { now: () => time.value };
+  const ctl = new CarController("car-a", f.adapter, { ttlMs: 300, maxCommandsPerSecond: 20, clock }, {
+    onSent: () => {},
+    onStopped: () => {},
+    onChange: () => {},
+  });
+  return { ...f, ctl, time };
+}
+
+describe("CarController: paradas repetidas", () => {
+  test("com o carro parado, paradas em rajada geram um único stop para o dispositivo", () => {
+    const { ctl, stops } = makeWithClock();
+    ctl.command(v(1, 0));
+    for (let i = 0; i < 50; i++) ctl.stop("pilot-release");
+    expect(stops).toHaveLength(1);
+  });
+
+  test("passado o intervalo mínimo, uma nova parada volta a ser enviada", () => {
+    const { ctl, stops, time } = makeWithClock();
+    ctl.command(v(1, 0));
+    ctl.stop("pilot-release");
+    time.value += 60;
+    ctl.stop("pilot-release");
+    expect(stops).toHaveLength(2);
+  });
+
+  test("parada com o carro andando nunca é suprimida", () => {
+    const { ctl, stops } = makeWithClock();
+    ctl.command(v(1, 0));
+    ctl.stop("pilot-release");
+    ctl.command(v(1, 0));
+    ctl.stop("admin-stop-all");
+    expect(stops.map((s) => s.reason)).toEqual(["pilot-release", "admin-stop-all"]);
+  });
+
+  test("a primeira parada de um carro que nunca andou é enviada", () => {
+    const { ctl, stops } = makeWithClock();
+    ctl.stop("admin-stop-all");
+    expect(stops).toHaveLength(1);
+  });
+
+  test("trocar o adaptador libera o próximo stop mesmo dentro do intervalo", () => {
+    const { ctl, stops } = makeWithClock();
+    ctl.command(v(1, 0));
+    ctl.stop("pilot-release");
+    const second = fakeAdapter();
+    ctl.replaceAdapter(second.adapter);
+    ctl.stop("admin-stop-all");
+    expect(stops).toHaveLength(1);
+    expect(second.stops.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
 describe("CarController", () => {
   test("coalesce rajadas: no máximo um envio pendente, com o último estado", async () => {
     const { ctl, drives } = make(300, 20);

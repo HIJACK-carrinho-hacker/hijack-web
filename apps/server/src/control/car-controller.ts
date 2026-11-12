@@ -15,6 +15,7 @@ export interface CarControllerHooks {
 }
 
 const ZERO: DriveVector = { throttle: 0, steering: 0 };
+const MIN_STOP_REPEAT_MS = 50;
 
 export class CarController {
   readonly carId: CarId;
@@ -28,6 +29,7 @@ export class CarController {
   private pending: ReturnType<typeof setTimeout> | null = null;
   private pendingVec: DriveVector | null = null;
   private stopReasonValue: StopReason | null = "boot";
+  private lastStopAt = Number.NEGATIVE_INFINITY;
 
   constructor(carId: CarId, adapter: DeviceAdapter, opts: CarControllerOptions, hooks: CarControllerHooks) {
     this.carId = carId;
@@ -55,6 +57,7 @@ export class CarController {
   replaceAdapter(adapter: DeviceAdapter): void {
     this.stop("mode-change");
     this.adapter = adapter;
+    this.lastStopAt = Number.NEGATIVE_INFINITY;
   }
 
   command(vec: DriveVector): void {
@@ -86,9 +89,13 @@ export class CarController {
   stop(reason: StopReason): void {
     this.clearPending();
     const wasMoving = this.moving;
+    const now = this.opts.clock.now();
     this.desiredVec = { ...ZERO };
-    this.seq++;
-    this.adapter.stop(reason, this.seq);
+    if (wasMoving || now - this.lastStopAt >= MIN_STOP_REPEAT_MS) {
+      this.seq++;
+      this.lastStopAt = now;
+      this.adapter.stop(reason, this.seq);
+    }
     if (wasMoving || this.stopReasonValue === null) {
       this.stopReasonValue = reason;
       this.hooks.onStopped(reason);
