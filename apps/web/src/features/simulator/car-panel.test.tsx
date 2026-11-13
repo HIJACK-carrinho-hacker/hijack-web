@@ -39,7 +39,7 @@ describe("CarPanel", () => {
     expect(renderToStaticMarkup(<CarPanel car={parado("demo-not-running")} />)).toContain("Demonstração parada");
     expect(renderToStaticMarkup(<CarPanel car={parado("admin-stop-all")} />)).toContain("STOP geral");
     const semMotivo = renderToStaticMarkup(<CarPanel car={parado(null)} />);
-    expect(semMotivo).toContain("—");
+    expect(semMotivo).toMatch(/Parada<\/dt><dd[^>]*>—<\/dd>/);
     for (const rotulo of Object.values(STOP_REASON_LABEL)) expect(semMotivo).not.toContain(rotulo);
   });
 

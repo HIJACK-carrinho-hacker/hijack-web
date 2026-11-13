@@ -50,10 +50,23 @@ describe("pilotStatus", () => {
   });
 
   test("só os motivos de segurança viram parada de segurança em running", () => {
-    const seguranca: readonly StopReason[] = ["watchdog", "admin-stop-all", "device-disconnected", "fault"];
+    const seguranca: Record<StopReason, boolean> = {
+      boot: false,
+      "pilot-release": false,
+      "pilot-stop": false,
+      "pilot-disconnected": false,
+      "session-revoked": false,
+      watchdog: true,
+      "demo-not-running": false,
+      "admin-stop-all": true,
+      "device-disconnected": true,
+      "server-restart": false,
+      "mode-change": false,
+      fault: true,
+    };
     for (const reason of STOP_REASONS) {
       const status = pilotStatus("open", "running", car({ stopReason: reason }));
-      if (seguranca.includes(reason)) {
+      if (seguranca[reason]) {
         expect(status).toMatchObject({ label: "Parada de segurança", tone: "warning", canDrive: true });
       } else {
         expect(status).toMatchObject({ label: "Em demonstração", tone: "primary", canDrive: true });
