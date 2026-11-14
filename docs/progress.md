@@ -77,6 +77,8 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 
 - Testes de rótulos (12/11/2026, noite): `CarPanel` com "Demonstração parada" e "STOP geral", e `pilotStatus` com todos os motivos de parada (só `watchdog`, `admin-stop-all`, `device-disconnected` e `fault` viram "Parada de segurança"; andando nunca; `setup`/`ready` aguardam a largada). 262 testes passando; lint e typecheck limpos. Sem mudança de comportamento.
 
+- Testes de navegador novos (14/11/2026, `regressoes.spec.ts`, desktop e mobile): R5 (sessão revogada), toast `release_required` depois de pausar, retomar e tocar de novo (o toque recusado vem de um script na mesma sessão durante a pausa) e erro do servidor nos cartões de defesa (WebSocket interceptado com `routeWebSocket`, que devolve `system.error`; o interruptor não muda). Cada um falha com a mutação correspondente (toast removido, `setError` removido, guarda de rota quebrado). Suíte completa: 41 passaram e 1 pulado (era 35 + 1) com o servidor simulado `dual`. Falta o toque em celular real.
+
 ## Bloqueios reais
 
 _(nenhum)_

@@ -98,3 +98,12 @@ export async function completeAttack(hacker: Page, target: 'Carrinho A' | 'Carri
     await hacker.getByRole('switch', { name: s, checked: true }).waitFor()
   }
 }
+
+export async function operatorPage(browser: Browser): Promise<{ page: Page; close: () => Promise<void> }> {
+  const ctx = await browser.newContext()
+  const page = await ctx.newPage()
+  await page.goto('/admin')
+  const res = await page.request.post('/api/admin/session', { data: { secret: adminSecret() } })
+  if (!res.ok()) throw new Error(`login do operador falhou: ${res.status()}`)
+  return { page, close: () => ctx.close() }
+}
