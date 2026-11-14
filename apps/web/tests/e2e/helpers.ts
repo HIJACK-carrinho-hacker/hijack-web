@@ -32,6 +32,12 @@ export async function operatorPage(browser: Browser): Promise<{ page: Page; clos
   await page.goto('/admin')
   const res = await page.request.post('/api/admin/session', { data: { secret: adminSecret() } })
   if (!res.ok()) throw new Error(`login do operador falhou: ${res.status()}`)
+  const info = (await (await page.request.get('/api/public')).json()) as { cars: { id: string; mode: string }[] }
+  const hardware = info.cars.filter((car) => car.mode === 'hardware').map((car) => car.id)
+  if (hardware.length > 0) {
+    await ctx.close()
+    throw new Error(`e2e recusado: carro em modo hardware (${hardware.join(', ')}); suba o servidor com CAR_A_MODE=simulated CAR_B_MODE=simulated`)
+  }
   return { page, close: () => ctx.close() }
 }
 
