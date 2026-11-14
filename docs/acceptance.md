@@ -8,7 +8,7 @@ Revisão de 05/11/2026. Legenda: ✅ verificado · ⚠️ verificado parcialment
 |---|---|---|
 | Login, papéis, equipes e sessões seguras | ✅ | `auth.test.ts` (cookie HttpOnly/SameSite, vaga exclusiva, rate limit, Origin, spoofing de papel/carro); `auth.spec.ts` |
 | Dois carros simulados ao mesmo tempo | ✅ | `engine.test.ts` ("dois carrinhos…"), `attack-ws.test.ts` |
-| Controles do piloto em celular e desktop | ⚠️ | E2E em perfil desktop e mobile (`pilot.spec.ts`), verificação manual no Chrome desktop e em largura de celular. **Toque em celular real ainda sem resultado registrado** |
+| Controles do piloto em celular e desktop | ⚠️ | E2E em perfil desktop e mobile (`pilot.spec.ts`), verificação manual no Chrome desktop e em largura de celular. Toque real num tablet pelo hotspot registrado em 14/11/2026 (41 valores de direção de −100 a 100, frente, ré e soltar, ≈ 109 s andando com o ESP32 real, saídas desligadas); **toque em celular ainda sem resultado registrado** |
 | Soltar o joystick ou perder comunicação faz parar | ✅ | `pilot.spec.ts` (soltar, fechar página), `engine.test.ts` (watchdog), `auth.test.ts` (piloto desconectado), verificação manual do `blur` |
 | Quatro etapas do hacker e duas inversões independentes | ✅ | `attack-manager.test.ts`, `attack-ws.test.ts`, `attack.spec.ts` (repetido 4× nos dois perfis) |
 | Defensor bloqueia a inversão no servidor e o caráter simulado é exibido | ✅ | `attack-ws.test.ts` (integridade), `defense.spec.ts`; rótulos permanentes "Simulação, não HMAC" / "Simulação, não validação no firmware" |
@@ -65,5 +65,5 @@ Fonte da parte física: `../esp32/docs/especificacao/` (10/11/2026) e `../esp32/
 4. **Alimentação:** HW-411 a 5,0 V sob carga, retroalimentação USB, capacidade da chave do porta-baterias (~3 A não confirmada), 2S **sem BMS** e **sem fusível** (células medidas uma a uma).
 5. **Brownout** ao arrancar ou esterçar (o firmware imprime o motivo do reset).
 6. **Tempo real de parada** por perda de Wi-Fi/WebSocket e STOP ALL. A parada lógica foi medida com a rede presa (347 a 399 ms, saídas desligadas); falta medir até as rodas.
-7. **Toque em celular real:** sem resultado registrado.
+7. **Toque em celular real:** o tablet foi testado em 14/11/2026 (ver acima); celular sem resultado registrado, e a sensação de uso (atraso, precisão do analógico) não foi anotada.
 8. **Riscos aceitos** (detalhes em `security-model.md`): sem TLS na LAN; sessões em memória; no `bun run dev` o rate limit vê todos os aparelhos com o IP do proxy; erros repetidos de senha podem bloquear temporariamente a entrada.
