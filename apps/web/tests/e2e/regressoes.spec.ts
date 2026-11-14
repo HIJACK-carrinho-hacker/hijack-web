@@ -1,7 +1,13 @@
-import { expect, test } from '@playwright/test'
+import { type BrowserContext, expect, test } from '@playwright/test'
 import { adminSend, holdJoystick, loginAs, operatorPage, resetEnvironment } from './helpers.ts'
 
 test.describe.configure({ mode: 'serial' })
+
+const opened: BrowserContext[] = []
+
+test.afterEach(async () => {
+  await Promise.all(opened.splice(0).map((ctx) => ctx.close()))
+})
 
 test.afterAll(async ({ browser }) => {
   await resetEnvironment(browser, 'dual')
@@ -10,6 +16,7 @@ test.afterAll(async ({ browser }) => {
 test('vaga liberada pelo operador leva o piloto à entrada, sem joystick', async ({ browser }) => {
   await resetEnvironment(browser, 'dual', 'running')
   const pilotCtx = await browser.newContext()
+  opened.push(pilotCtx)
   const pilot = await pilotCtx.newPage()
   await loginAs(pilot, { name: 'Ana', role: 'Piloto', car: 'Carrinho A' })
   await expect(pilot.getByRole('status').filter({ hasText: 'Em demonstração' })).toBeVisible()
@@ -22,12 +29,12 @@ test('vaga liberada pelo operador leva o piloto à entrada, sem joystick', async
   await expect(pilot).toHaveURL('/')
   await expect(pilot.getByText(/vaga liberada pelo operador/i)).toBeVisible()
   await expect(pilot.getByRole('application', { name: /Analógico/ })).toHaveCount(0)
-  await pilotCtx.close()
 })
 
 test('depois de pausar e retomar, o toque recusado avisa para soltar o joystick', async ({ browser }) => {
   await resetEnvironment(browser, 'dual', 'running')
   const pilotCtx = await browser.newContext()
+  opened.push(pilotCtx)
   const pilot = await pilotCtx.newPage()
   await loginAs(pilot, { name: 'Ana', role: 'Piloto', car: 'Carrinho A' })
   await expect(pilot.getByRole('status').filter({ hasText: 'Em demonstração' })).toBeVisible()
@@ -60,12 +67,12 @@ test('depois de pausar e retomar, o toque recusado avisa para soltar o joystick'
   await holdJoystick(pilot, 0, -1)
   await expect(pilot.getByText('Solte o joystick e toque de novo para voltar a mover.')).toBeVisible()
   await pilot.mouse.up()
-  await pilotCtx.close()
 })
 
 test('erro do servidor aparece no cartão de defesa e o interruptor é liberado', async ({ browser }) => {
   await resetEnvironment(browser, 'dual', 'running')
   const defenderCtx = await browser.newContext()
+  opened.push(defenderCtx)
   const defender = await defenderCtx.newPage()
   await defender.routeWebSocket(/\/ws$/, (ws) => {
     const server = ws.connectToServer()
@@ -96,7 +103,8 @@ test('erro do servidor aparece no cartão de defesa e o interruptor é liberado'
   await loginAs(defender, { name: 'Caio', role: 'Hacker', car: 'Carrinho B' })
   await defender.getByRole('tab', { name: 'Defesa' }).click()
 
-  const integrity = defender.getByRole('switch', { name: 'Desligada' }).first()
+  const integrity = defender.locator('#integrity')
+  await expect(integrity).toHaveAttribute('aria-checked', 'false')
   await integrity.click()
   await expect(defender.getByRole('alert').filter({ hasText: 'defesa recusada pelo servidor de teste' })).toHaveCount(1)
   await expect(integrity).toBeEnabled()
@@ -108,5 +116,4 @@ test('erro do servidor aparece no cartão de defesa e o interruptor é liberado'
   await expect(defender.locator('#replay')).toBeEnabled()
   await expect(defender.locator('#replay')).toHaveAttribute('aria-checked', 'false')
   await expect(defender.getByText('Recusando comandos antigos')).toHaveCount(0)
-  await defenderCtx.close()
 })
