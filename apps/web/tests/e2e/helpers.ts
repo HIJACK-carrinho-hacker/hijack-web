@@ -26,12 +26,18 @@ export async function adminSend(page: Page, messages: { type: string; payload: u
 
 export type Topology = 'single' | 'dual'
 
-export async function resetEnvironment(browser: Browser, topology: Topology, demoState?: 'running') {
+export async function operatorPage(browser: Browser): Promise<{ page: Page; close: () => Promise<void> }> {
   const ctx = await browser.newContext()
   const page = await ctx.newPage()
   await page.goto('/admin')
   const res = await page.request.post('/api/admin/session', { data: { secret: adminSecret() } })
   if (!res.ok()) throw new Error(`login do operador falhou: ${res.status()}`)
+  return { page, close: () => ctx.close() }
+}
+
+export async function resetEnvironment(browser: Browser, topology: Topology, demoState?: 'running') {
+  const operator = await operatorPage(browser)
+  const page = operator.page
   const msgs: { type: string; payload: unknown }[] = []
   for (const carId of ['car-a', 'car-b']) {
     for (const role of ['pilot', 'hacker']) msgs.push({ type: 'admin.releaseSlot', payload: { carId, role } })
@@ -46,7 +52,7 @@ export async function resetEnvironment(browser: Browser, topology: Topology, dem
     msgs.push({ type: 'admin.setDemoState', payload: { state: 'running' } })
   }
   await adminSend(page, msgs)
-  await ctx.close()
+  await operator.close()
 }
 
 export async function loginAs(page: Page, opts: { name: string; role: 'Piloto' | 'Hacker'; car: 'Carrinho A' | 'Carrinho B'; password?: string }) {
@@ -97,13 +103,4 @@ export async function completeAttack(hacker: Page, target: 'Carrinho A' | 'Carri
     await hacker.getByRole('switch', { name: s }).click()
     await hacker.getByRole('switch', { name: s, checked: true }).waitFor()
   }
-}
-
-export async function operatorPage(browser: Browser): Promise<{ page: Page; close: () => Promise<void> }> {
-  const ctx = await browser.newContext()
-  const page = await ctx.newPage()
-  await page.goto('/admin')
-  const res = await page.request.post('/api/admin/session', { data: { secret: adminSecret() } })
-  if (!res.ok()) throw new Error(`login do operador falhou: ${res.status()}`)
-  return { page, close: () => ctx.close() }
 }

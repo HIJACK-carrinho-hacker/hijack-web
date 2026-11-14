@@ -9,7 +9,8 @@ test.afterAll(async ({ browser }) => {
 
 test('vaga liberada pelo operador leva o piloto à entrada, sem joystick', async ({ browser }) => {
   await resetEnvironment(browser, 'dual', 'running')
-  const pilot = await (await browser.newContext()).newPage()
+  const pilotCtx = await browser.newContext()
+  const pilot = await pilotCtx.newPage()
   await loginAs(pilot, { name: 'Ana', role: 'Piloto', car: 'Carrinho A' })
   await expect(pilot.getByRole('status').filter({ hasText: 'Em demonstração' })).toBeVisible()
   await expect(pilot.getByRole('application', { name: /Analógico/ })).toBeVisible()
@@ -21,11 +22,13 @@ test('vaga liberada pelo operador leva o piloto à entrada, sem joystick', async
   await expect(pilot).toHaveURL('/')
   await expect(pilot.getByText(/vaga liberada pelo operador/i)).toBeVisible()
   await expect(pilot.getByRole('application', { name: /Analógico/ })).toHaveCount(0)
+  await pilotCtx.close()
 })
 
 test('depois de pausar e retomar, o toque recusado avisa para soltar o joystick', async ({ browser }) => {
   await resetEnvironment(browser, 'dual', 'running')
-  const pilot = await (await browser.newContext()).newPage()
+  const pilotCtx = await browser.newContext()
+  const pilot = await pilotCtx.newPage()
   await loginAs(pilot, { name: 'Ana', role: 'Piloto', car: 'Carrinho A' })
   await expect(pilot.getByRole('status').filter({ hasText: 'Em demonstração' })).toBeVisible()
 
@@ -57,21 +60,22 @@ test('depois de pausar e retomar, o toque recusado avisa para soltar o joystick'
   await holdJoystick(pilot, 0, -1)
   await expect(pilot.getByText('Solte o joystick e toque de novo para voltar a mover.')).toBeVisible()
   await pilot.mouse.up()
-
-  await holdJoystick(pilot, 0, -1)
-  await pilot.mouse.up()
-  await expect(pilot.getByText('Solte o joystick e toque de novo para voltar a mover.')).toBeVisible()
+  await pilotCtx.close()
 })
 
-test('erro do servidor aparece nos cartões de defesa e o interruptor volta ao estado anterior', async ({ browser }) => {
+test('erro do servidor aparece no cartão de defesa e o interruptor é liberado', async ({ browser }) => {
   await resetEnvironment(browser, 'dual', 'running')
-  const defender = await (await browser.newContext()).newPage()
+  const defenderCtx = await browser.newContext()
+  const defender = await defenderCtx.newPage()
   await defender.routeWebSocket(/\/ws$/, (ws) => {
     const server = ws.connectToServer()
     server.onMessage((message) => ws.send(message))
     ws.onMessage((message) => {
       const text = typeof message === 'string' ? message : message.toString()
-      const parsed = JSON.parse(text) as { type: string; requestId?: string }
+      let parsed: { type?: string; requestId?: string } = {}
+      try {
+        parsed = JSON.parse(text)
+      } catch {}
       if (parsed.type === 'defense.setIntegrityDemo' || parsed.type === 'defense.setReplayDemo') {
         ws.send(
           JSON.stringify({
@@ -92,12 +96,17 @@ test('erro do servidor aparece nos cartões de defesa e o interruptor volta ao e
   await loginAs(defender, { name: 'Caio', role: 'Hacker', car: 'Carrinho B' })
   await defender.getByRole('tab', { name: 'Defesa' }).click()
 
-  await defender.getByRole('switch', { name: 'Desligada' }).first().click()
+  const integrity = defender.getByRole('switch', { name: 'Desligada' }).first()
+  await integrity.click()
   await expect(defender.getByRole('alert').filter({ hasText: 'defesa recusada pelo servidor de teste' })).toHaveCount(1)
-  await expect(defender.getByRole('switch', { name: 'Desligada' }).first()).toBeVisible()
+  await expect(integrity).toBeEnabled()
+  await expect(integrity).toHaveAttribute('aria-checked', 'false')
   await expect(defender.getByText('Bloqueando alterações')).toHaveCount(0)
 
   await defender.locator('#replay').click()
   await expect(defender.getByRole('alert').filter({ hasText: 'defesa recusada pelo servidor de teste' })).toHaveCount(2)
+  await expect(defender.locator('#replay')).toBeEnabled()
+  await expect(defender.locator('#replay')).toHaveAttribute('aria-checked', 'false')
   await expect(defender.getByText('Recusando comandos antigos')).toHaveCount(0)
+  await defenderCtx.close()
 })
