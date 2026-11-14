@@ -65,5 +65,5 @@ Fonte da parte física: `../esp32/docs/especificacao/` (10/11/2026) e `../esp32/
 4. **Alimentação:** HW-411 a 5,0 V sob carga, retroalimentação USB, capacidade da chave do porta-baterias (~3 A não confirmada), 2S **sem BMS** e **sem fusível** (células medidas uma a uma).
 5. **Brownout** ao arrancar ou esterçar (o firmware imprime o motivo do reset).
 6. **Tempo real de parada** por perda de Wi-Fi/WebSocket e STOP ALL. A parada lógica foi medida com a rede presa (347 a 399 ms, saídas desligadas); falta medir até as rodas.
-7. **Toque em celular real:** o tablet foi testado em 14/11/2026 (ver acima); celular sem resultado registrado, e a sensação de uso (atraso, precisão do analógico) não foi anotada.
+7. **Toque em celular real:** o tablet foi testado em 14/11/2026 (ver acima); celular sem resultado registrado, e a sensação de uso no tablet foi relatada como fluida, sem travar (sem medição de atraso de ponta a ponta).
 8. **Riscos aceitos** (detalhes em `security-model.md`): sem TLS na LAN; sessões em memória; no `bun run dev` o rate limit vê todos os aparelhos com o IP do proxy; erros repetidos de senha podem bloquear temporariamente a entrada.
