@@ -1,5 +1,5 @@
 import type { AttackConfig, AttackView } from "@hijack/protocol";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,10 @@ import { Switch } from "@/components/ui/switch";
 import { DEFAULT_DEAD_ZONE } from "@/features/pilot/joystick-math";
 import { Joystick } from "@/features/pilot/joystick";
 import { usePilotDrive } from "@/features/pilot/use-pilot-drive";
-import { BIAS_OPTIONS, DELAY_OPTIONS, DROP_OPTIONS, type Option } from "./attack-options";
+import { useHijack } from "@/hooks/use-hijack";
+import { BIAS_OPTIONS, DELAY_OPTIONS, DROP_OPTIONS, type Option, hijackRejection } from "./attack-options";
+
+const REJECTION_VISIBLE_MS = 2500;
 
 type BooleanKey = {
   [K in keyof AttackConfig]: AttackConfig[K] extends boolean ? K : never;
@@ -135,7 +138,9 @@ export function EspionageControls(
             {p.cracking ? "Testando senhas…" : "Ataque de dicionário"}
           </Button>
         </div>
-        {attack.crackReport && <p className="font-mono text-xs">{attack.crackReport}</p>}
+        <p role="status" className="font-mono text-xs">
+          {attack.crackReport}
+        </p>
       </div>
     </ControlGroup>
   );
@@ -172,6 +177,21 @@ export function ChannelControls(p: ControlProps & { onJam: () => void }) {
 
 function HijackPad({ running }: { running: boolean }) {
   const drive = usePilotDrive(running, "hijack");
+  const { subscribe } = useHijack();
+  const [rejection, setRejection] = useState<string | null>(null);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const off = subscribe((msg) => {
+      if (msg.type !== "pilot.commandRejected") return;
+      setRejection(hijackRejection(msg.payload.code));
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setRejection(null), REJECTION_VISIBLE_MS);
+    });
+    return () => {
+      off();
+      if (timer) clearTimeout(timer);
+    };
+  }, [subscribe]);
   return (
     <div className="flex flex-col items-center gap-2">
       <Joystick
@@ -182,6 +202,9 @@ function HijackPad({ running }: { running: boolean }) {
         className="w-full max-w-56"
       />
       <span className="font-mono text-xs text-muted-foreground">Analógico do sequestro</span>
+      <p role="status" className="min-h-5 text-sm text-warning">
+        {rejection}
+      </p>
     </div>
   );
 }

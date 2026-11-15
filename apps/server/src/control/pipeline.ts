@@ -67,7 +67,7 @@ export function applyAttack(
   });
   if (!attack || isNeutral(input)) return result(false);
   let transformed = false;
-  if (attack.replayVec && !same(attack.replayVec, output)) {
+  if (attack.replayVec && input.throttle !== 0 && !same(attack.replayVec, output)) {
     if (defenses.replay) blockedBy.push("replay");
     else {
       output = { throttle: attack.replayVec.throttle, steering: attack.replayVec.steering };

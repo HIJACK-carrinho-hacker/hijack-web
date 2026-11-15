@@ -16,7 +16,7 @@ import {
   TEAM_IDS,
   type TeamId,
 } from "@hijack/protocol";
-import { AttackManager } from "./attacks/attack-manager.ts";
+import { AttackManager, isActiveConfig } from "./attacks/attack-manager.ts";
 import { describeConfigChanges } from "./attacks/describe.ts";
 import { PasswordStore, checkStrongPassword } from "./auth/password-store.ts";
 import { DefenseManager, replayExample, scramble } from "./defenses/defense-manager.ts";
@@ -198,9 +198,15 @@ export class HijackService {
 
   onConnClose(conn: BrowserConn): void {
     const s = this.sessionOf(conn);
-    if (!s || s.kind !== "participant" || s.role !== "pilot") return;
+    if (!s || s.kind !== "participant") return;
     const stillOpen = [...this.hub.connections()].some((c) => c !== conn && c.sessionToken === s.token);
-    if (!stillOpen) this.engine.pilotStop(s.carId, "pilot-disconnected");
+    if (stillOpen) return;
+    if (s.role === "pilot") {
+      this.engine.pilotStop(s.carId, "pilot-disconnected");
+      return;
+    }
+    const target = this.attacks.target(s.teamId);
+    if (target) this.engine.hijackStop(target, s.teamId);
   }
 
   async handle(conn: BrowserConn, msg: ClientMessage): Promise<Result | null> {
@@ -313,7 +319,7 @@ export class HijackService {
   private endAttack(team: TeamId): void {
     const target = this.attacks.target(team);
     this.attacks.disable(team);
-    if (target) this.engine.clearAttackState(target);
+    if (target) this.engine.clearAttackState(target, true);
   }
 
   private setTopology(topology: PublicState["topology"]): Result {
@@ -402,11 +408,14 @@ export class HijackService {
     }
     const r = this.attacks.configure(team, next);
     if (!r.ok || !target) return r;
+    if (next.delayMs !== prev.delayMs || !isActiveConfig(next)) this.engine.cancelDelayedCommands(target);
+    if (next.lockSteering && !prev.lockSteering) this.engine.rearmSteeringLock(target);
     if (next.intercept && !prev.intercept) this.engine.clearIntercepted(target);
     if (next.hijack !== prev.hijack) this.engine.setHijack(target, next.hijack ? team : null);
     const name = this.engine.car(target).displayName;
+    const covert = next.spoofTelemetry && !this.defenses.integrity(target);
     for (const change of describeConfigChanges(prev, next, name)) {
-      this.logAttack(session, change.message, change.visibility);
+      this.logAttack(session, change.message, covert ? "team" : change.visibility);
     }
     return ok;
   }

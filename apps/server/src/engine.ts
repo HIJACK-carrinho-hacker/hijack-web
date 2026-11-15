@@ -282,8 +282,8 @@ export class HijackEngine {
     if (ctx?.config.intercept) {
       this.recordIntercept(car, `pilot.drive ${JSON.stringify({ ...requested, pressed: input.pressed })}`);
     }
-    this.recordHistory(car, requested);
     if (release) {
+      this.recordHistory(car, requested);
       this.releaseRequired.delete(carId);
       car.lastTransformKey = null;
       this.halt(car, "pilot-release");
@@ -291,6 +291,7 @@ export class HijackEngine {
     }
     const gate = this.gateMovement(car, "pilot-stop");
     if (!gate.ok) return gate;
+    this.recordHistory(car, requested);
     const effect = ctx ? this.effectFor(car, ctx, requested) : null;
     const result = applyAttack(
       requested,
@@ -380,12 +381,12 @@ export class HijackEngine {
     return [...this.mustCar(carId).intercepted].reverse();
   }
 
-  clearAttackState(carId: CarId): void {
+  clearAttackState(carId: CarId, keepJamCooldown = false): void {
     const car = this.mustCar(carId);
     car.intercepted = [];
     car.lockedSteering = null;
     car.jammedUntil = null;
-    car.jamReadyAt = null;
+    if (!keepJamCooldown) car.jamReadyAt = null;
     this.cancelDelayed(car);
     if (car.hijackedBy) this.setHijack(carId, null);
     this.changed();
@@ -393,6 +394,14 @@ export class HijackEngine {
 
   clearIntercepted(carId: CarId): void {
     this.mustCar(carId).intercepted = [];
+  }
+
+  cancelDelayedCommands(carId: CarId): void {
+    this.cancelDelayed(this.mustCar(carId));
+  }
+
+  rearmSteeringLock(carId: CarId): void {
+    this.mustCar(carId).lockedSteering = null;
   }
 
   private gateMovement(car: CarRuntime, inactiveReason: StopReason): Result {
@@ -628,6 +637,7 @@ export class HijackEngine {
           }
         },
         onStopped: (reason) => {
+          this.cancelDelayed(runtime);
           runtime.lastTransformKey = null;
           if (reason === "watchdog" && !runtime.stopFromDevice) {
             this.metrics.inc(id, runtime.mode, "watchdogTrips");

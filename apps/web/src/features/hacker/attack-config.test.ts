@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { type AttackView, DEFAULT_ATTACK_CONFIG } from "@hijack/protocol";
 import { configOf } from "./attack-config.ts";
-import { BIAS_OPTIONS, DELAY_OPTIONS, DROP_OPTIONS } from "./attack-options.ts";
+import { BIAS_OPTIONS, DELAY_OPTIONS, DROP_OPTIONS, hijackRejection } from "./attack-options.ts";
 
 const view: AttackView = {
   attackerTeam: "B",
@@ -39,5 +39,13 @@ describe("opções dos ataques", () => {
       expect(Math.abs(o.value)).toBeLessThanOrEqual(40);
       expect(Math.abs(o.value) % 5).toBe(0);
     }
+  });
+});
+
+describe("hijackRejection", () => {
+  test("explica os motivos conhecidos e tem texto padrão", () => {
+    expect(hijackRejection("link_jammed")).toContain("link");
+    expect(hijackRejection("release_required")).toContain("Solte");
+    expect(hijackRejection("internal")).toBe("Comando recusado pelo servidor.");
   });
 });

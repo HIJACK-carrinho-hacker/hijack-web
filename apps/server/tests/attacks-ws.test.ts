@@ -149,6 +149,62 @@ describe("derrubar o link pelo WebSocket", () => {
   });
 });
 
+describe("correções da revisão", () => {
+  test("queda da conexão do sequestrador para o carrinho na hora", async () => {
+    await prepare();
+    await configure({ hijack: true });
+    hackerA.send("attack.drive", { throttle: 1, steering: 0, pressed: true });
+    await sleep(30);
+    expect(carB().controller.moving).toBe(true);
+    hackerA.close();
+    await sleep(60);
+    expect(carB().controller.moving).toBe(false);
+    expect(carB().controller.stopReason).toBe("hijack-release");
+  });
+
+  test("mudar o atraso descarta comandos atrasados antigos", async () => {
+    await prepare();
+    await configure({ delayMs: 300 });
+    pilotB.send("pilot.drive", { throttle: 1, steering: 0, pressed: true });
+    await sleep(30);
+    await configure({ delayMs: 0 });
+    pilotB.send("pilot.drive", { throttle: -1, steering: 0, pressed: true });
+    await sleep(400);
+    expect(carB().controller.desired).toEqual({ throttle: -1, steering: 0 });
+  });
+
+  test("religar a trava pelo WebSocket guarda a direção nova", async () => {
+    await prepare();
+    await configure({ lockSteering: true });
+    pilotB.send("pilot.drive", { throttle: 1, steering: -80, pressed: true });
+    await sleep(30);
+    await configure({ lockSteering: false, dropPct: 30 });
+    await configure({ lockSteering: true });
+    pilotB.send("pilot.drive", { throttle: 1, steering: 30, pressed: true });
+    await sleep(80);
+    expect(carB().controller.desired).toEqual({ throttle: 1, steering: 30 });
+  });
+
+  test("desativar não zera o intervalo entre quedas do link", async () => {
+    await prepare();
+    expect((await act(hackerA, "attack.jamLink", {})).ok).toBe(true);
+    expect((await act(hackerA, "attack.disable", {})).ok).toBe(true);
+    expect(await act(hackerA, "attack.jamLink", {})).toEqual({ ok: false, code: "forbidden" });
+  });
+
+  test("com a telemetria falsa o defensor não vê as mudanças do ataque no registro", async () => {
+    await prepare();
+    await configure({ spoofTelemetry: true });
+    await configure({ spoofTelemetry: true, invertThrottle: true });
+    await sleep(120);
+    const view = (v: Parameters<typeof h.server.engine.snapshot>[0]) =>
+      h.server.engine.snapshot(v).events.some((e) => e.message.includes("Inversão ativa"));
+    expect(view({ role: "hacker", displayName: "HB", teamId: "B", carId: "car-b" })).toBe(false);
+    expect(view({ role: "hacker", displayName: "HA", teamId: "A", carId: "car-a" })).toBe(true);
+    expect(view({ role: "admin" })).toBe(true);
+  });
+});
+
 describe("desativar", () => {
   test("desativar o ataque encerra sequestro e queda", async () => {
     await prepare();

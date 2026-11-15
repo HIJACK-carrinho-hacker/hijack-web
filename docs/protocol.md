@@ -95,8 +95,8 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 | `invertSteering` | booleano | nega o percentual da direção | integridade |
 | `steeringBias` | −40 a 40, múltiplo de 5 | soma à direção e limita a ±100 | integridade |
 | `lockSteering` | booleano | a direção fica no valor do primeiro comando depois de ligar | integridade |
-| `replay` | booleano | troca o comando atual pelo que o piloto mandou 5 s antes (`REPLAY_DELAY_MS`); sem histórico, nada muda | repetição |
-| `delayMs` | 0, 150, 300 | segura cada comando ativo antes de mandar ao carrinho; parar nunca atrasa e cancela o que estava esperando | nenhuma |
+| `replay` | booleano | troca o comando atual pelo pedido aceito do piloto de 5 s antes (`REPLAY_DELAY_MS`), só quando o pedido atual tem tração; sem histórico, nada muda | repetição |
+| `delayMs` | 0, 150, 300 | segura cada comando ativo antes de mandar ao carrinho; parar nunca atrasa e cancela o que estava esperando, assim como mudar o atraso ou desligar todos os ataques | nenhuma |
 | `dropPct` | 0, 30, 60 | descarta essa porcentagem dos comandos ativos (sorteio); a TTL do servidor e do firmware para o carrinho | nenhuma |
 | `intercept` | booleano | registra cada `pilot.drive` recebido e cada `device.drive` enviado ao alvo e mostra ao atacante | criptografia (embaralha o texto) |
 | `spoofTelemetry` | booleano | o hacker **dono** do carrinho vê `confirmed` e `desired` iguais ao `requested` e não recebe o evento "Comando alterado" (vai só para o atacante); operador, espectador e atacante veem a verdade | integridade |
@@ -104,7 +104,7 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 
 A ordem no pipeline é: neutro intocado → replay → travar → viés → inversões. Comando neutro do piloto nunca muda; se o replay ou o travamento resultam em neutro, o carrinho **para** (lado seguro). Exemplos da inversão: `(1,-100)` com inversão de direção → `(1,100)`; `(1,-60)` com ambas → `(-1,60)`; `(0,0)` nunca muda.
 
-**Sequestro (exceção à regra 5.3 do plano mestre, decidida em 15/11/2026):** enquanto ativo, `pilot.drive` ativo do piloto volta `hijacked` e `pilot.drive` neutro e `pilot.stop` do piloto são ignorados. O carrinho para quando o sequestrador solta (`attack.driveStop` ou `attack.drive` neutro, motivo `hijack-release`), no STOP ALL, na pausa, pela TTL do servidor e do firmware, ao desligar o sequestro, ao trocar a senha do alvo e quando o atacante sai. Ligar e desligar o sequestro para o carrinho (`hijack-start` / `hijack-release`). A marca "solte e toque de novo" depois da pausa vale também para o sequestrador.
+**Sequestro (exceção à regra 5.3 do plano mestre, decidida em 15/11/2026):** enquanto ativo, `pilot.drive` ativo do piloto volta `hijacked` e `pilot.drive` neutro e `pilot.stop` do piloto são ignorados. O carrinho para quando o sequestrador solta (`attack.driveStop` ou `attack.drive` neutro, motivo `hijack-release`) ou perde a última conexão, no STOP ALL, na pausa, pela TTL do servidor e do firmware, ao desligar o sequestro, ao trocar a senha do alvo e quando o atacante sai. Ligar e desligar o sequestro para o carrinho (`hijack-start` / `hijack-release`). A marca "solte e toque de novo" depois da pausa vale também para o sequestrador.
 
 **Link derrubado:** o servidor para o carrinho (`link-jammed`, gravado como motivo), recusa `pilot.drive` e `attack.drive` ativos com `link_jammed` por 5 s (`JAM_MS`) e só aceita outra queda 10 s depois (`JAM_COOLDOWN_MS`). O WebSocket do ESP32 e o `device.heartbeat` continuam: nada de novo vai ao firmware, que para pela TTL. Soltar o joystick continua parando.
 

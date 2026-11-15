@@ -130,3 +130,15 @@ Decisões técnicas do agente:
 | Telemetria falsa | só o hacker dono do carrinho vê o confirmado igual ao solicitado, no novo "Monitor do seu carrinho" da aba Defesa; o evento "Comando alterado" vai só para a equipe atacante enquanto o ataque estiver ativo |
 | Sequestro | `attack.drive`/`attack.driveStop` com o mesmo `CarController` (mesmo `seq` crescente, TTL e coalescência); limite de 40/s como o piloto e parada isenta; o analógico do sequestro reaproveita o `Joystick` e o `usePilotDrive` (parâmetro `channel`), sem teclado para não disputar as setas com as abas |
 | Firmware | nenhuma mudança: atraso e perda viram watchdog, replay com `seq` novo é aceito e a queda simulada mantém o heartbeat. O servidor não manda tipos novos ao ESP32 (tipo desconhecido gera `device.fault`) |
+
+Ajustes da revisão Opus (15/11/2026, aprovada com ressalvas):
+
+- **Replay só com tração pedida:** um comando só de direção (`throttle 0`) nunca vira movimento pelo replay; antes, `(0,30)` podia virar `(1,0)` e o carrinho andava sem o piloto pedir tração.
+- **Queda da conexão do sequestrador para o carrinho na hora** (`hijack-release`), como já acontecia com o piloto; antes ficava até a TTL de 400 ms.
+- **Mudar o atraso ou desligar todos os ataques descarta os comandos atrasados**, para um comando antigo não passar por cima de um mais novo. O watchdog do servidor também cancela os atrasados.
+- **Religar "Travar direção" guarda a direção nova** (antes reaproveitava a do travamento anterior).
+- **Desativar o ataque mantém o intervalo de 10 s entre quedas do link** (antes dava para burlar com "Desativar ataque"); o reset do operador e a nova largada zeram tudo.
+- **Com a telemetria falsa ativa, as mudanças de configuração do ataque também ficam só com a equipe atacante** no registro.
+- **O histórico do replay só guarda pedidos aceitos** (e as solturas), não os recusados com a partida pausada ou o link derrubado.
+- O analógico do sequestro mostra por que um comando foi recusado (link derrubado, solte e toque de novo, partida parada).
+- Não corrigido (já existia): se a gravação da nova senha falhar no disco, a troca lança erro antes de revogar o piloto e de encerrar o sequestro. Comandos do cliente montados a partir de um snapshot antigo podem reenviar `hijack: true` logo depois de o servidor encerrar o sequestro; o servidor recusa a configuração inteira com a mensagem da senha trocada.

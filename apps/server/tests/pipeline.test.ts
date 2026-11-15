@@ -140,6 +140,11 @@ describe("pipeline: viés, travamento e replay", () => {
     expect(r2).toMatchObject({ transformed: true, blockedBy: ["replay"] });
   });
 
+  test("replay não cria tração num comando só de direção", () => {
+    const r = applyAttack({ throttle: 0, steering: 30 }, fx({ replayVec: { throttle: 1, steering: 0 } }));
+    expect(r).toMatchObject({ output: { throttle: 0, steering: 30 }, transformed: false, blocked: false });
+  });
+
   test("integridade não bloqueia o replay", () => {
     const r = applyAttack({ throttle: 1, steering: 0 }, fx({ replayVec: { throttle: -1, steering: 40 } }), integrity);
     expect(r.output).toEqual({ throttle: -1, steering: 40 });

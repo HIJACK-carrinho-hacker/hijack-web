@@ -97,6 +97,24 @@ describe("atraso de comandos", () => {
     expect(engine.car("car-a").controller.moving).toBe(false);
   });
 
+  test("parada sem pausar a partida cancela os comandos atrasados", async () => {
+    for (const stop of [
+      () => engine.pilotStop("car-a", "pilot-stop"),
+      () => engine.stopCar("car-a", "session-revoked"),
+      () => engine.cancelDelayedCommands("car-a"),
+    ]) {
+      make();
+      attack({ delayMs: 300 });
+      pilot(1);
+      stop();
+      expect(engine.demoState).toBe("running");
+      await sleep(350);
+      expect(dev().drives).toHaveLength(0);
+      engine.dispose();
+    }
+    make();
+  });
+
   test("STOP geral cancela os comandos atrasados", async () => {
     make();
     attack({ delayMs: 300 });
@@ -149,6 +167,27 @@ describe("replay", () => {
     expect(lastDrive()).toEqual({ throttle: 1, steering: 20 });
   });
 
+  test("replay não liga a tração quando o piloto só vira a direção", () => {
+    make();
+    attack({ replay: true });
+    pilot(1, 0);
+    now += REPLAY_DELAY_MS;
+    pilot(0, 30);
+    expect(lastDrive()).toEqual({ throttle: 0, steering: 30 });
+  });
+
+  test("pedidos recusados não entram no histórico do replay", () => {
+    make();
+    attack({ replay: true });
+    pilot(1, 0);
+    now += 1000;
+    engine.jamLink("car-a");
+    expect(pilot(-1, 40)).toMatchObject({ ok: false, code: "link_jammed" });
+    now += JAM_MS;
+    pilot(1, 10);
+    expect(lastDrive()).toEqual({ throttle: 1, steering: 0 });
+  });
+
   test("defesa de repetição recusa e registra", () => {
     make();
     attack({ replay: true }, { replay: true });
@@ -167,6 +206,16 @@ describe("travar direção", () => {
     pilot(1, 30);
     now += 100;
     pilot(1, -80);
+    expect(lastDrive()).toEqual({ throttle: 1, steering: 30 });
+  });
+
+  test("religar a trava guarda a direção nova", () => {
+    make();
+    attack({ lockSteering: true });
+    pilot(1, -80);
+    engine.rearmSteeringLock("car-a");
+    now += 100;
+    pilot(1, 30);
     expect(lastDrive()).toEqual({ throttle: 1, steering: 30 });
   });
 
@@ -355,5 +404,13 @@ describe("limpeza do estado de ataque", () => {
     expect(engine.hijackedBy("car-a")).toBeNull();
     expect(engine.jamState("car-a")).toEqual({ jammedUntil: null, jamReadyAt: null });
     expect(engine.intercepted("car-a")).toEqual([]);
+  });
+
+  test("desativar o ataque mantém o intervalo entre quedas", () => {
+    make();
+    engine.jamLink("car-a");
+    engine.clearAttackState("car-a", true);
+    expect(engine.jamState("car-a").jammedUntil).toBeNull();
+    expect(engine.jamLink("car-a")).toMatchObject({ ok: false, code: "forbidden" });
   });
 });
