@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useHijack } from "@/hooks/use-hijack";
 import { cn } from "@/lib/utils";
+import { configOf } from "./attack-config";
 
 const SCAN_MS = 1500;
 const EXPLOIT_MS = 1200;
@@ -157,10 +158,7 @@ export function AttackSteps({ attack, cars, running }: { attack: AttackView; car
                   disabled={disabled}
                   onCheckedChange={(v) =>
                     void run("configure", () =>
-                      request("attack.configure", {
-                        invertThrottle: key === "invertThrottle" ? v : attack.invertThrottle,
-                        invertSteering: key === "invertSteering" ? v : attack.invertSteering,
-                      }),
+                      request("attack.configure", { ...configOf(attack), [key]: v }),
                     )
                   }
                 />

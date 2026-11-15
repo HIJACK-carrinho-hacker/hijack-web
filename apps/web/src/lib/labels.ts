@@ -41,6 +41,9 @@ export const STOP_REASON_LABEL: Record<StopReason, string> = {
   "server-restart": "Servidor reiniciado",
   "mode-change": "Troca de modo",
   fault: "Falha",
+  "link-jammed": "Link derrubado",
+  "hijack-start": "Sequestro iniciado",
+  "hijack-release": "Sequestrador soltou",
 };
 
 export const TEAM_COLOR_CLASS = {

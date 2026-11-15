@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { DEFAULT_ATTACK_CONFIG } from "@hijack/protocol";
 import { loadConfig } from "../src/config/env.ts";
 import { type Harness, type TestClient, adminLogin, connectAs, login, startServer } from "./helpers.ts";
 
@@ -105,7 +106,7 @@ describe("topologia de 1 carrinho", () => {
     expect(await act(hackerB, "attack.selectTarget", { targetCarId: "car-b" })).toMatchObject({ ok: false, code: "forbidden" });
     expect((await act(hackerB, "attack.selectTarget", { targetCarId: "car-a" })).ok).toBe(true);
     expect((await act(hackerB, "attack.exploitDemo", {})).ok).toBe(true);
-    expect((await act(hackerB, "attack.configure", { invertThrottle: true, invertSteering: true })).ok).toBe(true);
+    expect((await act(hackerB, "attack.configure", { ...DEFAULT_ATTACK_CONFIG, invertThrottle: true, invertSteering: true })).ok).toBe(true);
     pilotA.send("pilot.drive", { throttle: 1, steering: -60, pressed: true });
     await sleep(30);
     expect(confirmed("car-a")).toEqual({ throttle: -1, steering: 60 });

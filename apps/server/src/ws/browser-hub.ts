@@ -32,10 +32,12 @@ export interface BrowserHubHandlers {
 function isStopMessage(msg: ClientMessage): boolean {
   switch (msg.type) {
     case "pilot.stop":
+    case "attack.driveStop":
     case "admin.stopAll":
     case "session.logout":
       return true;
     case "pilot.drive":
+    case "attack.drive":
       return !msg.payload.pressed || (msg.payload.throttle === 0 && msg.payload.steering === 0);
     default:
       return false;
@@ -64,7 +66,7 @@ export class BrowserHub {
     const pilot = new RateLimiter(MAX_PILOT_MESSAGES_PER_SECOND, MAX_PILOT_MESSAGES_PER_SECOND);
     let lastNotice = 0;
     const allowed = (type: string | null, requestId?: string): boolean => {
-      const isPilot = type?.startsWith("pilot.") ?? false;
+      const isPilot = type !== null && (type.startsWith("pilot.") || type === "attack.drive");
       const limiter = isPilot ? pilot : control;
       if (limiter.take()) return true;
       if (isPilot) return false;

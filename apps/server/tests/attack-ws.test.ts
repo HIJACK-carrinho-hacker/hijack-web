@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { DEFAULT_ATTACK_CONFIG } from "@hijack/protocol";
 import { type Harness, type TestClient, adminLogin, connectAs, login, startServer } from "./helpers.ts";
 
 let h: Harness;
@@ -41,7 +42,7 @@ async function fullAttack(c: TestClient, target: "car-a" | "car-b", invertThrott
   expect((await act(c, "attack.scan", {})).ok).toBe(true);
   expect((await act(c, "attack.selectTarget", { targetCarId: target })).ok).toBe(true);
   expect((await act(c, "attack.exploitDemo", {})).ok).toBe(true);
-  expect((await act(c, "attack.configure", { invertThrottle, invertSteering })).ok).toBe(true);
+  expect((await act(c, "attack.configure", { ...DEFAULT_ATTACK_CONFIG, invertThrottle, invertSteering })).ok).toBe(true);
 }
 
 const confirmed = (carId: "car-a" | "car-b") => {
@@ -143,7 +144,7 @@ describe("ataque guiado", () => {
     pilotA.send("pilot.drive", { throttle: 1, steering: -100, pressed: true });
     await sleep(30);
     expect(confirmed("car-a")).toEqual({ throttle: 1, steering: 100 });
-    expect(await act(hackerB, "attack.configure", { invertThrottle: true, invertSteering: false })).toEqual({ ok: true });
+    expect(await act(hackerB, "attack.configure", { ...DEFAULT_ATTACK_CONFIG, invertThrottle: true })).toEqual({ ok: true });
     pilotA.send("pilot.drive", { throttle: 1, steering: -100, pressed: true });
     await sleep(70);
     expect(confirmed("car-a")).toEqual({ throttle: -1, steering: -100 });
@@ -258,7 +259,14 @@ describe("defesa didática", () => {
     await act(hackerB, "auth.changePassword", { currentPassword: "1234", nextPassword: "Carrinho2026" });
     const snap = await hackerB.waitFor("state.snapshot", (m) => m.payload.state.defenses[0]?.level === 3);
     expect(snap.payload.state.defenses).toEqual([
-      { carId: "car-b", strongPasswordEnabled: true, integrityDemoEnabled: true, replayDemoEnabled: true, level: 3 },
+      {
+        carId: "car-b",
+        strongPasswordEnabled: true,
+        integrityDemoEnabled: true,
+        replayDemoEnabled: true,
+        encryptionDemoEnabled: false,
+        level: 3,
+      },
     ]);
   });
 

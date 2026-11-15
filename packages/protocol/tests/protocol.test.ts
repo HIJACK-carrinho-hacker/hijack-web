@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   CLIENT_MESSAGE_TYPES,
+  DEFAULT_ATTACK_CONFIG,
   DEVICE_MESSAGE_TYPES,
   MAX_MESSAGE_BYTES,
   clientMessageSchema,
@@ -94,6 +95,55 @@ describe("mensagens do cliente", () => {
   test("requestId precisa ser UUID", () => {
     const r = parseClient(drive({ throttle: 0, steering: 0, pressed: false }, { requestId: "abc" }));
     expect(r).toMatchObject({ ok: false, code: "invalid_payload" });
+  });
+});
+
+describe("ataques novos", () => {
+  const msg = (type: string, payload: unknown) =>
+    JSON.stringify({ protocolVersion: 1, type, requestId: uuid, sentAt: 1, payload });
+  const configure = (extra: Record<string, unknown>) =>
+    parseClient(msg("attack.configure", { ...DEFAULT_ATTACK_CONFIG, ...extra }));
+
+  test("attack.configure aceita a configuração padrão e cada ataque", () => {
+    expect(configure({}).ok).toBe(true);
+    expect(configure({ steeringBias: -40, lockSteering: true, delayMs: 300, dropPct: 60 }).ok).toBe(true);
+    expect(configure({ replay: true, intercept: true, spoofTelemetry: true, hijack: true }).ok).toBe(true);
+  });
+
+  test.each([
+    { steeringBias: 45 },
+    { steeringBias: -45 },
+    { steeringBias: 7 },
+    { delayMs: 200 },
+    { delayMs: 1000 },
+    { dropPct: 100 },
+    { dropPct: 10 },
+  ])("attack.configure rejeita valor fora das opções: %p", (extra) => {
+    expect(configure(extra)).toMatchObject({ ok: false, code: "invalid_payload" });
+  });
+
+  test("attack.configure exige todos os campos e recusa extras", () => {
+    expect(parseClient(msg("attack.configure", { invertThrottle: true, invertSteering: false }))).toMatchObject({
+      ok: false,
+      code: "invalid_payload",
+    });
+    expect(configure({ targetCarId: "car-b" })).toMatchObject({ ok: false, code: "invalid_payload" });
+  });
+
+  test("attack.drive segue as faixas do piloto", () => {
+    expect(parseClient(msg("attack.drive", { throttle: 1, steering: -60, pressed: true })).ok).toBe(true);
+    expect(parseClient(msg("attack.drive", { throttle: 2, steering: 0, pressed: true }))).toMatchObject({
+      ok: false,
+      code: "invalid_payload",
+    });
+  });
+
+  test("mensagens vazias e a defesa de criptografia", () => {
+    for (const type of ["attack.crackPassword", "attack.jamLink", "attack.driveStop"]) {
+      expect(parseClient(msg(type, {})).ok).toBe(true);
+      expect(parseClient(msg(type, { carId: "car-a" }))).toMatchObject({ ok: false, code: "invalid_payload" });
+    }
+    expect(parseClient(msg("defense.setEncryptionDemo", { enabled: true })).ok).toBe(true);
   });
 });
 

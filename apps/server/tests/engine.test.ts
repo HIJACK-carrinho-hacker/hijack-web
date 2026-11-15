@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { DEFAULT_ATTACK_CONFIG } from "@hijack/protocol";
 import { SimulatorAdapter } from "../src/adapters/simulator/simulator-adapter.ts";
 import { testConfig } from "../src/config/env.ts";
 import { HijackEngine } from "../src/engine.ts";
@@ -262,10 +263,11 @@ describe("HijackEngine", () => {
 
   test("cada novo movimento alterado depois de uma parada gera novo evento", () => {
     run();
-    engine.setAttackResolver((carId) => ({
-      effect: carId === "car-b" ? { invertThrottle: true, invertSteering: false } : null,
-      integrity: false,
-    }));
+    engine.setAttackResolver((carId) =>
+      carId === "car-b"
+        ? { attackerTeam: "A", config: { ...DEFAULT_ATTACK_CONFIG, invertThrottle: true }, integrity: false, replayDefense: false }
+        : null,
+    );
     const count = () => engine.events.all().filter((e) => e.kind === "attack.transformed").length;
     engine.pilotInput("car-b", { throttle: 1, steering: 0, pressed: true });
     engine.pilotInput("car-b", { throttle: 1, steering: 0, pressed: true });

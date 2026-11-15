@@ -9,13 +9,22 @@ export interface PilotStatus {
   canDrive: boolean;
 }
 
-const SAFETY_STOPS: ReadonlySet<StopReason> = new Set(["watchdog", "admin-stop-all", "device-disconnected", "fault"]);
+const SAFETY_STOPS: ReadonlySet<StopReason> = new Set([
+  "watchdog",
+  "admin-stop-all",
+  "device-disconnected",
+  "fault",
+  "link-jammed",
+]);
 
 export function pilotStatus(conn: ConnectionStatus, demo: DemoState | undefined, car: CarView | undefined): PilotStatus {
   if (conn !== "open") return { label: "Sem conexão", tone: "destructive", canDrive: false };
   if (!car || !demo) return { label: "Carregando…", tone: "muted", canDrive: false };
   if (!car.active) return { label: "Carrinho desativado nesta demonstração", tone: "muted", canDrive: false };
   if (!car.telemetry.online) return { label: "Carrinho desconectado", tone: "destructive", canDrive: false };
+  if (car.hijacked && demo === "running") {
+    return { label: "Controle tomado pelo invasor", tone: "destructive", canDrive: false };
+  }
   switch (demo) {
     case "setup":
     case "ready":

@@ -16,6 +16,8 @@ const car = (over: Partial<CarView> = {}): CarView => ({
   confirmedStale: false,
   moving: true,
   stopReason: null,
+  hijacked: false,
+  jammed: false,
   telemetry: { online: true, lastSeenAt: null, uptimeMs: null, rssi: null, reconnects: 0, rejectedCommands: 0, lastSeq: 0, watchdogTrips: 0 },
   sim: null,
   ...over,

@@ -124,7 +124,7 @@ export function createApiRouter(service: HijackService, config: Config): express
         res,
         "metrics",
         format,
-        ["carId", "mode", "received", "applied", "transformed", "blocked", "rejected", "disconnects", "watchdogTrips", "ackLatencyMsP50", "ackLatencyMsP95"],
+        ["carId", "mode", "received", "applied", "transformed", "blocked", "dropped", "rejected", "disconnects", "watchdogTrips", "ackLatencyMsP50", "ackLatencyMsP95"],
         rows,
       );
       return;

@@ -3,7 +3,15 @@ import type { CarId, CarMode, Metrics } from "@hijack/protocol";
 const SAMPLE_LIMIT = 500;
 const PENDING_LIMIT = 200;
 
-export type CounterName = "received" | "applied" | "transformed" | "blocked" | "rejected" | "disconnects" | "watchdogTrips";
+export type CounterName =
+  | "received"
+  | "applied"
+  | "transformed"
+  | "blocked"
+  | "dropped"
+  | "rejected"
+  | "disconnects"
+  | "watchdogTrips";
 
 interface CarMetrics {
   counters: Record<CounterName, number>;
@@ -16,6 +24,7 @@ const emptyCounters = (): Record<CounterName, number> => ({
   applied: 0,
   transformed: 0,
   blocked: 0,
+  dropped: 0,
   rejected: 0,
   disconnects: 0,
   watchdogTrips: 0,

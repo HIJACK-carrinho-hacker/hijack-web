@@ -9,6 +9,7 @@ import type {
   TEAM_IDS,
 } from "./constants.ts";
 import type {
+  attackConfigSchema,
   attackViewSchema,
   axisSchema,
   carViewSchema,
@@ -17,6 +18,7 @@ import type {
   deviceToServerSchema,
   driveVectorSchema,
   eventLogEntrySchema,
+  interceptEntrySchema,
   loginRequestSchema,
   meSchema,
   metricsSchema,
@@ -55,6 +57,8 @@ export type Telemetry = z.infer<typeof telemetrySchema>;
 export type CarView = z.infer<typeof carViewSchema>;
 export type SlotView = z.infer<typeof slotViewSchema>;
 export type AttackView = z.infer<typeof attackViewSchema>;
+export type AttackConfig = z.infer<typeof attackConfigSchema>;
+export type InterceptEntry = z.infer<typeof interceptEntrySchema>;
 export type DefenseView = z.infer<typeof defenseViewSchema>;
 export type Me = z.infer<typeof meSchema>;
 export type EventLogEntry = z.infer<typeof eventLogEntrySchema>;

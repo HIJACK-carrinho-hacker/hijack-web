@@ -34,6 +34,9 @@ export const STOP_REASONS = [
   "server-restart",
   "mode-change",
   "fault",
+  "link-jammed",
+  "hijack-start",
+  "hijack-release",
 ] as const;
 
 export const DEFAULT_COMMAND_TTL_MS = 400;
@@ -46,6 +49,38 @@ export const BROWSER_MESSAGE_BURST = 20;
 export const MAX_PILOT_MESSAGES_PER_SECOND = 40;
 export const CONFIRMED_STALE_MS = 1500;
 export const RATE_LIMIT_NOTICE_MS = 1000;
+
+export const STEERING_BIAS_MAX = 40;
+export const STEERING_BIAS_STEP = 5;
+export const ATTACK_DELAYS_MS = [0, 150, 300] as const;
+export const ATTACK_DROP_PCTS = [0, 30, 60] as const;
+export const REPLAY_DELAY_MS = 5000;
+export const REPLAY_HISTORY_MS = 10000;
+export const JAM_MS = 5000;
+export const JAM_COOLDOWN_MS = 10000;
+export const INTERCEPT_LOG_SIZE = 15;
+export const CRACK_DICTIONARY = [
+  "123456",
+  "password",
+  "admin",
+  "qwerty",
+  "senha",
+  "0000",
+  "1111",
+  "12345",
+  "abc123",
+  "1234",
+  "carrinho",
+  "hijack",
+  "esp32",
+  "123123",
+  "iloveyou",
+  "senha123",
+  "admin123",
+  "102030",
+  "batata",
+  "brasil",
+] as const;
 
 export const DEFAULT_CAR_PASSWORD = "1234";
 export const MIN_STRONG_PASSWORD_LENGTH = 8;
@@ -74,5 +109,7 @@ export const ERROR_CODES = [
   "weak_password",
   "car_offline",
   "release_required",
+  "hijacked",
+  "link_jammed",
   "internal",
 ] as const;

@@ -14,6 +14,8 @@ const car = (over: Partial<CarView> = {}): CarView => ({
   confirmedStale: false,
   moving: false,
   stopReason: null,
+  hijacked: false,
+  jammed: false,
   telemetry: { online: true, lastSeenAt: null, uptimeMs: null, rssi: null, reconnects: 0, rejectedCommands: 0, lastSeq: 0, watchdogTrips: 0 },
   sim: null,
   ...over,
@@ -63,6 +65,9 @@ describe("pilotStatus", () => {
       "server-restart": false,
       "mode-change": false,
       fault: true,
+      "link-jammed": true,
+      "hijack-start": false,
+      "hijack-release": false,
     };
     for (const reason of STOP_REASONS) {
       const status = pilotStatus("open", "running", car({ stopReason: reason }));
@@ -72,6 +77,14 @@ describe("pilotStatus", () => {
         expect(status).toMatchObject({ label: "Em demonstração", tone: "primary", canDrive: true });
       }
     }
+  });
+  test("sequestro tira o controle do piloto durante a partida", () => {
+    expect(pilotStatus("open", "running", car({ hijacked: true }))).toMatchObject({
+      label: "Controle tomado pelo invasor",
+      tone: "destructive",
+      canDrive: false,
+    });
+    expect(pilotStatus("open", "paused", car({ hijacked: true }))).toMatchObject({ label: "Pausado" });
   });
   test("andando não é parada de segurança mesmo com motivo antigo", () => {
     expect(pilotStatus("open", "running", car({ moving: true, stopReason: "watchdog" }))).toMatchObject({ label: "Em demonstração" });

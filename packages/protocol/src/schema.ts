@@ -1,7 +1,12 @@
 import { z } from "zod";
 import {
+  ATTACK_DELAYS_MS,
+  ATTACK_DROP_PCTS,
   ATTACK_STEPS,
   CAR_IDS,
+  INTERCEPT_LOG_SIZE,
+  STEERING_BIAS_MAX,
+  STEERING_BIAS_STEP,
   CAR_MODES,
   DEMO_STATES,
   DEMO_TOPOLOGIES,
@@ -44,6 +49,45 @@ export const passwordSchema = z.string().min(1).max(MAX_PASSWORD_LENGTH);
 export const driveVectorSchema = z.strictObject({
   throttle: axisSchema,
   steering: steeringSchema,
+});
+
+export const attackConfigShape = {
+  invertThrottle: z.boolean(),
+  invertSteering: z.boolean(),
+  steeringBias: z
+    .number()
+    .int()
+    .min(-STEERING_BIAS_MAX)
+    .max(STEERING_BIAS_MAX)
+    .multipleOf(STEERING_BIAS_STEP),
+  lockSteering: z.boolean(),
+  delayMs: z.literal(ATTACK_DELAYS_MS),
+  dropPct: z.literal(ATTACK_DROP_PCTS),
+  replay: z.boolean(),
+  intercept: z.boolean(),
+  spoofTelemetry: z.boolean(),
+  hijack: z.boolean(),
+};
+
+export const attackConfigSchema = z.strictObject(attackConfigShape);
+
+export const DEFAULT_ATTACK_CONFIG: z.infer<typeof attackConfigSchema> = {
+  invertThrottle: false,
+  invertSteering: false,
+  steeringBias: 0,
+  lockSteering: false,
+  delayMs: 0,
+  dropPct: 0,
+  replay: false,
+  intercept: false,
+  spoofTelemetry: false,
+  hijack: false,
+};
+
+export const interceptEntrySchema = z.strictObject({
+  at: z.number(),
+  text: z.string(),
+  encrypted: z.boolean(),
 });
 
 export const loginRequestSchema = z.strictObject({
@@ -95,13 +139,18 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientEnvelope("attack.scan", empty),
   clientEnvelope("attack.selectTarget", z.strictObject({ targetCarId: carIdSchema })),
   clientEnvelope("attack.exploitDemo", empty),
-  clientEnvelope(
-    "attack.configure",
-    z.strictObject({ invertThrottle: z.boolean(), invertSteering: z.boolean() }),
-  ),
+  clientEnvelope("attack.configure", attackConfigSchema),
   clientEnvelope("attack.disable", empty),
+  clientEnvelope("attack.crackPassword", empty),
+  clientEnvelope("attack.jamLink", empty),
+  clientEnvelope(
+    "attack.drive",
+    z.strictObject({ throttle: axisSchema, steering: steeringSchema, pressed: z.boolean() }),
+  ),
+  clientEnvelope("attack.driveStop", empty),
   clientEnvelope("defense.setIntegrityDemo", z.strictObject({ enabled: z.boolean() })),
   clientEnvelope("defense.setReplayDemo", z.strictObject({ enabled: z.boolean() })),
+  clientEnvelope("defense.setEncryptionDemo", z.strictObject({ enabled: z.boolean() })),
   clientEnvelope(
     "auth.changePassword",
     z.strictObject({ currentPassword: passwordSchema, nextPassword: passwordSchema }),
@@ -141,6 +190,8 @@ export const carViewSchema = z.strictObject({
   confirmedStale: z.boolean(),
   moving: z.boolean(),
   stopReason: stopReasonSchema.nullable(),
+  hijacked: z.boolean(),
+  jammed: z.boolean(),
   telemetry: telemetrySchema,
   sim: z
     .strictObject({ x: z.number(), y: z.number(), heading: z.number() })
@@ -159,9 +210,12 @@ export const attackViewSchema = z.strictObject({
   scanResults: z.array(carIdSchema),
   targetCarId: carIdSchema.nullable(),
   exploitReport: z.string().nullable(),
-  invertThrottle: z.boolean(),
-  invertSteering: z.boolean(),
+  ...attackConfigShape,
   active: z.boolean(),
+  intercepted: z.array(interceptEntrySchema).max(INTERCEPT_LOG_SIZE),
+  crackReport: z.string().nullable(),
+  jammedUntil: z.number().nullable(),
+  jamReadyAt: z.number().nullable(),
 });
 
 export const defenseViewSchema = z.strictObject({
@@ -169,7 +223,8 @@ export const defenseViewSchema = z.strictObject({
   strongPasswordEnabled: z.boolean(),
   integrityDemoEnabled: z.boolean(),
   replayDemoEnabled: z.boolean(),
-  level: z.number().int().min(0).max(3),
+  encryptionDemoEnabled: z.boolean(),
+  level: z.number().int().min(0).max(4),
 });
 
 export const meSchema = z.strictObject({
@@ -197,6 +252,7 @@ export const metricsSchema = z.strictObject({
   applied: z.number().int(),
   transformed: z.number().int(),
   blocked: z.number().int(),
+  dropped: z.number().int(),
   rejected: z.number().int(),
   disconnects: z.number().int(),
   watchdogTrips: z.number().int(),
