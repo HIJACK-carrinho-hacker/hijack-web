@@ -17,7 +17,7 @@ O HIJACK roda em uma **LAN isolada de laboratório**. Este documento separa o qu
 | Força bruta | Login: 5 falhas em 60 s por IP **ou** por carrinho → bloqueio de 15 s, dobrando até 5 min. Troca de senha: 3 falhas por sessão. Admin: 5 falhas por IP. Mensagens de erro genéricas. |
 | Origem | `Origin` obrigatório e igual ao `Host` (ou em `ALLOWED_ORIGINS`) no WebSocket; `POST`/`DELETE` em `/api` com `Origin` de outro site → 403. |
 | Tamanho | Mensagens WS > 2 KiB e corpos HTTP > 2 KiB são recusados. |
-| Parada segura | STOP e watchdog nunca são transformados pelo ataque (ver `architecture.md`). |
+| Parada segura | STOP ALL, pausa e watchdog nunca são transformados nem desligados pelo ataque (ver `architecture.md`). Única exceção, decidida em 15/11/2026: durante o sequestro, a parada pedida pelo **piloto** é ignorada; o carrinho para quando o sequestrador solta, no STOP ALL, na pausa e pela TTL. |
 | Logs | Nenhuma senha, segredo ou token aparece em eventos, métricas, `/health` ou erros. |
 
 ## Didático (simulado)
@@ -25,9 +25,16 @@ O HIJACK roda em uma **LAN isolada de laboratório**. Este documento separa o qu
 | Item | O que é |
 |---|---|
 | Ataque em etapas | Simulação no servidor sobre os carrinhos cadastrados; não há scan, sniffing nem exploração de rede. |
-| Integridade | Chave que impede a inversão no servidor; **não é HMAC** nem assinatura. |
-| Repetição | Gera um evento didático de comando antigo recusado; **não é validação no firmware**. A checagem de `seq` do firmware existe por confiabilidade, não como essa camada. |
-| Indicador 0–3 | Conta camadas demonstradas, não mede segurança real. |
+| Sabotagem (inversão, viés, travamento, atraso, perda, replay) | Feita pelo próprio servidor no pipeline do comando do piloto; parar nunca é alterado nem atrasado. |
+| Interceptar tráfego | Mostra ao atacante o que o servidor já recebe e envia daquele carrinho; nenhuma rede é capturada. |
+| Quebra de senha | Lista fixa de senhas comuns comparada só com a marca "senha padrão"; a senha real nunca é testada nem exibida. |
+| Derrubar o link | O servidor deixa de enviar comandos por 5 s; o WebSocket do ESP32 continua aberto e o firmware para pela TTL. Não há deauth nem interferência de rádio. |
+| Telemetria falsa | Muda só o que o hacker defensor vê no snapshot; o projetor e o operador continuam com a verdade. |
+| Sequestro | O servidor aceita `attack.drive` do atacante enquanto a senha do alvo for a padrão; STOP ALL, pausa e TTL continuam valendo. |
+| Integridade | Chave que impede inversão, viés, travamento e telemetria falsa no servidor; **não é HMAC** nem assinatura. |
+| Repetição | Recusa no servidor o replay do atacante e gera um exemplo didático no registro; **não é validação no firmware**. A checagem de `seq` do firmware existe por confiabilidade, não como essa camada (um replay com `seq` novo passa por ela). |
+| Criptografia | Embaralha o texto do tráfego interceptado; **não é TLS**: a rede continua em texto claro. |
+| Indicador 0–4 | Conta camadas demonstradas, não mede segurança real. |
 
 ## Riscos aceitos e limitações
 

@@ -37,6 +37,15 @@ O hacker B ataca o Carrinho A, explicando cada etapa (o hacker A vê na aba Ataq
 
 Ponto didático: a inversão nunca move um carrinho parado e nunca impede o STOP.
 
+### Ataques extras (≈ 5 min, opcionais)
+
+Depois das inversões, o hacker B pode mostrar os outros ataques da etapa 4 (todos simulados no servidor):
+
+- **Sabotagem:** viés de direção (o carrinho puxa para um lado), travar direção, atraso de 150/300 ms, perda de 30/60 % dos comandos (o carrinho engasga e o watchdog aparece nas métricas) e replay (o carrinho repete o que o piloto fez 5 s antes).
+- **Espionagem:** interceptar tráfego (o feed mostra os comandos do piloto e o que o servidor manda ao carrinho, em texto claro) e quebrar a senha por dicionário (acha o `1234`).
+- **Canal:** derrubar o link por 5 s (o carrinho para sozinho pelo failsafe; o projetor mostra "LINK DERRUBADO") e falsificar a telemetria (o monitor do hacker A mostra o carrinho obedecendo enquanto o projetor mostra "COMANDO ALTERADO NO CAMINHO").
+- **Sequestro:** o hacker B liga "Sequestrar o carrinho" e dirige pelo analógico dele; o piloto A vê "Controle tomado pelo invasor" e o projetor mostra "CARRINHO SEQUESTRADO". O STOP ALL continua parando tudo.
+
 ## 3. Defesa (≈ 4 min)
 
 Hacker A na aba **Defesa**:
@@ -44,12 +53,16 @@ Hacker A na aba **Defesa**:
 1. **Autenticação (real):** trocar `1234` por uma senha forte.
    - O piloto A é desconectado e precisa entrar com a nova senha; `1234` deixa de funcionar.
    - **Mostrar que a inversão continua acontecendo**: senha forte impede acesso indevido, mas não protege contra alterações feitas por um componente já autorizado (o servidor, nesta simulação).
+   - Se o sequestro estava ativo, ele termina na hora e não pode ser religado; a quebra de senha passa a falhar.
 2. **Integridade (simulada, não HMAC):** ligar.
    - O piloto A volta a ir para frente; o projetor mostra Solicitado = Confirmado.
    - O hacker B vê "Alteração bloqueada pela integridade (simulada)".
 3. **Repetição (simulada, não validação no firmware):** ligar e gerar um exemplo.
-   - O registro mostra um comando antigo reapresentado e recusado, sem mover o carrinho.
-4. Indicador de segurança chega a 3/3 — lembrar que conta **camadas demonstradas**, não segurança real.
+   - O registro mostra um comando antigo reapresentado e recusado, sem mover o carrinho; com o replay do hacker B ligado, o carrinho volta a obedecer o piloto ("Repetição recusada").
+4. **Criptografia (simulada, não TLS):** ligar; o feed de interceptação do hacker B fica ilegível.
+5. Indicador de segurança chega a 4/4 — lembrar que conta **camadas demonstradas**, não segurança real.
+   - A integridade também derruba a telemetria falsa: o monitor do hacker A volta a mostrar a verdade.
+   - Atraso, perda e link derrubado não têm camada: o que protege é o failsafe real do carrinho.
 
 ## 4. Encerramento (≈ 2 min)
 

@@ -9,7 +9,8 @@ apps/server
       │          SnapshotBroadcaster (snapshot por visualizador, ≤ 1 a cada 80 ms)
       ▼
    HijackEngine (autoridade única: estado da demo, carros, eventos, métricas)
-      │ pilotInput → applyAttack (pipeline puro) → CarController
+      │ pilotInput → applyAttack (pipeline puro) → perda/atraso → CarController
+      │ hijackInput (sequestro) ─────────────────────────────→ CarController
       ▼
    CarController (seq crescente, coalescência ≤ 20 cmd/s, STOP prioritário, watchdog do servidor)
       ▼
@@ -26,8 +27,8 @@ apps/server
 | `ws/browser-hub.ts` | conexões de navegador, `parseMessage`, envio com envelope |
 | `ws/origin.ts` | checagem do `Origin` no upgrade |
 | `ws/broadcaster.ts` | agenda e envia `state.snapshot` por conexão |
-| `engine.ts` | `HijackEngine`: máquina de estados da demo, topologia (`single`/`dual`, `isActive`), carros, eventos, métricas, snapshot por visualizador |
-| `control/pipeline.ts` | `applyAttack`: inversão de tração (1 ↔ −1) e de direção (nega o percentual), neutro inviolável, bloqueio pela integridade didática |
+| `engine.ts` | `HijackEngine`: máquina de estados da demo, topologia (`single`/`dual`, `isActive`), carros, eventos, métricas, snapshot por visualizador (inclusive a telemetria falsa do defensor); estado por carro dos ataques que dependem de tempo: histórico do replay, direção travada, comandos atrasados, link derrubado, sequestro e tráfego interceptado |
+| `control/pipeline.ts` | `applyAttack`: replay, travamento, viés e inversões (nessa ordem), neutro inviolável, bloqueio pela integridade e pela repetição didáticas (`blockedBy`) |
 | `control/car-controller.ts` | envio ao dispositivo, `seq`, limite de taxa, STOP, watchdog do servidor |
 | `demo/demo-state.ts` | transições válidas da demonstração |
 | `devices/types.ts` | contrato `DeviceAdapter` e eventos do dispositivo |
@@ -37,8 +38,9 @@ apps/server
 | `telemetry/` | log de eventos em anel e métricas (contadores, latência de ack p50/p95) |
 | `hijack-service.ts` | sessões, autorização por mensagem (inclusive regras da topologia de 1 carrinho), ataques, defesas, troca de senha, ações do operador (`admin.setTopology`), snapshot por visualizador |
 | `auth/` | `PasswordStore` (argon2id em arquivo), `SessionStore` (tokens, vagas), leitura de cookie |
-| `attacks/attack-manager.ts` | etapas do ataque por equipe e efeito (`effectOn`) sobre o carro alvo |
-| `defenses/defense-manager.ts` | integridade e repetição didáticas por carrinho, nível 0–3, texto do exemplo de repetição |
+| `attacks/attack-manager.ts` | etapas do ataque por equipe, configuração (`attack.configure`), relatórios de exploração e de quebra de senha, `configOn` do carro alvo |
+| `attacks/describe.ts` | texto e visibilidade dos eventos de cada mudança de configuração |
+| `defenses/defense-manager.ts` | integridade, repetição e criptografia didáticas por carrinho, nível 0–4, texto do exemplo de repetição, embaralhamento do tráfego |
 | `safety/throttle.ts` | bloqueio progressivo por falhas |
 | `http/api.ts` | rotas `/api` com checagem de Origin |
 

@@ -65,9 +65,11 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 | `cars[].confirmedStale` | `true` quando o carro está online, já enviou algum dado e o dispositivo não manda nenhum evento (ack, telemetria, parada, conexão) há mais de 1500 ms (`CONFIRMED_STALE_MS`); a tela mostra "sem dados" no lugar do último valor e esconde o alerta de comando alterado. Qualquer evento novo volta para `false` na hora; o piloto sempre recebe `false` |
 | `cars[].mode` | `simulated` ou `hardware`, exibido em toda a UI |
 | `cars[].sim` | posição meramente ilustrativa no simulador |
-| `attacks` | hacker vê o próprio ataque; admin e simulador veem todos |
-| `defenses[].level` | camadas **demonstradas** (0–3), não nível real de segurança |
-| `metrics` | somente admin e simulador |
+| `cars[].hijacked` | o carrinho está sequestrado (visível para todos, inclusive o piloto, que vê "Controle tomado pelo invasor") |
+| `cars[].jammed` | o link foi derrubado pelo ataque e o servidor não envia comandos ao carrinho (5 s) |
+| `attacks` | hacker vê o próprio ataque; admin e simulador veem todos. Além das etapas, traz a configuração (`attack.configure`), `intercepted` (até 15 quadros, mais novo primeiro; `encrypted: true` com a criptografia do alvo ligada), `crackReport`, `jammedUntil` e `jamReadyAt` |
+| `defenses[].level` | camadas **demonstradas** (0–4), não nível real de segurança |
+| `metrics` | somente admin e simulador; `dropped` conta os comandos descartados pela perda de pacotes |
 
 ## Etapas do ataque
 
@@ -78,21 +80,47 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 | `attack.scan` | `running` | lista os carrinhos **ativos** cadastrados (sem varredura real) |
 | `attack.selectTarget {targetCarId}` | `running`, etapa ≥ `scan`, alvo = carrinho adversário e ativo | define o alvo |
 | `attack.exploitDemo` | `running`, etapa ≥ `target` | gera o relatório simulado |
-| `attack.configure {invertThrottle, invertSteering}` | `running`, etapa ≥ `exploit` | liga/desliga cada inversão; `active` = alguma ligada |
-| `attack.disable` | qualquer estado | desliga as inversões (progresso mantido) |
+| `attack.configure {…}` | `running`, etapa ≥ `exploit` | grava a configuração inteira (todos os campos são obrigatórios; o cliente reenvia o objeto completo); `active` = algum ataque diferente do padrão |
+| `attack.crackPassword` | `running`, etapa ≥ `exploit` | gera o relatório do ataque de dicionário simulado |
+| `attack.jamLink` | `running`, etapa ≥ `exploit`, fora do intervalo de 10 s depois da última queda | derruba o link do alvo por 5 s |
+| `attack.drive {throttle, steering, pressed}` | sequestro ativo da equipe | dirige o alvo; recusa vem em `pilot.commandRejected` (sem `action.ok`) |
+| `attack.driveStop` | sequestro ativo da equipe | para o alvo (o sequestrador soltou o analógico) |
+| `attack.disable` | qualquer estado | volta tudo ao padrão, encerra o sequestro e a queda do link (progresso mantido) |
 
-A inversão de direção **nega o percentual** (−60 → 60, −100 → 100; 0 continua 0, sem `-0`) e preserva a intensidade; a inversão de tração troca 1 ↔ −1. Exemplos: `(1,-100)` com inversão de direção → `(1,100)`; `(1,-60)` com ambas → `(-1,60)`; `(0,0)` nunca muda.
+### Configuração do ataque (`attack.configure`)
 
-Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria equipe, carrinho desativado ou equipe sem papel de ataque na topologia). Pausar preserva o progresso. O ataque de uma equipe é zerado ao sair de `stopped` (nova largada, com o evento "Ataques zerados para a nova largada" se havia progresso) e desativado quando o hacker dessa equipe sai (logout, `admin.releaseSlot`, nova entrada ou expiração da sessão). A troca de senha **não** bloqueia a inversão (pré-projeto: a senha forte "não impede por si só alterações nos comandos feitas por um componente autorizado"); só a integridade didática bloqueia.
+| Campo | Valores | Efeito no servidor | Bloqueado por |
+|---|---|---|---|
+| `invertThrottle` | booleano | troca 1 ↔ −1 | integridade |
+| `invertSteering` | booleano | nega o percentual da direção | integridade |
+| `steeringBias` | −40 a 40, múltiplo de 5 | soma à direção e limita a ±100 | integridade |
+| `lockSteering` | booleano | a direção fica no valor do primeiro comando depois de ligar | integridade |
+| `replay` | booleano | troca o comando atual pelo que o piloto mandou 5 s antes (`REPLAY_DELAY_MS`); sem histórico, nada muda | repetição |
+| `delayMs` | 0, 150, 300 | segura cada comando ativo antes de mandar ao carrinho; parar nunca atrasa e cancela o que estava esperando | nenhuma |
+| `dropPct` | 0, 30, 60 | descarta essa porcentagem dos comandos ativos (sorteio); a TTL do servidor e do firmware para o carrinho | nenhuma |
+| `intercept` | booleano | registra cada `pilot.drive` recebido e cada `device.drive` enviado ao alvo e mostra ao atacante | criptografia (embaralha o texto) |
+| `spoofTelemetry` | booleano | o hacker **dono** do carrinho vê `confirmed` e `desired` iguais ao `requested` e não recebe o evento "Comando alterado" (vai só para o atacante); operador, espectador e atacante veem a verdade | integridade |
+| `hijack` | booleano | o hacker atacante dirige o alvo por `attack.drive`; o piloto é ignorado | senha forte: recusado com `forbidden` se a senha do alvo não é a padrão; trocar a senha encerra o sequestro |
+
+A ordem no pipeline é: neutro intocado → replay → travar → viés → inversões. Comando neutro do piloto nunca muda; se o replay ou o travamento resultam em neutro, o carrinho **para** (lado seguro). Exemplos da inversão: `(1,-100)` com inversão de direção → `(1,100)`; `(1,-60)` com ambas → `(-1,60)`; `(0,0)` nunca muda.
+
+**Sequestro (exceção à regra 5.3 do plano mestre, decidida em 15/11/2026):** enquanto ativo, `pilot.drive` ativo do piloto volta `hijacked` e `pilot.drive` neutro e `pilot.stop` do piloto são ignorados. O carrinho para quando o sequestrador solta (`attack.driveStop` ou `attack.drive` neutro, motivo `hijack-release`), no STOP ALL, na pausa, pela TTL do servidor e do firmware, ao desligar o sequestro, ao trocar a senha do alvo e quando o atacante sai. Ligar e desligar o sequestro para o carrinho (`hijack-start` / `hijack-release`). A marca "solte e toque de novo" depois da pausa vale também para o sequestrador.
+
+**Link derrubado:** o servidor para o carrinho (`link-jammed`, gravado como motivo), recusa `pilot.drive` e `attack.drive` ativos com `link_jammed` por 5 s (`JAM_MS`) e só aceita outra queda 10 s depois (`JAM_COOLDOWN_MS`). O WebSocket do ESP32 e o `device.heartbeat` continuam: nada de novo vai ao firmware, que para pela TTL. Soltar o joystick continua parando.
+
+**Quebra de senha:** só usa a marca "senha padrão" do alvo (`PasswordStore.isDefault`); nunca testa a senha real. Com a padrão, o relatório diz em que tentativa da lista fixa (`CRACK_DICTIONARY`) o `1234` aparece; com a senha trocada, diz que nenhuma das senhas comuns serviu, sem mostrar a senha.
+
+Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria equipe, carrinho desativado, equipe sem papel de ataque na topologia, sequestro com a senha trocada, nova queda antes do intervalo), `hijacked`, `link_jammed`. Pausar preserva o progresso. O ataque de uma equipe é zerado ao sair de `stopped` (nova largada, com o evento "Ataques zerados para a nova largada" se havia progresso) e desativado quando o hacker dessa equipe sai (logout, `admin.releaseSlot`, nova entrada ou expiração da sessão). A troca de senha **não** bloqueia as alterações de comando (pré-projeto: a senha forte "não impede por si só alterações nos comandos feitas por um componente autorizado"); ela bloqueia a quebra de senha e o sequestro.
 
 ## Defesa didática
 
 | Mensagem | Quem | Efeito |
 |---|---|---|
-| `defense.setIntegrityDemo {enabled}` | hacker, no próprio carrinho | liga/desliga o bloqueio das inversões no servidor (`applyAttack` devolve o comando original e conta `blocked`) |
-| `defense.setReplayDemo {enabled}` | hacker, no próprio carrinho | liga/desliga; cada `enabled: true` registra um exemplo didático de comando antigo recusado; nunca move o carrinho |
+| `defense.setIntegrityDemo {enabled}` | hacker, no próprio carrinho | liga/desliga o bloqueio de inversão, viés, travamento e telemetria falsa no servidor (`applyAttack` devolve o comando original e conta `blocked`) |
+| `defense.setReplayDemo {enabled}` | hacker, no próprio carrinho | liga/desliga a recusa do replay do atacante no servidor ("Repetição recusada (simulada)"); cada `enabled: true` também registra um exemplo didático; nunca move o carrinho |
+| `defense.setEncryptionDemo {enabled}` | hacker, no próprio carrinho | liga/desliga; o tráfego interceptado do carrinho chega ao atacante embaralhado (`encrypted: true`) |
 
-`level` = número de camadas demonstradas entre senha forte, integridade e repetição. Funciona em qualquer estado da demonstração. O reset do operador com `resetDefenses` desliga integridade e repetição (a senha só volta com `resetPasswords`).
+`level` = número de camadas demonstradas entre senha forte, integridade, repetição e criptografia (0–4). Funciona em qualquer estado da demonstração. O reset do operador com `resetDefenses` desliga integridade, repetição e criptografia (a senha só volta com `resetPasswords`).
 
 ## Solicitado × confirmado
 
@@ -101,7 +129,7 @@ Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria 
 ## Visibilidade
 
 - Piloto: `requested`/`desired`/`confirmed` sempre zerados, `attacks` vazio, só eventos públicos.
-- Hacker: o próprio ataque, a defesa do próprio carrinho, eventos públicos, de "staff" (comando alterado/bloqueado, ataque ativado) e da própria equipe.
+- Hacker: o próprio ataque, a defesa do próprio carrinho, eventos públicos, de "staff" (comando alterado/bloqueado, ataque ativado) e da própria equipe. Interceptação, telemetria falsa e quebra de senha geram eventos só da equipe atacante. Com a telemetria falsa ativa (e a integridade desligada), o hacker dono do carrinho recebe `confirmed`/`desired` iguais ao `requested` desse carrinho.
 - Espectador (`/simulator`) e operador: todos os ataques e defesas; eventos marcados só para o operador não aparecem ao espectador.
 - Depois de uma ação aceita, o autor recebe o `state.snapshot` atualizado antes do `action.ok`.
 
@@ -125,7 +153,7 @@ Erros: `demo_not_running`, `attack_step_invalid`, `forbidden` (alvo da própria 
 
 O snapshot do hacker A não traz ataques; o do hacker B não traz defesas; operador e espectador veem só o ataque da equipe B. Em `dual` tudo funciona como antes.
 
-Sem sessão → `unauthenticated`; papel errado → `forbidden`. **Limite por conexão do navegador** (token bucket): mensagens `pilot.*` até 40/s; as demais até 10/s com rajada de 20. O excedente é descartado; nas mensagens não `pilot.*` a conexão recebe `rate_limited` (no máximo um aviso por segundo) e o excedente de `pilot.*` é descartado sem aviso. **Mensagens de parada nunca são limitadas**: `pilot.stop`, `pilot.drive` neutro ou com `pressed: false`, `admin.stopAll` e `session.logout`. O limite vale por conexão (várias conexões com o mesmo cookie o contornam). A tela do piloto envia `pilot.drive` no máximo a cada 50 ms (≈ 20/s). `pilot.drive` aceito não gera `action.ok` (evita ruído a 10 Hz); recusado gera `pilot.commandRejected`. Um comando ativo recusado com a partida em `paused` marca o carro: a marca é limpa por qualquer comando neutro, por `pilot.stop`, pela queda do WebSocket do piloto, pela revogação ou expiração da sessão e ao trocar a rodada, a topologia ou o modo do carro; depois de retomar, comandos ativos geram `pilot.commandRejected` com `release_required` até chegar um comando neutro (`pressed: false` ou `throttle 0` e `steering 0`).
+Sem sessão → `unauthenticated`; papel errado → `forbidden`. **Limite por conexão do navegador** (token bucket): mensagens `pilot.*` e `attack.drive` até 40/s; as demais até 10/s com rajada de 20. O excedente é descartado; nas demais a conexão recebe `rate_limited` (no máximo um aviso por segundo) e o excedente de `pilot.*`/`attack.drive` é descartado sem aviso. **Mensagens de parada nunca são limitadas**: `pilot.stop`, `attack.driveStop`, `pilot.drive` e `attack.drive` neutros ou com `pressed: false`, `admin.stopAll` e `session.logout`. O limite vale por conexão (várias conexões com o mesmo cookie o contornam). A tela do piloto envia `pilot.drive` no máximo a cada 50 ms (≈ 20/s). `pilot.drive` aceito não gera `action.ok` (evita ruído a 10 Hz); recusado gera `pilot.commandRejected`. Um comando ativo recusado com a partida em `paused` marca o carro: a marca é limpa por qualquer comando neutro, por `pilot.stop`, pela queda do WebSocket do piloto, pela revogação ou expiração da sessão e ao trocar a rodada, a topologia ou o modo do carro; depois de retomar, comandos ativos geram `pilot.commandRejected` com `release_required` até chegar um comando neutro (`pressed: false` ou `throttle 0` e `steering 0`).
 
 Ao abrir a conexão, o servidor envia `session.accepted` (se houver sessão) e um `state.snapshot`. Sessão revogada → `session.revoked {reason}`, e a conexão passa a ser de visitante.
 

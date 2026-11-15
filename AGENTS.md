@@ -21,7 +21,8 @@ Monorepo Bun da aplicação HIJACK (demonstração acadêmica de segurança em s
 - Ataques são **simulações internas no servidor**: nenhum scan, sniffing ou exploração real de rede.
 - Integridade e repetição na UI são **demonstrações didáticas** (não HMAC, não validação no firmware).
 - Troca de senha tem efeito **real** (hash argon2id). Senha `1234` é vulnerabilidade proposital.
-- `STOP` e watchdog nunca são invertidos nem desligados por ataque. Na dúvida, parar.
+- `STOP` e watchdog nunca são invertidos nem desligados por ataque. Na dúvida, parar. Única exceção (decisão do usuário em 15/11/2026): durante o **sequestro** a parada pedida pelo piloto é ignorada; STOP ALL, pausa, TTL e soltar do sequestrador continuam parando. Parar nunca é atrasado nem descartado pelos ataques de atraso e perda.
+- Ataques novos (viés, travar, atraso, perda, replay, interceptar, quebra de senha, link derrubado, telemetria falsa, sequestro) são simulação no servidor; nenhum tipo novo de mensagem vai ao ESP32 (tipo desconhecido para o carrinho com `device.fault`). Contrato em `docs/protocol.md`, decisões em `docs/assumptions.md` seção 7.
 - Navegador nunca é autoridade de time/papel/carro; autorizar **cada mensagem** no servidor.
 - Botões A/B do piloto são visuais e desabilitados.
 - Nunca registrar senhas/segredos em logs, telemetria ou erros. Nunca commitar `.env` ou `data/`.

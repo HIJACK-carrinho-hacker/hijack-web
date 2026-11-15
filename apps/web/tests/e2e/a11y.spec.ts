@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { type Page, expect, test } from '@playwright/test'
-import { adminSecret, loginAs, resetEnvironment } from './helpers.ts'
+import { adminSecret, completeAttack, loginAs, resetEnvironment } from './helpers.ts'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -30,6 +30,10 @@ test('telas sem violações sérias de acessibilidade', async ({ browser, page }
   await loginAs(hacker, { name: 'Bruno', role: 'Hacker', car: 'Carrinho B' })
   await expect(hacker.getByRole('button', { name: 'Escanear rede' })).toBeVisible()
   await audit(hacker, 'hacker-ataque')
+  await completeAttack(hacker, 'Carrinho A', ['Interceptar tráfego', 'Sequestrar o carrinho'])
+  await expect(hacker.getByRole('application', { name: /Analógico do sequestro/ })).toBeVisible()
+  await audit(hacker, 'hacker-ataque-etapa-4')
+  await hacker.getByRole('switch', { name: 'Sequestrar o carrinho' }).click()
   await hacker.getByRole('tab', { name: 'Defesa' }).click()
   await expect(hacker.getByText('Simulação, não HMAC')).toBeVisible()
   await audit(hacker, 'hacker-defesa')

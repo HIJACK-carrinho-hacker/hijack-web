@@ -88,8 +88,8 @@ export async function loginSingle(page: Page, opts: { name: string; slot: 'pilot
 export const carPanel = (page: Page, name: 'Carrinho A' | 'Carrinho B') =>
   page.locator('[data-slot=card]').filter({ hasText: new RegExp(`^${name}`) })
 
-export async function holdJoystick(page: Page, dx: number, dy: number) {
-  const joy = page.getByRole('application', { name: /Analógico/ })
+export async function holdJoystick(page: Page, dx: number, dy: number, name: RegExp = /Analógico/) {
+  const joy = page.getByRole('application', { name })
   await joy.scrollIntoViewIfNeeded()
   const box = await joy.boundingBox()
   if (!box) throw new Error('joystick sem posição')
@@ -100,7 +100,7 @@ export async function holdJoystick(page: Page, dx: number, dy: number) {
   await page.mouse.move(cx + dx * box.width * 0.3, cy + dy * box.height * 0.3, { steps: 4 })
 }
 
-export async function completeAttack(hacker: Page, target: 'Carrinho A' | 'Carrinho B', switches: ('Frente ↔ Ré' | 'Esquerda ↔ Direita')[]) {
+export async function completeAttack(hacker: Page, target: 'Carrinho A' | 'Carrinho B', switches: string[]) {
   await hacker.getByRole('button', { name: 'Escanear rede' }).click()
   await hacker.getByRole('button', { name: new RegExp(target) }).click()
   await hacker.getByRole('button', { name: 'Explorar vulnerabilidade' }).click()
