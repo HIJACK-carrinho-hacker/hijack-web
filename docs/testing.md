@@ -8,7 +8,7 @@
 | `bun run test:e2e` | Playwright em perfil desktop (Chrome) e mobile (Pixel 7), contra servidor + Vite |
 | `cd ../esp32 && pio test -e native` | lógica pura do firmware (Unity) |
 
-Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os seus. Eles chamam `resetEnvironment()` (libera vagas, volta a `setup`, reseta ataques, defesas e senhas) para serem repetíveis, e leem o `ADMIN_SECRET` de `apps/server/.env`.
+Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os seus. Eles chamam `resetEnvironment()` (libera vagas, volta a `setup`, reseta ataques, defesas e senhas) para serem repetíveis, e leem o `ADMIN_SECRET` de `apps/server/.env`. Por isso o servidor precisa ser subido à mão antes (`CAR_A_MODE=simulated CAR_B_MODE=simulated DEMO_TOPOLOGY=dual bun run dev` na raiz): o servidor que o próprio Playwright sobe usa outro segredo (`e2e-admin-secret`) e o login do operador falha.
 
 ## Matriz (plano mestre, seção 12)
 
@@ -48,6 +48,9 @@ Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os 
 | Reconexão não reexecuta comando antigo | `engine.test.ts`, `device.test.ts` |
 | ESP32: autenticação, welcome, drive válido, ack → confirmado, STOP geral, queda, substituição, watchdog relatado | `device.test.ts` |
 | Exportação restrita ao operador e sem segredos | `export.test.ts` |
+| Ataques novos no pipeline: viés (limite ±100, sem `-0`), travamento, replay (só com tração pedida, saída neutra para), ordem, bloqueio por integridade e por repetição | `pipeline.test.ts` |
+| Ataques novos no engine: atraso cancelado por qualquer parada (inclusive sem pausar), perda com sorteio injetável sem descartar a soltura, replay de 5 s e histórico só de pedidos aceitos, trava e trava religada, link derrubado (parada, recusa, volta, intervalo e snapshot no fim do intervalo), sequestro (piloto ignorado, só a equipe certa, solta/STOP ALL/pausa/solte e toque de novo), interceptação com limite, telemetria falsa por visualizador, limpeza do estado | `attacks-engine.test.ts` |
+| Ataques novos pelo WebSocket: sequestro e queda da conexão do sequestrador, senha forte encerra e bloqueia, analógico do sequestro a 40 Hz sem `rate_limited`, quebra de senha, interceptação e criptografia, 4ª camada, link derrubado e intervalo mantido ao desativar, mudar o atraso descarta atrasados, trava religada, telemetria falsa esconde as mudanças do ataque | `attacks-ws.test.ts`, `attack-manager.test.ts` |
 | Topologia `single`: padrão da configuração e TTL 400, `/api/public` com `active`, sem piloto do `car-b`, equipe A só defende, equipe B só ataca o `car-a`, escaneamento só de ativos, integridade da equipe A bloqueia, `admin.setTopology` (fora de `running`, revoga piloto B, reseta ataques) | `topology.test.ts` |
 
 ### E2E (Playwright, `apps/web/tests/e2e`)
@@ -62,7 +65,8 @@ Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os 
 | Integridade bloqueia; repetição só gera evento | `defense.spec.ts` |
 | Simulador público × controles do operador | `simulator.spec.ts` |
 | Topologia de 1 carrinho: opções de entrada, hacker A defensor, hacker B atacante invertendo o Carrinho A, integridade bloqueando, simulador sem o Carrinho B, `/admin` com o Carrinho B desativado e seletor travado em `running` | `topology.spec.ts` |
-| Acessibilidade (axe, WCAG 2 A/AA, sem violações sérias/críticas) em todas as telas | `a11y.spec.ts` |
+| Ataques novos: viés e integridade, interceptação e criptografia, quebra de senha, link derrubado e volta, telemetria falsa no monitor do defensor, sequestro (piloto perde o controle, hacker dirige) | `novos-ataques.spec.ts` |
+| Acessibilidade (axe, WCAG 2 A/AA, sem violações sérias/críticas) em todas as telas, inclusive a etapa 4 do hacker com o analógico do sequestro | `a11y.spec.ts` |
 
 Os testes do servidor usam `DEMO_TOPOLOGY=dual` por padrão (`testConfig`); os E2E antigos chamam `resetEnvironment(browser, 'dual', …)`, que também define a topologia pelo `admin.setTopology`.
 

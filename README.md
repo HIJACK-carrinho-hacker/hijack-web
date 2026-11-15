@@ -1,6 +1,6 @@
 # HIJACK — aplicação web
 
-Demonstração acadêmica de segurança em sistemas ciberfísicos numa **LAN isolada**, com **1 carrinho ESP32** (padrão: a equipe A pilota e defende, a equipe B só ataca) ou, opcionalmente, **2 carrinhos** (cada equipe com piloto no celular e hacker no notebook). O piloto controla frente/ré em velocidade fixa e a **direção proporcional** (-100 a +100 %). O hacker faz um ataque **simulado no servidor** que inverte frente↔ré e/ou esquerda↔direita do carrinho adversário; o defensor troca a senha (efeito real) e liga defesas **didáticas**. O firmware fica no repositório irmão `../esp32`.
+Demonstração acadêmica de segurança em sistemas ciberfísicos numa **LAN isolada**, com **1 carrinho ESP32** (padrão: a equipe A pilota e defende, a equipe B só ataca) ou, opcionalmente, **2 carrinhos** (cada equipe com piloto no celular e hacker no notebook). O piloto controla frente/ré em velocidade fixa e a **direção proporcional** (-100 a +100 %). O hacker faz ataques **simulados no servidor** contra o carrinho adversário: inverter frente↔ré e esquerda↔direita, viés e travamento da direção, atraso e perda de comandos, replay, interceptação do tráfego, quebra de senha por dicionário, derrubar o link, telemetria falsa e sequestro do controle. O defensor troca a senha (efeito real) e liga defesas **didáticas** (integridade, repetição e criptografia). O firmware fica no repositório irmão `../esp32`.
 
 > Não é uma ferramenta de invasão: não há varredura, captura ou exploração real de rede. Detalhes em `docs/security-model.md`.
 
@@ -109,7 +109,8 @@ Para os E2E pela primeira vez: `cd apps/web && bunx playwright install chromium`
 - [ ] Carrinhos físicos testados com rodas suspensas (`../esp32/docs/testing-hardware.md`).
 - [ ] Operador com `/admin` aberto e o botão **STOP ALL** à vista.
 - [ ] Corte físico de energia de cada carrinho ao alcance.
-- [ ] Público informado de que ataque, integridade e repetição são **simulações**; só a troca de senha é real.
+- [ ] Público informado de que os ataques, a integridade, a repetição e a criptografia são **simulações**; só a troca de senha é real.
+- [ ] Se for usar o sequestro com o carrinho no chão: STOP ALL à mão e alguém perto da chave da bateria (durante o sequestro a parada do piloto é ignorada).
 
 ## Documentação
 
