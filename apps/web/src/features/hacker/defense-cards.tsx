@@ -37,8 +37,9 @@ export function IntegrityCard({ defense }: { defense: DefenseView | undefined })
           <SimBadge>Simulação, não HMAC</SimBadge>
         </CardTitle>
         <CardDescription>
-          Quando ligada, o servidor deixa de aplicar as inversões pedidas pelo hacker adversário no seu carrinho. O
-          piloto continua dirigindo normalmente.
+          Quando ligada, o servidor deixa de aplicar as alterações pedidas pelo hacker adversário no seu carrinho
+          (inversão, viés e travamento da direção) e o monitor volta a mostrar a telemetria verdadeira. O piloto
+          continua dirigindo normalmente.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -54,6 +55,47 @@ export function IntegrityCard({ defense }: { defense: DefenseView | undefined })
               setBusy(true);
               setError(null);
               const r = await request("defense.setIntegrityDemo", { enabled: v });
+              setBusy(false);
+              if (!r.ok) setError(r.message);
+            }}
+          />
+        </div>
+        <ErrorNote message={error} />
+      </CardContent>
+    </Card>
+  );
+}
+
+export function EncryptionCard({ defense }: { defense: DefenseView | undefined }) {
+  const { request } = useHijack();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const enabled = defense?.encryptionDemoEnabled ?? false;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex flex-wrap items-center gap-2">
+          Criptografia
+          <SimBadge>Simulação, não TLS</SimBadge>
+        </CardTitle>
+        <CardDescription>
+          Quando ligada, quem intercepta o tráfego do seu carrinho só vê texto embaralhado. No sistema real isso exige
+          TLS; aqui a rede continua em texto claro.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor="encryption" className="text-base">
+            {enabled ? "Tráfego cifrado" : "Desligada"}
+          </Label>
+          <Switch
+            id="encryption"
+            checked={enabled}
+            disabled={busy}
+            onCheckedChange={async (v) => {
+              setBusy(true);
+              setError(null);
+              const r = await request("defense.setEncryptionDemo", { enabled: v });
               setBusy(false);
               if (!r.ok) setError(r.message);
             }}
@@ -85,8 +127,8 @@ export function ReplayCard({ defense }: { defense: DefenseView | undefined }) {
           <SimBadge>Simulação, não validação no firmware</SimBadge>
         </CardTitle>
         <CardDescription>
-          Mostra o conceito de recusar um comando antigo reenviado. Gera apenas um exemplo no registro; nenhum
-          movimento é injetado no carrinho.
+          Quando ligada, o servidor recusa os comandos antigos que o atacante reapresenta (replay) no seu carrinho e
+          registra um exemplo do comando recusado. A defesa nunca move o carrinho.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

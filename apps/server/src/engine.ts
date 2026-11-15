@@ -768,6 +768,10 @@ export class HijackEngine {
         });
         dirty = true;
       }
+      if (car.jamReadyAt !== null && now >= car.jamReadyAt) {
+        car.jamReadyAt = null;
+        dirty = true;
+      }
       car.controller.checkWatchdog();
       if (car.controller.moving || !isNeutral(car.confirmed)) dirty = true;
       const stale = car.online && car.lastSeenAt !== null && now - car.lastSeenAt > CONFIRMED_STALE_MS;

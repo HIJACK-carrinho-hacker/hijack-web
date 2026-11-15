@@ -30,8 +30,8 @@ test('integridade do defensor bloqueia a inversão; desligar volta a inverter', 
 
   await defender.getByRole('switch', { name: /Desligada|Bloqueando/ }).first().click()
   await expect(defender.getByText('Bloqueando alterações')).toBeVisible()
-  await expect(defender.getByRole('img', { name: '2 de 3 camadas demonstradas' })).toHaveCount(0)
-  await expect(defender.getByRole('img', { name: '1 de 3 camadas demonstradas' })).toBeVisible()
+  await expect(defender.getByRole('img', { name: '2 de 4 camadas demonstradas' })).toHaveCount(0)
+  await expect(defender.getByRole('img', { name: '1 de 4 camadas demonstradas' })).toBeVisible()
 
   await holdJoystick(pilot, 0, -1)
   await expect(carPanel(viewer, 'Carrinho B').getByRole('img', { name: 'Confirmado: frente, direção centro' })).toBeVisible()

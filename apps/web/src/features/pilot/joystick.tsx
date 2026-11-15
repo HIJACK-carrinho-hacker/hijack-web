@@ -6,11 +6,17 @@ interface JoystickProps {
   deadZone: number;
   onChange: (axes: Axes, pressed: boolean) => void;
   className?: string;
+  label?: string;
 }
 
 const TRAVEL = 0.62;
 
-export function Joystick({ deadZone, onChange, className }: JoystickProps) {
+export function Joystick({
+  deadZone,
+  onChange,
+  className,
+  label = "Analógico: arraste para dirigir; solte para parar",
+}: JoystickProps) {
   const ref = useRef<HTMLDivElement>(null);
   const pointer = useRef<number | null>(null);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
@@ -42,7 +48,7 @@ export function Joystick({ deadZone, onChange, className }: JoystickProps) {
     <div
       ref={ref}
       role="application"
-      aria-label="Analógico: arraste para dirigir; solte para parar"
+      aria-label={label}
       className={cn("@container relative aspect-square touch-none select-none", className)}
       onPointerDown={(e) => {
         if (pointer.current !== null) return;

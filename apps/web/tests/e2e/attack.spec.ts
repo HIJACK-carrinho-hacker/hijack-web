@@ -48,7 +48,7 @@ test('quatro etapas e inversões independentes alteram o carrinho adversário', 
   await expect(carPanel(viewer, 'Carrinho B').getByRole('img', { name: 'Confirmado: parado, direção centro' })).toBeVisible()
 
   await hacker.getByRole('button', { name: 'Desativar ataque' }).click()
-  await expect(hacker.getByText('Nenhuma inversão ativa')).toBeVisible()
+  await expect(hacker.getByText('Nenhum ataque ativo')).toBeVisible()
   await holdJoystick(pilot, 0, -1)
   await expect(carPanel(viewer, 'Carrinho B').getByRole('img', { name: 'Confirmado: frente, direção centro' })).toBeVisible()
   await pilot.mouse.up()

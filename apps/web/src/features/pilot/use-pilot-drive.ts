@@ -6,7 +6,9 @@ import { delayUntilNextSend } from "./send-throttle.ts";
 
 type StopReason = ClientPayload<"pilot.stop">["reason"];
 
-export function usePilotDrive(enabled: boolean) {
+export type DriveChannel = "pilot" | "hijack";
+
+export function usePilotDrive(enabled: boolean, channel: DriveChannel = "pilot") {
   const { send, status } = useHijack();
   const axesRef = useRef<Axes>(NEUTRAL);
   const pressedRef = useRef(false);
@@ -27,8 +29,18 @@ export function usePilotDrive(enabled: boolean) {
   const transmit = useCallback(() => {
     if (!enabledRef.current) return;
     lastSentAt.current = Date.now();
-    send("pilot.drive", { ...axesRef.current, pressed: pressedRef.current });
-  }, [send]);
+    const payload = { ...axesRef.current, pressed: pressedRef.current };
+    if (channel === "pilot") send("pilot.drive", payload);
+    else send("attack.drive", payload);
+  }, [send, channel]);
+
+  const sendStop = useCallback(
+    (reason: StopReason) => {
+      if (channel === "pilot") send("pilot.stop", { reason });
+      else send("attack.driveStop", {});
+    },
+    [send, channel],
+  );
 
   const transmitPaced = useCallback(() => {
     const wait = delayUntilNextSend(Date.now(), lastSentAt.current, PILOT_SEND_MIN_INTERVAL_MS);
@@ -52,9 +64,9 @@ export function usePilotDrive(enabled: boolean) {
       pressedRef.current = false;
       setAxes(NEUTRAL);
       setResetKey((k) => k + 1);
-      if (wasActive) send("pilot.stop", { reason });
+      if (wasActive) sendStop(reason);
     },
-    [clearTimer, send],
+    [clearTimer, sendStop],
   );
 
   const update = useCallback(
@@ -68,13 +80,13 @@ export function usePilotDrive(enabled: boolean) {
       if (!changed) return;
       if (!active) {
         clearTimer();
-        send("pilot.stop", { reason: "release" });
+        sendStop("release");
         return;
       }
       transmitPaced();
       if (!timer.current) timer.current = setInterval(transmitPaced, PILOT_REFRESH_MS);
     },
-    [clearTimer, send, transmitPaced],
+    [clearTimer, sendStop, transmitPaced],
   );
 
   useEffect(() => {

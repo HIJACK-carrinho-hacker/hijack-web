@@ -146,8 +146,9 @@ export function AdminPage() {
                       <th className="pr-3">Modo</th>
                       <th className="pr-3">Receb.</th>
                       <th className="pr-3">Aplic.</th>
-                      <th className="pr-3">Invert.</th>
+                      <th className="pr-3">Alter.</th>
                       <th className="pr-3">Bloq.</th>
+                      <th className="pr-3">Perd.</th>
                       <th className="pr-3">Watchdog</th>
                       <th>Ack p50/p95 (ms)</th>
                     </tr>
@@ -161,6 +162,7 @@ export function AdminPage() {
                         <td className="pr-3">{m.applied}</td>
                         <td className="pr-3">{m.transformed}</td>
                         <td className="pr-3">{m.blocked}</td>
+                        <td className="pr-3">{m.dropped}</td>
                         <td className="pr-3">{m.watchdogTrips}</td>
                         <td>
                           {m.ackLatencyMsP50 ?? "—"} / {m.ackLatencyMsP95 ?? "—"}

@@ -205,6 +205,18 @@ describe("derrubar o link", () => {
     expect(engine.jamLink("car-a").ok).toBe(true);
   });
 
+  test("fim do intervalo entre quedas gera um snapshot novo", async () => {
+    make();
+    engine.jamLink("car-a");
+    now += JAM_MS;
+    await sleep(80);
+    const rev = engine.revision;
+    now += JAM_COOLDOWN_MS;
+    await sleep(80);
+    expect(engine.revision).toBeGreaterThan(rev);
+    expect(engine.jamState("car-a").jamReadyAt).toBeNull();
+  });
+
   test("soltar o joystick continua parando durante a queda", () => {
     make();
     engine.jamLink("car-a");

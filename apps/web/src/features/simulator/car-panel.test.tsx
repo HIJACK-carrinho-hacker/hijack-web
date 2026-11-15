@@ -50,4 +50,24 @@ describe("CarPanel", () => {
     expect(html).toContain("em movimento");
     expect(html).not.toContain(STOP_REASON_LABEL.watchdog);
   });
+
+  test("sequestro e link derrubado aparecem no painel", () => {
+    expect(renderToStaticMarkup(<CarPanel car={car()} />)).not.toContain("CARRINHO SEQUESTRADO");
+    expect(renderToStaticMarkup(<CarPanel car={car({ hijacked: true })} />)).toContain("CARRINHO SEQUESTRADO");
+    expect(renderToStaticMarkup(<CarPanel car={car({ jammed: true })} />)).toContain("LINK DERRUBADO");
+  });
+
+  test("lista as quatro defesas ligadas", () => {
+    const defense = {
+      carId: "car-a" as const,
+      strongPasswordEnabled: true,
+      integrityDemoEnabled: false,
+      replayDemoEnabled: true,
+      encryptionDemoEnabled: true,
+      level: 3,
+    };
+    const html = renderToStaticMarkup(<CarPanel car={car()} defense={defense} />);
+    expect(html).toContain("senha forte · repetição · criptografia");
+    expect(renderToStaticMarkup(<CarPanel car={car()} defense={{ ...defense, strongPasswordEnabled: false, replayDemoEnabled: false, encryptionDemoEnabled: false, level: 0 }} />)).not.toContain("Defesas:");
+  });
 });

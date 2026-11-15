@@ -3,8 +3,9 @@ import { SecurityPills } from "@/components/hijack/security-pills";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventList } from "@/components/hijack/event-list";
 import { AttackSteps } from "@/features/hacker/attack-steps";
-import { IntegrityCard, ReplayCard } from "@/features/hacker/defense-cards";
+import { EncryptionCard, IntegrityCard, ReplayCard } from "@/features/hacker/defense-cards";
 import { PasswordCard } from "@/features/hacker/password-card";
+import { CarPanel } from "@/features/simulator/car-panel";
 import { useHijack } from "@/hooks/use-hijack";
 
 const TAB = "flex-none px-4 text-base font-semibold after:bg-primary data-active:text-primary dark:data-active:text-primary";
@@ -18,6 +19,7 @@ export function HackerPage() {
   const defendsOnly = single && me?.teamId === "A";
   const attacksOnly = single && me?.teamId === "B";
   const targetName = state?.cars.find((c) => c.active)?.displayName ?? "Carrinho A";
+  const ownCar = state?.cars.find((c) => c.id === me?.carId && c.active);
   const log = (state?.events ?? []).filter((e) => /^(attack|defense)\./.test(e.kind)).slice(0, 12);
   return (
     <main className="mx-auto flex min-h-svh max-w-4xl flex-col gap-6 px-4 py-6">
@@ -58,11 +60,18 @@ export function HackerPage() {
         </TabsContent>
         {!attacksOnly && (
           <TabsContent value="defense" className="flex flex-col gap-4">
+            {ownCar && (
+              <section aria-label="Monitor do seu carrinho" className="flex flex-col gap-2">
+                <h3 className="text-sm font-semibold">Monitor do seu carrinho</h3>
+                <CarPanel car={ownCar} defense={defense} />
+              </section>
+            )}
             <PasswordCard defense={defense} />
             <IntegrityCard defense={defense} />
             <ReplayCard defense={defense} />
+            <EncryptionCard defense={defense} />
             <p className="text-xs text-muted-foreground">
-              O indicador de segurança conta as camadas demonstradas (0 a 3). Ele não mede o nível real de segurança do
+              O indicador de segurança conta as camadas demonstradas (0 a 4). Ele não mede o nível real de segurança do
               sistema.
             </p>
             {log.length > 0 && (

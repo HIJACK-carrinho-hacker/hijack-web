@@ -39,9 +39,27 @@ export function CarPanel({ car, defense, children }: { car: CarView; defense?: D
             COMANDO ALTERADO NO CAMINHO
           </p>
         )}
-        {defense && (defense.integrityDemoEnabled || defense.replayDemoEnabled || defense.strongPasswordEnabled) && (
+        {car.hijacked && (
+          <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-center font-mono text-xs text-destructive">
+            CARRINHO SEQUESTRADO
+          </p>
+        )}
+        {car.jammed && (
+          <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-1.5 text-center font-mono text-xs text-warning">
+            LINK DERRUBADO
+          </p>
+        )}
+        {defense && defense.level > 0 && (
           <p className="font-mono text-xs text-primary">
-            Defesas: {[defense.strongPasswordEnabled && "senha forte", defense.integrityDemoEnabled && "integridade", defense.replayDemoEnabled && "repetição"].filter(Boolean).join(" · ")}
+            Defesas:{" "}
+            {[
+              defense.strongPasswordEnabled && "senha forte",
+              defense.integrityDemoEnabled && "integridade",
+              defense.replayDemoEnabled && "repetição",
+              defense.encryptionDemoEnabled && "criptografia",
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         )}
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-xs">

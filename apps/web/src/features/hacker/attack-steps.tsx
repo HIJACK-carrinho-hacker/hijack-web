@@ -1,15 +1,15 @@
-import { ATTACK_STEPS, type AttackView, type CarId, type CarView } from "@hijack/protocol";
+import { ATTACK_STEPS, type AttackConfig, type AttackView, type CarId, type CarView } from "@hijack/protocol";
 import { Check, Loader2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { useHijack } from "@/hooks/use-hijack";
 import { cn } from "@/lib/utils";
 import { configOf } from "./attack-config";
+import { ChannelControls, EspionageControls, HijackControls, SabotageControls } from "./attack-controls";
 
 const SCAN_MS = 1500;
 const EXPLOIT_MS = 1200;
+const CRACK_MS = 1200;
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -44,7 +44,9 @@ function StepCard({
 
 export function AttackSteps({ attack, cars, running }: { attack: AttackView; cars: CarView[]; running: boolean }) {
   const { request, me } = useHijack();
-  const [busy, setBusy] = useState<null | "scan" | "exploit" | "target" | "configure" | "disable">(null);
+  const [busy, setBusy] = useState<
+    null | "scan" | "exploit" | "target" | "configure" | "disable" | "crack" | "jam"
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const progress = ATTACK_STEPS.indexOf(attack.step);
   const nameOf = (id: CarId) => cars.find((c) => c.id === id)?.displayName ?? id;
@@ -59,6 +61,12 @@ export function AttackSteps({ attack, cars, running }: { attack: AttackView; car
   };
 
   const disabled = !running || busy !== null;
+  const controls = {
+    attack,
+    disabled,
+    configure: (patch: Partial<AttackConfig>) =>
+      void run("configure", () => request("attack.configure", { ...configOf(attack), ...patch })),
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -140,30 +148,16 @@ export function AttackSteps({ attack, cars, running }: { attack: AttackView; car
       )}
 
       {progress >= 3 && (
-        <StepCard index={4} title="Modifique os comandos" done={attack.active}>
-          <div className="flex flex-col gap-3">
-            {(
-              [
-                ["invertThrottle", "Frente ↔ Ré"],
-                ["invertSteering", "Esquerda ↔ Direita"],
-              ] as const
-            ).map(([key, label]) => (
-              <div key={key} className="flex items-center justify-between gap-4 rounded-lg border bg-card px-3 py-2">
-                <Label htmlFor={key} className="text-base">
-                  {label}
-                </Label>
-                <Switch
-                  id={key}
-                  checked={attack[key]}
-                  disabled={disabled}
-                  onCheckedChange={(v) =>
-                    void run("configure", () =>
-                      request("attack.configure", { ...configOf(attack), [key]: v }),
-                    )
-                  }
-                />
-              </div>
-            ))}
+        <StepCard index={4} title="Ataque o carrinho" done={attack.active}>
+          <div className="flex flex-col gap-5">
+            <SabotageControls {...controls} />
+            <EspionageControls
+              {...controls}
+              cracking={busy === "crack"}
+              onCrack={() => void run("crack", () => request("attack.crackPassword", {}), CRACK_MS)}
+            />
+            <ChannelControls {...controls} onJam={() => void run("jam", () => request("attack.jamLink", {}))} />
+            <HijackControls {...controls} running={running} />
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -174,12 +168,9 @@ export function AttackSteps({ attack, cars, running }: { attack: AttackView; car
               Desativar ataque
             </Button>
             <span className={cn("text-sm", attack.active ? "text-primary" : "text-muted-foreground")}>
-              {attack.active && attack.targetCarId ? `Ataque ativo em ${nameOf(attack.targetCarId)}` : "Nenhuma inversão ativa"}
+              {attack.active && attack.targetCarId ? `Ataque ativo em ${nameOf(attack.targetCarId)}` : "Nenhum ataque ativo"}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            A inversão só altera comandos enquanto o piloto adversário estiver dirigindo. Parar nunca é invertido.
-          </p>
         </StepCard>
       )}
 
