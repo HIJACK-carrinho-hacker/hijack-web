@@ -25,6 +25,9 @@ Monorepo Bun da aplicação HIJACK (demonstração acadêmica de segurança em s
 - Navegador nunca é autoridade de time/papel/carro; autorizar **cada mensagem** no servidor.
 - Botões A/B do piloto são visuais e desabilitados.
 - Nunca registrar senhas/segredos em logs, telemetria ou erros. Nunca commitar `.env` ou `data/`.
+- O snapshot do piloto esconde `requested`, `desired` e `confirmed` (zerados por desenho): para ver o confirmado em testes, ler por um espectador sem sessão.
+- O e2e do Playwright recusa rodar com carro em modo `hardware`; rodar só com o servidor da bancada parado e `CAR_A_MODE=simulated CAR_B_MODE=simulated`.
+- Comandos de movimento ao carro real só quando o usuário pedir, com a mão dele na fonte; pulsos curtos, um de cada vez.
 
 ## Fluxo de trabalho
 
