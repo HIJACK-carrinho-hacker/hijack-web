@@ -97,7 +97,7 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 | `lockSteering` | booleano | a direção fica no valor do primeiro comando depois de ligar | integridade |
 | `replay` | booleano | troca o comando atual pelo pedido aceito do piloto de 5 s antes (`REPLAY_DELAY_MS`), só quando o pedido atual tem tração; sem histórico, nada muda | repetição |
 | `delayMs` | 0, 150, 300 | segura cada comando ativo antes de mandar ao carrinho; parar nunca atrasa e cancela o que estava esperando, assim como mudar o atraso ou desligar todos os ataques | nenhuma |
-| `dropPct` | 0, 30, 60 | descarta essa porcentagem dos comandos ativos (sorteio); a TTL do servidor e do firmware para o carrinho | nenhuma |
+| `dropPct` | 0, 30, 60 | divide o tempo em janelas de 0,5 s (`DROP_BURST_MS`) e sorteia cada janela com essa chance; numa janela sorteada todos os comandos ativos são descartados, e como 0,5 s passa da TTL de 400 ms o firmware para o carrinho (engasgo visível) | nenhuma |
 | `intercept` | booleano | registra cada `pilot.drive` recebido e cada `device.drive` enviado ao alvo e mostra ao atacante | criptografia (embaralha o texto) |
 | `spoofTelemetry` | booleano | o hacker **dono** do carrinho vê `confirmed` e `desired` iguais ao `requested` e não recebe o evento "Comando alterado" (vai só para o atacante); operador, espectador e atacante veem a verdade | integridade |
 | `hijack` | booleano | o hacker atacante dirige o alvo por `attack.drive`; o piloto é ignorado | senha forte: recusado com `forbidden` se a senha do alvo não é a padrão; trocar a senha encerra o sequestro |

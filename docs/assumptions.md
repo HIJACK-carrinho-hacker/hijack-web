@@ -123,7 +123,7 @@ Decisões técnicas do agente:
 | Travar | guarda a direção do primeiro comando depois de ligar (não a do instante do clique, quando o piloto pode estar solto) |
 | Replay | histórico de 10 s dos pedidos do piloto (inclusive as solturas); usa o pedido de 5 s antes; sem histórico, nada muda |
 | Atraso | `setTimeout` por comando com contador de geração; qualquer parada (soltar, STOP ALL, pausa, queda, troca de modo) cancela os pendentes. Atrasos de 150 e 300 ms ficam abaixo da TTL de 400 ms |
-| Perda | sorteio por comando ativo; parar nunca é descartado; contador `dropped` nas métricas e coluna "Perd." no `/admin` (a coluna "Invert." virou "Alter.") |
+| Perda | em rajadas: janelas de 0,5 s sorteadas inteiras com a chance escolhida (antes era sorteio por comando, e na bancada de 15/11 com motores 16 comandos descartados em 4 s não pararam o carrinho nenhuma vez, porque a 10 comandos/s o ESP só para com ≈ 4 perdas seguidas); parar nunca é descartado; contador `dropped` nas métricas e coluna "Perd." no `/admin` (a coluna "Invert." virou "Alter.") |
 | Link derrubado | 5 s de queda e 10 s de intervalo até a próxima; o fim do intervalo gera um snapshot novo para liberar o botão |
 | Interceptação | até 15 quadros (`pilot.drive` recebido e `device.drive` enviado, este já alterado pelo ataque); zera ao religar; o texto cifrado é um embaralhamento determinístico, não criptografia |
 | Quebra de senha | lista fixa de 20 senhas comuns com o `1234` na 10ª posição; usa só a marca de senha padrão |

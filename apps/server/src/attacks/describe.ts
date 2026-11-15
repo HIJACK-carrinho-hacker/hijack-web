@@ -25,7 +25,7 @@ export function describeConfigChanges(prev: AttackConfig, next: AttackConfig, ta
     staff(next.delayMs === 0 ? "Atraso de comandos desligado" : `Atraso de ${next.delayMs} ms nos comandos`);
   }
   if (prev.dropPct !== next.dropPct) {
-    staff(next.dropPct === 0 ? "Perda de pacotes desligada" : `Perda de ${next.dropPct}% dos comandos`);
+    staff(next.dropPct === 0 ? "Perda de pacotes desligada" : `Perda de pacotes: ${next.dropPct}% do tempo, em rajadas de 0,5 s`);
   }
   if (prev.replay !== next.replay) {
     staff(next.replay ? "Replay ligado: o carrinho repete o que o piloto fez 5 s antes" : "Replay desligado");

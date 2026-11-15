@@ -9,6 +9,7 @@ import {
   type DemoTopology,
   type DriveVector,
   type ErrorCode,
+  DROP_BURST_MS,
   INTERCEPT_LOG_SIZE,
   JAM_COOLDOWN_MS,
   JAM_MS,
@@ -98,6 +99,8 @@ interface CarRuntime {
   jamReadyAt: number | null;
   hijackedBy: TeamId | null;
   intercepted: InterceptRecord[];
+  dropWindowEnd: number;
+  dropWindowActive: boolean;
 }
 
 const NEUTRAL: DriveVector = { throttle: 0, steering: 0 };
@@ -302,7 +305,7 @@ export class HijackEngine {
     if (result.blocked) this.metrics.inc(carId, car.mode, "blocked");
     this.logTransform(car, requested, result, ctx);
     this.trackRequest(car, requested);
-    if (ctx && ctx.config.dropPct > 0 && !isNeutral(result.output) && this.random() * 100 < ctx.config.dropPct) {
+    if (ctx && ctx.config.dropPct > 0 && !isNeutral(result.output) && this.inDropBurst(car, ctx.config.dropPct)) {
       this.metrics.inc(carId, car.mode, "dropped");
       return ok;
     }
@@ -385,6 +388,8 @@ export class HijackEngine {
     const car = this.mustCar(carId);
     car.intercepted = [];
     car.lockedSteering = null;
+    car.dropWindowEnd = 0;
+    car.dropWindowActive = false;
     car.jammedUntil = null;
     if (!keepJamCooldown) car.jamReadyAt = null;
     this.cancelDelayed(car);
@@ -442,6 +447,15 @@ export class HijackEngine {
       lockedSteering: c.lockSteering ? car.lockedSteering : null,
       replayVec: c.replay ? this.replayVector(car) : null,
     };
+  }
+
+  private inDropBurst(car: CarRuntime, pct: number): boolean {
+    const now = this.clock.now();
+    if (now >= car.dropWindowEnd) {
+      car.dropWindowActive = this.random() * 100 < pct;
+      car.dropWindowEnd = now + DROP_BURST_MS;
+    }
+    return car.dropWindowActive;
   }
 
   private recordHistory(car: CarRuntime, vec: DriveVector): void {
@@ -623,6 +637,8 @@ export class HijackEngine {
       jamReadyAt: null,
       hijackedBy: null,
       intercepted: [],
+      dropWindowEnd: 0,
+      dropWindowActive: false,
       unsubscribe: () => {},
     } as Omit<CarRuntime, "controller"> as CarRuntime;
     runtime.controller = new CarController(

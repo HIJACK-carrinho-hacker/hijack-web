@@ -54,6 +54,7 @@ export const STEERING_BIAS_MAX = 40;
 export const STEERING_BIAS_STEP = 5;
 export const ATTACK_DELAYS_MS = [0, 150, 300] as const;
 export const ATTACK_DROP_PCTS = [0, 30, 60] as const;
+export const DROP_BURST_MS = 500;
 export const REPLAY_DELAY_MS = 5000;
 export const REPLAY_HISTORY_MS = 10000;
 export const JAM_MS = 5000;

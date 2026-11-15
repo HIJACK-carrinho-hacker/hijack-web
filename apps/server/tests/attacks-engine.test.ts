@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { type AttackConfig, DEFAULT_ATTACK_CONFIG, JAM_COOLDOWN_MS, JAM_MS, REPLAY_DELAY_MS } from "@hijack/protocol";
+import { type AttackConfig, DEFAULT_ATTACK_CONFIG, DROP_BURST_MS, JAM_COOLDOWN_MS, JAM_MS, REPLAY_DELAY_MS } from "@hijack/protocol";
 import { testConfig } from "../src/config/env.ts";
 import type { DeviceAdapter, DeviceDriveCommand, DeviceEvent } from "../src/devices/types.ts";
 import { HijackEngine, type Viewer } from "../src/engine.ts";
@@ -126,16 +126,31 @@ describe("atraso de comandos", () => {
 });
 
 describe("perda de pacotes", () => {
-  test("comando sorteado é descartado e contado", () => {
+  test("janela sorteada descarta todos os comandos por 0,5 s e é contada", () => {
     make();
     attack({ dropPct: 60 });
     rnd = 0.1;
-    pilot(1);
+    for (let i = 0; i < 5; i++) {
+      pilot(1);
+      rnd = 0.9;
+      now += 99;
+    }
     expect(dev().drives).toHaveLength(0);
-    expect(engine.snapshot({ role: "admin" }).metrics.find((m) => m.carId === "car-a")?.dropped).toBe(1);
-    rnd = 0.9;
+    expect(engine.snapshot({ role: "admin" }).metrics.find((m) => m.carId === "car-a")?.dropped).toBe(5);
+    now += DROP_BURST_MS;
     pilot(1);
     expect(dev().drives).toHaveLength(1);
+  });
+
+  test("janela não sorteada deixa passar todos os comandos dela", () => {
+    make();
+    attack({ dropPct: 60 });
+    rnd = 0.9;
+    pilot(1);
+    rnd = 0;
+    now += 100;
+    pilot(1, 10);
+    expect(lastDrive()).toEqual({ throttle: 1, steering: 10 });
   });
 
   test("soltar nunca é descartado", () => {
