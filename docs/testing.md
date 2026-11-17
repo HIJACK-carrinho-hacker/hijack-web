@@ -10,6 +10,18 @@
 
 Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os seus. Eles chamam `resetEnvironment()` (libera vagas, volta a `setup`, reseta ataques, defesas e senhas) para serem repetíveis, e leem o `ADMIN_SECRET` de `apps/server/.env`. Por isso o servidor precisa ser subido à mão antes (`CAR_A_MODE=simulated CAR_B_MODE=simulated DEMO_TOPOLOGY=dual bun run dev` na raiz): o servidor que o próprio Playwright sobe usa outro segredo (`e2e-admin-secret`) e o login do operador falha.
 
+### Resultado mais recente — informações educativas (17/11/2026)
+
+Lint, typecheck, build e 343 testes passaram. A execução concluída de navegador foi `bun run test:e2e security-info.spec.ts novos-ataques.spec.ts --trace=retain-on-failure`: **16/16**, desktop e Pixel 7 emulado. As tentativas da suíte completa foram interrompidas por falhas e timeouts; houve correções no fechamento por Escape, na seleção do combobox e no encerramento de contextos dos cenários antigos de ataques. A suíte completa ainda precisa de uma execução concluída após esses ajustes. Não houve teste novo de hardware.
+
+### Conferência manual dos balões
+
+1. Subir a aplicação com os dois carrinhos simulados. Para uma prévia só neste computador: `CAR_A_MODE=simulated CAR_B_MODE=simulated DEMO_TOPOLOGY=dual SERVER_HOST=127.0.0.1 bun run dev`.
+2. Abrir `http://127.0.0.1:5173/` no navegador. Em Linux, `xdg-open http://127.0.0.1:5173/` usa o navegador padrão; uma janela lançada por automação pode ficar em outra área de trabalho. Confirmar que a página apareceu antes de dizer que está visível.
+3. Usar sessões separadas para operador e hacker (outro perfil ou janela privativa). Abas no mesmo contexto compartilham o cookie: uma sessão de operador pode redirecionar o participante e impedir que apareça o formulário de entrada.
+4. Entrar como hacker e abrir a aba Defesa para conferir os quatro ícones. Para os ataques, iniciar pelo operador e completar as três primeiras etapas guiadas; depois pausar a demonstração e ler os balões da etapa 4 sem ligar ataques.
+5. Conferir abertura por mouse, clique, toque e teclado; fechamento por Escape, botão de fechar e clique fora; leitura sem cortar o texto em tela pequena. Para capturas, aguardar o fim da animação ou desativá-la na captura.
+
 ## Matriz (plano mestre, seção 12)
 
 ### Unitários
@@ -77,5 +89,5 @@ Ver `../esp32/docs/testing-hardware.md`. Nenhum resultado físico deve ser regis
 
 ## Limitações conhecidas
 
-- Toque real em celular ainda não tem resultado registrado; os E2E de "mobile" usam ponteiro de mouse com viewport e agente de celular.
+- Toque real em celular ainda não tem resultado registrado. Os E2E de "mobile" emulam viewport e agente de celular; os testes dos balões de ataque em `security-info.spec.ts` usam `tap()`, mas isso continua sendo toque emulado. Os testes antigos usam majoritariamente ponteiro de mouse.
 - Perda de foco e aba oculta são testadas via eventos simulados no navegador.

@@ -37,6 +37,8 @@ O hacker B ataca o Carrinho A, explicando cada etapa (o hacker A vê na aba Ataq
 
 Ponto didático: a inversão nunca move um carrinho parado e nunca impede o STOP.
 
+Ao apresentar um controle de ataque, abrir o ícone de informação ao lado do nome. Ler **Na vida real** para contextualizar a ameaça e **No HIJACK** para explicar o efeito simulado e seus limites. O balão abre por mouse, clique, toque ou teclado e continua acessível com a partida pausada. As explicações são conceituais, sem instruções para executar ataques reais.
+
 ### Ataques extras (≈ 5 min, opcionais)
 
 Depois das inversões, o hacker B pode mostrar os outros ataques da etapa 4 (todos simulados no servidor):
@@ -50,6 +52,8 @@ Depois das inversões, o hacker B pode mostrar os outros ataques da etapa 4 (tod
 
 Hacker A na aba **Defesa**:
 
+Os quatro cartões também têm ícones de informação: usar os balões para explicar o mecanismo real e distinguir a proteção demonstrada daquela que existe de fato no projeto.
+
 1. **Autenticação (real):** trocar `1234` por uma senha forte.
    - O piloto A é desconectado e precisa entrar com a nova senha; `1234` deixa de funcionar.
    - **Mostrar que a inversão continua acontecendo**: senha forte impede acesso indevido, mas não protege contra alterações feitas por um componente já autorizado (o servidor, nesta simulação).
@@ -62,7 +66,7 @@ Hacker A na aba **Defesa**:
 4. **Criptografia (simulada, não TLS):** ligar; o feed de interceptação do hacker B fica ilegível.
 5. Indicador de segurança chega a 4/4 — lembrar que conta **camadas demonstradas**, não segurança real.
    - A integridade também derruba a telemetria falsa: o monitor do hacker A volta a mostrar a verdade.
-   - Atraso, perda e link derrubado não têm camada: o que protege é o failsafe real do carrinho.
+   - Atraso, perda e link derrubado não têm camada: o failsafe real limita o risco ao parar o carrinho, mas não recupera a comunicação.
 
 ## 4. Encerramento (≈ 2 min)
 

@@ -1,6 +1,6 @@
 # Aceitação — Definition of Done (plano mestre, seção 14)
 
-Revisão de 05/11/2026. Legenda: ✅ verificado · ⚠️ verificado parcialmente · ⏳ pendente.
+Revisão inicial de 05/11/2026; atualização das informações educativas em 17/11/2026. Legenda: ✅ verificado · ⚠️ verificado parcialmente · ⏳ pendente.
 
 ## Pronto como software simulado
 
@@ -11,12 +11,13 @@ Revisão de 05/11/2026. Legenda: ✅ verificado · ⚠️ verificado parcialment
 | Controles do piloto em celular e desktop | ⚠️ | E2E em perfil desktop e mobile (`pilot.spec.ts`), verificação manual no Chrome desktop e em largura de celular. Toque real num tablet pelo hotspot registrado em 14/11/2026 (41 valores de direção de −100 a 100, frente, ré e soltar, ≈ 109 s andando com o ESP32 real, saídas desligadas); **toque em celular ainda sem resultado registrado** |
 | Soltar o joystick ou perder comunicação faz parar | ✅ | `pilot.spec.ts` (soltar, fechar página), `engine.test.ts` (watchdog), `auth.test.ts` (piloto desconectado), verificação manual do `blur` |
 | Quatro etapas do hacker e duas inversões independentes | ✅ | `attack-manager.test.ts`, `attack-ws.test.ts`, `attack.spec.ts` (repetido 4× nos dois perfis) |
+| Informações educativas nos 12 controles de ataque e nas 4 defesas | ✅ simulação e navegador emulado | `security-info.spec.ts`: ajuda sem executar ações, disponível na pausa, mouse/toque emulado/teclado, fechamento/foco, largura e axe com balão aberto; cenários reais separados da simulação. Conjunto direcionado com `novos-ataques.spec.ts`: 16/16 em 17/11/2026; a suíte completa não terminou após os ajustes |
 | Defensor bloqueia a inversão no servidor e o caráter simulado é exibido | ✅ | `attack-ws.test.ts` (integridade), `defense.spec.ts`; rótulos permanentes "Simulação, não HMAC" / "Simulação, não validação no firmware" |
 | Ataques novos (15/11/2026): viés, travar, atraso, perda, replay, interceptar, quebra de senha, link derrubado, telemetria falsa e sequestro, cada um com a defesa correspondente ou o failsafe | ✅ simulado e bancada solta; ⚠️ sem chassi nem chão | `pipeline.test.ts`, `attacks-engine.test.ts`, `attacks-ws.test.ts`, `novos-ataques.spec.ts`; no ESP32 real, 23 de 23 verificações pelo protocolo e serial com `saidas=desligadas` (`progress.md`, 15/11/2026). Bancada com motores e servo soltos: 18/18 na 2ª rodada, com observação física parcial do usuário (`progress.md`) |
 | Troca real de senha altera a autenticação | ✅ | `auth.test.ts` (hash argon2id persistido, senha antiga falha, piloto revogado), `auth.spec.ts` |
-| Repetição didática não se confunde com criptografia | ✅ | só gera evento e não move o carrinho (`attack-ws.test.ts`, `defense.spec.ts`); texto e rótulo explícitos; `security-model.md` |
+| Repetição didática não se confunde com criptografia | ✅ | recusa o replay simulado no servidor e gera exemplo sem movimento (`attacks-engine.test.ts`, `attacks-ws.test.ts`, `defense.spec.ts`); não acrescenta validação criptográfica contra repetição ao firmware |
 | Operador faz pausa e STOP ALL | ✅ | `engine.test.ts`, `simulator-ws.test.ts`, `device.test.ts` (STOP chega ao ESP32) |
-| Testes automáticos verdes e README reproduz execução limpa | ✅ | clone limpo dos dois repositórios: `bun install`, `lint`, `typecheck`, `test` (134), `build`; `pio run`, `pio test -e native` (13). E2E: 29 + 1 pulado na cópia de trabalho (passo 10: `test` 170, E2E 35 + 1 pulado) |
+| Testes automáticos verdes e README reproduz execução limpa | ⚠️ suíte completa atual pendente | em 17/11/2026: lint, typecheck, 343 testes e build passaram; E2E direcionado 16/16, sem execução completa concluída após os ajustes. Clone limpo foi verificado nas fases anteriores (134 testes e 13 testes nativos do firmware), não repetido nesta atualização; histórico em `progress.md` |
 | Métricas separam simulado e hardware | ✅ | `MetricsRegistry` indexado por carro **e** modo; coluna `mode` na exportação (`export.test.ts`) |
 
 ## Atualização da especificação (10/11/2026)

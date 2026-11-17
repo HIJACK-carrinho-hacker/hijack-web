@@ -2,6 +2,15 @@
 
 Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠️ bloqueado
 
+## Estado atual — 17/11/2026
+
+- Informações educativas nos 12 controles de ataque e nas 4 defesas concluídas e enviadas para `origin/main` do `hijack-web` no commit `18ffae7`, a pedido do usuário. Uso descrito no README e no roteiro da apresentação; decisões na seção 8 de `assumptions.md`.
+- Última validação funcional da feature: lint, typecheck, build e 343 testes passaram; Playwright direcionado 16/16. **A suíte completa não foi concluída após os ajustes.** Os balões não alteraram servidor, protocolo ou firmware. Os testes existentes do servidor foram executados; não houve nova validação de firmware ou hardware.
+- Próxima conversa de software: sugerir defesas adicionais às quatro existentes. Pedido feito pelo usuário, ainda sem opções apresentadas ou decisão de implementação.
+- Hardware: última evidência permanece a bancada de 15/11/2026, com motores e servo soltos; nada no chassi nem no chão. Última gravação registrada: `esp32dev`, saídas desligadas, às 19:30 daquela data.
+
+## Etapas verificadas
+
 | Passo | Status | Observações |
 |---|---|---|
 | 0. Bootstrap (pastas, git, docs, AGENTS.md) | ✅ | Plano mestre e referências copiados |
@@ -15,11 +24,13 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 | 8. Robustez e apresentação | ✅ | Exportação CSV/JSON (só operador, sem segredos, anti-fórmula), `bun run demo` (servidor entrega o build), QR code e endereços da LAN no `/admin`, auditoria axe sem violações sérias, README com LAN/firewall/solução de problemas/checklist, `testing.md`, `demo-script.md` |
 | 9. Revisão final | ✅ | Clone limpo dos dois repositórios verificado; `docs/acceptance.md` com a Definition of Done item a item e pendências físicas |
 | 10. Especificação do carrinho (10/11/2026) | ✅ software | Direção proporcional -100..+100 (protocolo, pipeline, simulador, joystick, indicador, arena), TTL 400 ms, topologia `single` (padrão) / `dual` com `admin.setTopology`, regras de equipe A defensora e equipe B atacante; ver `assumptions.md` seção 5. Firmware alterado em paralelo em `../esp32`. **Hardware não testado** |
-| 12. Ataques novos do hacker (15/11/2026) | ✅ simulado, ESP32 real com saídas desligadas e bancada com motores e servo soltos (18/18; observação física parcial) | Viés e travamento da direção, atraso, perda de pacotes, replay real, interceptação, quebra de senha, link derrubado, telemetria falsa e sequestro; defesa nova de criptografia (indicador 0–4); repetição passa a recusar o replay no servidor. Decisões em `assumptions.md` seção 7; contrato em `protocol.md`. Firmware sem mudança. **Não testado com o ESP32 nem com motores** |
+| 12. Ataques novos do hacker (15/11/2026) | ✅ simulado, ESP32 real com saídas desligadas e bancada com motores e servo soltos (18/18; observação física parcial) | Viés e travamento da direção, atraso, perda de pacotes, replay real, interceptação, quebra de senha, link derrubado, telemetria falsa e sequestro; defesa nova de criptografia (indicador 0–4); repetição passa a recusar o replay no servidor. Decisões em `assumptions.md` seção 7; contrato em `protocol.md`. Firmware sem mudança. Sem teste no chassi nem no chão |
 | 11. Validação do hacker (11/11/2026) | ✅ simulado e ESP32 real com saídas desligadas | Fluxo completo no Chrome (entrada, 4 etapas, inversões independentes, defesas, autorização, ciclo da partida, métricas e exportação), topologias `single` e `dual`, ESP32 real recebendo a tração invertida (a direção invertida não foi observada no hardware). Corrigido o STOP ALL (pausa a partida). **Motores, L298N e servo continuam sem teste** |
 | 13. Informações educativas (17/11/2026) | ✅ interface e testes em simulação | Ícones nos 12 controles de ataque e nas 4 defesas; balões com cenário real e comportamento no HIJACK, por mouse, toque ou teclado. Conteúdo conceitual, sem instruções ofensivas. Servidor, protocolo e firmware sem alterações; decisões em `assumptions.md` seção 8 |
 
 ## Testes executados
+
+- Atualização documental (17/11/2026): lint, typecheck, os 343 testes e build reexecutados e aprovados. Alterações apenas em documentação e AGENTS.md; nenhum novo E2E, teste de firmware ou hardware nesta atualização.
 
 - Informações educativas (17/11/2026): lint ✅, typecheck ✅, `bun run test` ✅ **343 testes**, build ✅; Playwright direcionado (`security-info.spec.ts` e `novos-ataques.spec.ts`) ✅ **16/16**, em desktop e Pixel 7 emulado, incluindo toque com `tap()`, ajuda disponível na pausa, nenhuma ação enviada ao abrir os balões, teclado, foco, fechamento, largura e axe com balão aberto. Conferência visual por capturas em desktop e mobile. Corrigidos: seletor antigo ambíguo entre combobox e botão de informação, contextos dos cenários antigos de ataques sem fechamento e Escape quando o foco fica no ícone. As tentativas da suíte completa encontraram timeouts em cenários antigos e a falha de Escape; foram interrompidas para diagnóstico. Após os ajustes, a execução concluída foi a direcionada de 16 testes, **não a suíte completa**. Servidor de teste com ambos os carros simulados, dados temporários e backend em loopback; nenhum teste com hardware.
 
@@ -102,5 +113,7 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 _(nenhum)_
 
 ## Próximo passo
+
+Software: apresentar ao usuário sugestões de defesas além de autenticação, integridade, repetição e criptografia; nenhuma nova defesa foi escolhida ou implementada. Validação: permanece pendente uma execução completa do Playwright após os ajustes de 17/11; o resultado concluído mais recente é o direcionado de 16/16.
 
 Bancada parcial feita em 14/11/2026 (motores e servo soltos). Falta montar no chassi e testar no chão: sentido de cada roda, centro do servo, PWM mínimo, corrente com carga e tempo real de parada. Teste físico em etapas, conforme o material chega: `../esp32/docs/proximos-passos-hardware.md` (A: bancada com o que já existe; B: L298N; C: servo; D: chassi e chão). Medições reais vão para `../esp32/docs/testing-hardware.md` e para `docs/acceptance.md`. Antes da demonstração: roteador dedicado de 2,4 GHz e 10 min de piloto automático sem queda.

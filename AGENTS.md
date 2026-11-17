@@ -35,6 +35,12 @@ Monorepo Bun da aplicação HIJACK (demonstração acadêmica de segurança em s
 - A cada passo: `bun run lint && bun run typecheck && bun run test && bun run build`; atualizar `docs/progress.md`; commit (sem push).
 - Escolhas não especificadas: decidir pelo mais simples e registrar em `docs/assumptions.md`.
 
+## Estado do painel em 17/11/2026
+
+- Informações educativas nos 12 controles de ataque e nas 4 defesas, publicadas no commit `18ffae7`. Texto em `apps/web/src/features/hacker/security-info-content.ts`, apresentação em `security-info.tsx`; cenário real separado do comportamento no HIJACK. Decisões e limites em `docs/assumptions.md` seção 8.
+- Verificação concluída: lint, typecheck, build, 343 testes e 16 E2E direcionados (`security-info.spec.ts` e `novos-ataques.spec.ts`, desktop e mobile). A suíte completa não terminou após os ajustes; detalhes em `docs/progress.md`. Nenhum resultado novo de hardware.
+- O usuário pediu novas sugestões de defesas; ainda não houve apresentação das opções, escolha ou implementação. As quatro defesas atuais continuam sendo autenticação, integridade, repetição e criptografia.
+
 ## Convenções do usuário
 
 - **Sem comentários no código.** Explicações necessárias vão para `docs/`; comentários desnecessários não devem existir.
