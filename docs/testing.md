@@ -12,7 +12,7 @@ Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os 
 
 ### Resultado mais recente — informações educativas (17/11/2026)
 
-Lint, typecheck, build e 343 testes passaram. A execução concluída de navegador foi `bun run test:e2e security-info.spec.ts novos-ataques.spec.ts --trace=retain-on-failure`: **16/16**, desktop e Pixel 7 emulado. As tentativas da suíte completa foram interrompidas por falhas e timeouts; houve correções no fechamento por Escape, na seleção do combobox e no encerramento de contextos dos cenários antigos de ataques. A suíte completa ainda precisa de uma execução concluída após esses ajustes. Não houve teste novo de hardware.
+Lint, typecheck, build e 343 testes passaram. A execução concluída de navegador foi `bun run test:e2e security-info.spec.ts novos-ataques.spec.ts --trace=retain-on-failure`: **16/16**, desktop e Pixel 7 emulado. As tentativas da suíte completa foram interrompidas por falhas e timeouts; houve correções no fechamento por Escape, na seleção do combobox e no encerramento de contextos dos cenários antigos de ataques. Em seguida, a suíte completa (`bun run test:e2e`, servidor subido com `CAR_A_MODE=simulated CAR_B_MODE=simulated DEMO_TOPOLOGY=dual bun run dev`) terminou com **57 aprovados e 1 pulado** (WASD no perfil mobile, que não tem teclado), em 4,1 min; lint, typecheck, build e os 343 testes foram reexecutados e passaram. Não houve teste novo de hardware.
 
 ### Conferência manual dos balões
 

@@ -5,7 +5,7 @@ Legenda: ✅ concluído e verificado · 🔄 em andamento · ⏳ pendente · ⚠
 ## Estado atual — 17/11/2026
 
 - Informações educativas nos 12 controles de ataque e nas 4 defesas concluídas e enviadas para `origin/main` do `hijack-web` no commit `18ffae7`, a pedido do usuário. Uso descrito no README e no roteiro da apresentação; decisões na seção 8 de `assumptions.md`.
-- Última validação funcional da feature: lint, typecheck, build e 343 testes passaram; Playwright direcionado 16/16. **A suíte completa não foi concluída após os ajustes.** Os balões não alteraram servidor, protocolo ou firmware. Os testes existentes do servidor foram executados; não houve nova validação de firmware ou hardware.
+- Última validação funcional da feature: lint, typecheck, build e 343 testes passaram; Playwright direcionado 16/16. Depois, a suíte completa de Playwright terminou com **57 aprovados e 1 pulado** (WASD no perfil mobile), com servidor e Vite subidos à mão e carros simulados. Os balões não alteraram servidor, protocolo ou firmware. Os testes existentes do servidor foram executados; não houve nova validação de firmware ou hardware.
 - Próxima conversa de software: sugerir defesas adicionais às quatro existentes. Pedido feito pelo usuário, ainda sem opções apresentadas ou decisão de implementação.
 - Hardware: última evidência permanece a bancada de 15/11/2026, com motores e servo soltos; nada no chassi nem no chão. Última gravação registrada: `esp32dev`, saídas desligadas, às 19:30 daquela data.
 
