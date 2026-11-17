@@ -3,6 +3,14 @@ import { carPanel, completeAttack, holdJoystick, loginAs, resetEnvironment } fro
 
 test.describe.configure({ mode: 'serial' })
 
+test.beforeAll(async ({ browser }) => {
+  await Promise.all(browser.contexts().map((context) => context.close()))
+})
+
+test.afterEach(async ({ browser }) => {
+  await Promise.all(browser.contexts().map((context) => context.close()))
+})
+
 test.afterAll(async ({ browser }) => {
   await resetEnvironment(browser, 'dual')
 })
@@ -24,7 +32,7 @@ async function scene(browser: import('@playwright/test').Browser, switches: stri
 }
 
 const choose = async (page: Page, label: string, option: string) => {
-  await page.getByLabel(label).click()
+  await page.getByRole('combobox', { name: label, exact: true }).click()
   await page.getByRole('option', { name: option }).click()
 }
 

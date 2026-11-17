@@ -142,3 +142,16 @@ Ajustes da revisão Opus (15/11/2026, aprovada com ressalvas):
 - **O histórico do replay só guarda pedidos aceitos** (e as solturas), não os recusados com a partida pausada ou o link derrubado.
 - O analógico do sequestro mostra por que um comando foi recusado (link derrubado, solte e toque de novo, partida parada).
 - Não corrigido (já existia): se a gravação da nova senha falhar no disco, a troca lança erro antes de revogar o piloto e de encerrar o sequestro. Comandos do cliente montados a partir de um snapshot antigo podem reenviar `hijack: true` logo depois de o servidor encerrar o sequestro; o servidor recusa a configuração inteira com a mensagem da senha trocada.
+
+## 8. Informações educativas nos ataques e defesas (17/11/2026)
+
+Pedido do usuário: acrescentar informações curtas sobre como cada ataque poderia acontecer na vida real, sem ensinar sua execução, e aplicar a mesma ideia às defesas.
+
+- Os 12 controles de ataque (incluindo as duas inversões) e as 4 defesas recebem um ícone de informação ao lado do nome. A ajuda continua disponível quando o controle está desabilitado, inclusive durante uma pausa.
+- Cada balão separa **Na vida real** (cenário conceitual, condições necessárias e efeito) de **No HIJACK** (comportamento demonstrado e limites). Os cenários de comprometimento são exemplos possíveis, não descrições de uma vulnerabilidade real encontrada no carrinho.
+- Interação: passar o mouse abre sem tirar o foco do campo em uso; mover o ponteiro até o balão permite ler o texto; clicar fixa a explicação. Toque, Enter e Espaço também abrem. Escape, o botão de fechar ou um clique fora fecham. O conteúdo cabe na largura da tela e pode rolar verticalmente.
+- O componente reutiliza o Popover existente do shadcn/Radix, com nome acessível e botão independente dos rótulos dos controles. Abrir ajuda não envia mensagens de ataque, defesa ou troca de senha.
+- Conteúdo concentrado em `apps/web/src/features/hacker/security-info-content.ts`; apresentação em `security-info.tsx`. Nenhuma alteração de protocolo, servidor ou firmware.
+- As explicações deixam explícitos os limites: integridade e repetição não são a mesma proteção; criptografia não garante disponibilidade; os quatro controles de defesa não eliminam atraso, perda ou queda do link; parar com failsafe limita o risco, mas não recupera a comunicação. Trocar a senha é real; os outros três interruptores continuam didáticos.
+
+Referências conceituais consultadas: [NIST — códigos de autenticação de mensagem](https://csrc.nist.gov/glossary/term/message_authentication_code), [NIST — negação de serviço](https://csrc.nist.gov/glossary/term/denial_of_service) e [RFC 8446 — TLS 1.3, seções 1 e 8](https://www.rfc-editor.org/rfc/rfc8446). O comportamento demonstrado segue a seção 7 acima e o código atual do projeto.

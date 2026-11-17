@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useHijack } from "@/hooks/use-hijack";
+import { SecurityInfo } from "./security-info";
+import { DEFENSE_EXPLANATIONS } from "./security-info-content";
 
 function SimBadge({ children }: { children: string }) {
   return (
@@ -34,6 +36,7 @@ export function IntegrityCard({ defense }: { defense: DefenseView | undefined })
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2">
           Integridade
+          <SecurityInfo label="Integridade" explanation={DEFENSE_EXPLANATIONS.integrity} />
           <SimBadge>Simulação, não HMAC</SimBadge>
         </CardTitle>
         <CardDescription>
@@ -76,6 +79,7 @@ export function EncryptionCard({ defense }: { defense: DefenseView | undefined }
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2">
           Criptografia
+          <SecurityInfo label="Criptografia" explanation={DEFENSE_EXPLANATIONS.encryption} />
           <SimBadge>Simulação, não TLS</SimBadge>
         </CardTitle>
         <CardDescription>
@@ -124,6 +128,7 @@ export function ReplayCard({ defense }: { defense: DefenseView | undefined }) {
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2">
           Repetição
+          <SecurityInfo label="Repetição" explanation={DEFENSE_EXPLANATIONS.replay} />
           <SimBadge>Simulação, não validação no firmware</SimBadge>
         </CardTitle>
         <CardDescription>

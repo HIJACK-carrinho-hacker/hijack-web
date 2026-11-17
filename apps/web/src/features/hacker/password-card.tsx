@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useHijack } from "@/hooks/use-hijack";
+import { SecurityInfo } from "./security-info";
+import { DEFENSE_EXPLANATIONS } from "./security-info-content";
 
 export function PasswordCard({ defense }: { defense: DefenseView | undefined }) {
   const { request } = useHijack();
@@ -39,8 +41,9 @@ export function PasswordCard({ defense }: { defense: DefenseView | undefined }) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex flex-wrap items-center gap-2">
           Autenticação
+          <SecurityInfo label="Autenticação" explanation={DEFENSE_EXPLANATIONS.authentication} />
           {strong ? (
             <Badge>Senha forte ativa</Badge>
           ) : (

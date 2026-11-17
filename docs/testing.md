@@ -66,6 +66,7 @@ Os E2E reutilizam servidor e Vite já em execução (`bun run dev`) ou sobem os 
 | Simulador público × controles do operador | `simulator.spec.ts` |
 | Topologia de 1 carrinho: opções de entrada, hacker A defensor, hacker B atacante invertendo o Carrinho A, integridade bloqueando, simulador sem o Carrinho B, `/admin` com o Carrinho B desativado e seletor travado em `running` | `topology.spec.ts` |
 | Ataques novos: viés e integridade, interceptação e criptografia, quebra de senha, link derrubado e volta, telemetria falsa no monitor do defensor, sequestro (piloto perde o controle, hacker dirige) | `novos-ataques.spec.ts` |
+| Informações educativas: 12 ataques e 4 defesas, ajuda com controles desabilitados, nenhum comando disparado pela ajuda, toque emulado, largura do balão, teclado/fechamento/foco, hover sem roubar foco e auditoria axe com balão aberto | `security-info.spec.ts` |
 | Acessibilidade (axe, WCAG 2 A/AA, sem violações sérias/críticas) em todas as telas, inclusive a etapa 4 do hacker com o analógico do sequestro | `a11y.spec.ts` |
 
 Os testes do servidor usam `DEMO_TOPOLOGY=dual` por padrão (`testConfig`); os E2E antigos chamam `resetEnvironment(browser, 'dual', …)`, que também define a topologia pelo `admin.setTopology`.

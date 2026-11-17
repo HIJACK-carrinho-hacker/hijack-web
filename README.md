@@ -52,6 +52,8 @@ Ao iniciar, o servidor imprime os endereços da LAN (`[hijack] na LAN: http://19
 
 Cada navegador guarda **uma** sessão. Para testar vários papéis num computador, use navegadores diferentes ou janelas anônimas.
 
+No painel do hacker, o ícone de informação ao lado de cada ataque e defesa explica **Na vida real** (o cenário de segurança) e **No HIJACK** (o que a demonstração faz). Passe o mouse ou clique para ler; no celular, toque no ícone. Pelo teclado, use Tab para chegar ao ícone e Enter ou Espaço para abrir; Escape fecha. As explicações são conceituais, sem instruções para executar ataques.
+
 ## Ligando os carrinhos reais (ESP32)
 
 O passo a passo de montagem, pinagem e gravação está em [`../esp32/README.md`](../esp32/README.md); a especificação do carrinho (servo ±45°, failsafe, pinos) está em `../esp32/docs/especificacao/`. Pinos da equipe: servo **GPIO 13**; motor esquerdo ENA **25**, IN1 **26**, IN2 **27**; motor direito ENB **21**, IN3 **18**, IN4 **19**. Do lado do servidor:

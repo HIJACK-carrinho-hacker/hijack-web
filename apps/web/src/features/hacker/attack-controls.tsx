@@ -10,6 +10,8 @@ import { Joystick } from "@/features/pilot/joystick";
 import { usePilotDrive } from "@/features/pilot/use-pilot-drive";
 import { useHijack } from "@/hooks/use-hijack";
 import { BIAS_OPTIONS, DELAY_OPTIONS, DROP_OPTIONS, type Option, hijackRejection } from "./attack-options";
+import { SecurityInfo } from "./security-info";
+import { ATTACK_EXPLANATIONS } from "./security-info-content";
 
 const REJECTION_VISIBLE_MS = 2500;
 
@@ -38,9 +40,10 @@ export function ControlGroup({ title, hint, children }: { title: string; hint: s
 function ToggleRow({ id, label, attack, disabled, configure }: ControlProps & { id: BooleanKey; label: string }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-lg border bg-card px-3 py-2">
-      <Label htmlFor={`atk-${id}`} className="text-base">
-        {label}
-      </Label>
+      <div className="flex items-center gap-1">
+        <Label htmlFor={`atk-${id}`} className="text-base">{label}</Label>
+        <SecurityInfo label={label} explanation={ATTACK_EXPLANATIONS[id]} />
+      </div>
       <Switch
         id={`atk-${id}`}
         checked={attack[id]}
@@ -60,10 +63,11 @@ function ChoiceRow({
   configure,
 }: ControlProps & { id: NumberKey; label: string; options: readonly Option[] }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border bg-card px-3 py-2">
-      <Label htmlFor={`atk-${id}`} className="text-base">
-        {label}
-      </Label>
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border bg-card px-3 py-2">
+      <div className="flex items-center gap-1">
+        <Label htmlFor={`atk-${id}`} className="text-base">{label}</Label>
+        <SecurityInfo label={label} explanation={ATTACK_EXPLANATIONS[id]} />
+      </div>
       <Select
         value={String(attack[id])}
         disabled={disabled}
@@ -132,8 +136,11 @@ export function EspionageControls(
         </ol>
       )}
       <div className="flex flex-col gap-2 rounded-lg border bg-card px-3 py-2">
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-base">Quebrar senha</span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1">
+            <span className="text-base">Quebrar senha</span>
+            <SecurityInfo label="Quebrar senha" explanation={ATTACK_EXPLANATIONS.crackPassword} />
+          </div>
           <Button variant="secondary" size="sm" disabled={p.disabled} onClick={p.onCrack}>
             {p.cracking ? "Testando senhas…" : "Ataque de dicionário"}
           </Button>
@@ -156,8 +163,11 @@ export function ChannelControls(p: ControlProps & { onJam: () => void }) {
       hint="Derrubar o link é simulado: o servidor deixa de enviar comandos e o failsafe real do carrinho o para."
     >
       <div className="flex flex-col gap-2 rounded-lg border bg-card px-3 py-2">
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-base">Derrubar o link</span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1">
+            <span className="text-base">Derrubar o link</span>
+            <SecurityInfo label="Derrubar o link" explanation={ATTACK_EXPLANATIONS.jamLink} />
+          </div>
           <Button variant="secondary" size="sm" disabled={p.disabled || jammed || cooling} onClick={p.onJam}>
             Derrubar por 5 s
           </Button>
