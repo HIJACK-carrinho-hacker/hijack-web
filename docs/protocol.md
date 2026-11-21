@@ -49,7 +49,7 @@ Os payloads são `strictObject`: campos extras (por exemplo `teamId` ou `role` e
 - `throttle`: -1 ré, 0 neutro, 1 frente. **Velocidade fixa**: o piloto nunca controla velocidade proporcional.
 - `steering`: **inteiro de -100 a +100** (percentual de direção proporcional; **positivo = direita**, negativo = esquerda, 0 = centro). Vale em `pilot.drive`, `sim.manualDrive`, `requested`/`desired`/`confirmed`, `device.drive`, `device.ack` e `device.telemetry`. O firmware mapeia ±100 para o curso validado do servo (até ±45° em torno do centro calibrado).
 - Neutro = `throttle 0` e `steering 0` (vira STOP). `throttle 0` com `steering ≠ 0` é comando válido: o servo vira e os motores ficam parados.
-- O analógico do piloto gera `steering` em passos de 5 (zona morta ajustável); teclado A/D/setas mandam ±100.
+- O analógico do piloto gera `steering` em passos de 5 (zona morta ajustável); teclado A/D/setas mandam ±100. Com o carrinho andando, levar o analógico todo para o lado mantém o sentido da tração (frente ou ré) até voltar ao centro, soltar ou passar para a metade oposta (`assumptions.md` seção 9).
 - TTL padrão do comando: **400 ms** (`DEFAULT_COMMAND_TTL_MS`; faixa recomendada 300–500 ms).
 
 ## Estado público (`state.snapshot`)

@@ -19,6 +19,7 @@ export function Joystick({
 }: JoystickProps) {
   const ref = useRef<HTMLDivElement>(null);
   const pointer = useRef<number | null>(null);
+  const lastThrottle = useRef<Axes["throttle"]>(0);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
   const [active, setActive] = useState(false);
 
@@ -33,12 +34,15 @@ export function Joystick({
     };
     const p = clampToUnitCircle(raw.x, raw.y);
     setKnob(p);
-    onChange(axesFromVector(p.x, p.y, deadZone), true);
+    const axes = axesFromVector(p.x, p.y, deadZone, lastThrottle.current);
+    lastThrottle.current = axes.throttle;
+    onChange(axes, true);
   };
 
   const release = () => {
     if (pointer.current === null) return;
     pointer.current = null;
+    lastThrottle.current = 0;
     setActive(false);
     setKnob({ x: 0, y: 0 });
     onChange({ throttle: 0, steering: 0 }, false);

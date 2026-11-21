@@ -28,6 +28,26 @@ describe("axesFromVector", () => {
     expect(axesFromVector(30, -40)).toEqual({ throttle: 1, steering: 45 });
   });
 
+  test("andando, ir todo para o lado mantém o sentido da tração", () => {
+    expect(axesFromVector(1, 0, 0.3, 1)).toEqual({ throttle: 1, steering: 100 });
+    expect(axesFromVector(-1, 0, 0.3, 1)).toEqual({ throttle: 1, steering: -100 });
+    expect(axesFromVector(1, 0.2, 0.3, -1)).toEqual({ throttle: -1, steering: 95 });
+  });
+
+  test("parado, ir todo para o lado só vira o servo", () => {
+    expect(axesFromVector(1, 0, 0.3, 0)).toEqual({ throttle: 0, steering: 100 });
+  });
+
+  test("passar da zona morta para a metade oposta troca o sentido", () => {
+    expect(axesFromVector(0.7, 0.7, 0.3, 1)).toEqual({ throttle: -1, steering: 55 });
+    expect(axesFromVector(0.7, -0.7, 0.3, -1)).toEqual({ throttle: 1, steering: 55 });
+  });
+
+  test("voltar ao centro para mesmo com sentido anterior", () => {
+    expect(axesFromVector(0, 0, 0.3, 1)).toEqual({ throttle: 0, steering: 0 });
+    expect(axesFromVector(0.2, 0.1, 0.3, -1)).toEqual({ throttle: 0, steering: 0 });
+  });
+
   test("dead zone maior exige deslocamento maior", () => {
     expect(axesFromVector(0.4, 0, 0.5)).toEqual({ throttle: 0, steering: 0 });
     expect(axesFromVector(0.6, 0, 0.5)).toEqual({ throttle: 0, steering: 20 });

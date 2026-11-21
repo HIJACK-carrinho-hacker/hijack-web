@@ -4,7 +4,7 @@ Duração livre, sem pontuação nem vencedor. Um operador conduz pelo `/admin` 
 
 **Padrão — 1 carrinho (`DEMO_TOPOLOGY=single`):** equipe A = piloto do Carrinho A (celular) + hacker que **defende** (notebook); equipe B = hacker que **ataca** o Carrinho A (notebook). **Opção — 2 carrinhos (`dual`):** cada equipe tem piloto e hacker e ataca o carrinho adversário; as diferenças estão em "Variante com 2 carrinhos" no fim.
 
-O piloto controla frente/ré em velocidade fixa e a direção **proporcional** (quanto mais o analógico vai para o lado, mais o servo esterça, até ±45° no carrinho real).
+O piloto controla frente/ré em velocidade fixa e a direção **proporcional** (quanto mais o analógico vai para o lado, mais o servo esterça, até ±45° no carrinho real). Andando, o analógico todo para o lado mantém a frente ou a ré com a direção a 100 %; parado, só vira as rodas.
 
 ## Preparação (antes do público)
 

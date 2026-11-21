@@ -155,3 +155,14 @@ Pedido do usuário: acrescentar informações curtas sobre como cada ataque pode
 - As explicações deixam explícitos os limites: integridade e repetição não são a mesma proteção; criptografia não garante disponibilidade; os quatro controles de defesa não eliminam atraso, perda ou queda do link; parar com failsafe limita o risco, mas não recupera a comunicação. Trocar a senha é real; os outros três interruptores continuam didáticos.
 
 Referências conceituais consultadas: [NIST — códigos de autenticação de mensagem](https://csrc.nist.gov/glossary/term/message_authentication_code), [NIST — negação de serviço](https://csrc.nist.gov/glossary/term/denial_of_service) e [RFC 8446 — TLS 1.3, seções 1 e 8](https://www.rfc-editor.org/rfc/rfc8446). O comportamento demonstrado segue a seção 7 acima e o código atual do projeto.
+
+## 9. Tração mantida com o analógico todo para o lado (20/11/2026)
+
+Pedido do usuário: com o analógico todo para o lado o motor desligava e o carrinho parava, porque a tração só vinha do eixo vertical (zona morta de 30 %). Na diagonal a direção chegava a só ≈ 60 %, então pelo analógico era impossível andar com a direção a 100 %. Opção escolhida pelo usuário: **manter o sentido**.
+
+- `axesFromVector` recebe o sentido anterior. Se o eixo vertical está dentro da zona morta e há direção (`steering ≠ 0`), a tração continua a anterior (frente ou ré). O `Joystick` guarda o último sentido enviado e o zera ao soltar.
+- Partindo parado e indo direto para o lado, só o servo vira (igual antes).
+- Passar da zona morta para a metade oposta troca o sentido; voltar ao centro (sem direção e sem tração) manda neutro e para; soltar para na hora.
+- Só a tela muda: `frente + 100 %` já era comando válido (o teclado W+D já o mandava). Servidor, protocolo, ataques, watchdog e firmware não mudaram. Vale também para o analógico do sequestro, que usa o mesmo componente.
+- Hardware: a corrente com servo e motores juntos é a mesma da diagonal (pico de ≈ 540 mA visto na bancada). Sem o diferencial eletrônico, a roda de dentro pode arrastar na curva fechada; não testado no chão.
+

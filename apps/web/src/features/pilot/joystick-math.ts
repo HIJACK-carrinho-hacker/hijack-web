@@ -26,10 +26,17 @@ export function steeringFromX(x: number, deadZone = DEFAULT_DEAD_ZONE): number {
   return quantized === 0 ? 0 : Math.sign(x) * quantized;
 }
 
-export function axesFromVector(x: number, y: number, deadZone = DEFAULT_DEAD_ZONE): Axes {
+export function axesFromVector(
+  x: number,
+  y: number,
+  deadZone = DEFAULT_DEAD_ZONE,
+  previousThrottle: Axis = 0,
+): Axes {
   const p = clampToUnitCircle(x, y);
-  const throttle: Axis = p.y < -deadZone ? 1 : p.y > deadZone ? -1 : 0;
-  return { throttle, steering: steeringFromX(p.x, deadZone) };
+  const steering = steeringFromX(p.x, deadZone);
+  const fromY: Axis = p.y < -deadZone ? 1 : p.y > deadZone ? -1 : 0;
+  const throttle: Axis = fromY === 0 && steering !== 0 ? previousThrottle : fromY;
+  return { throttle, steering };
 }
 
 export function axesFromKeys(keys: ReadonlySet<string>): Axes {
