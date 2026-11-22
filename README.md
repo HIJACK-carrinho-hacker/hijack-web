@@ -39,6 +39,7 @@ Gerar um segredo aleatório: `openssl rand -hex 16`.
 | `bun run demo` | **apresentação**: compila o frontend e sobe só o servidor (porta 3000) servindo tudo |
 | `bun run dev` | desenvolvimento: servidor (3000) + Vite (5173) com recarga automática |
 | `bun run start` | servidor em modo produção (usa o build existente em `apps/web/dist`) |
+| `bun run ip` | mostra o IP do notebook na rede (placa Wi-Fi primeiro) e os endereços do piloto, do `/admin` e do portal do carrinho |
 
 Ao iniciar, o servidor imprime os endereços da LAN (`[hijack] na LAN: http://192.168.x.y:3000`). O `/admin` também mostra o endereço e um **QR code**.
 
@@ -69,7 +70,7 @@ Também é possível iniciar já em hardware com `CAR_A_MODE=hardware` / `CAR_B_
 ## Rede e firewall
 
 1. Conecte o notebook servidor, os celulares, os notebooks e os ESP32 na **mesma** Wi-Fi isolada.
-2. Descubra o IP do notebook: o servidor imprime ao iniciar; ou `ip -4 addr` (Linux), `ipconfig` (Windows), `ipconfig getifaddr en0` (macOS).
+2. Descubra o IP do notebook: `bun run ip`; o servidor também imprime ao iniciar; ou `ip -4 addr` (Linux), `ipconfig` (Windows), `ipconfig getifaddr en0` (macOS).
 3. Libere a porta no firewall do notebook servidor (3000; em desenvolvimento também 5173):
    - Linux com UFW: `sudo ufw allow 3000/tcp`
    - Linux com firewalld: `sudo firewall-cmd --add-port=3000/tcp`
