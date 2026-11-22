@@ -25,7 +25,7 @@ Monorepo Bun da aplicação HIJACK (demonstração acadêmica de segurança em s
 - Ataques novos (viés, travar, atraso, perda, replay, interceptar, quebra de senha, link derrubado, telemetria falsa, sequestro) são simulação no servidor; nenhum tipo novo de mensagem vai ao ESP32 (tipo desconhecido para o carrinho com `device.fault`). Contrato em `docs/protocol.md`, decisões em `docs/assumptions.md` seção 7.
 - Navegador nunca é autoridade de time/papel/carro; autorizar **cada mensagem** no servidor.
 - Botões A/B do piloto são visuais e desabilitados.
-- Nunca registrar senhas/segredos em logs, telemetria ou erros. Nunca commitar `.env` ou `data/`.
+- Nunca registrar senhas/segredos em logs, telemetria ou erros. Nunca commitar `data/` nem outro `.env`; o `apps/server/.env` é versionado por decisão do usuário (22/11/2026, repositório privado, LAN isolada).
 - O snapshot do piloto esconde `requested`, `desired` e `confirmed` (zerados por desenho): para ver o confirmado em testes, ler por um espectador sem sessão.
 - O e2e do Playwright recusa rodar com carro em modo `hardware`; rodar só com o servidor da bancada parado e `CAR_A_MODE=simulated CAR_B_MODE=simulated`.
 - Comandos de movimento ao carro real só quando o usuário pedir, com a mão dele na fonte; pulsos curtos, um de cada vez.

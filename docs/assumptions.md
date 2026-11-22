@@ -166,3 +166,8 @@ Pedido do usuário: com o analógico todo para o lado o motor desligava e o carr
 - Só a tela muda: `frente + 100 %` já era comando válido (o teclado W+D já o mandava). Servidor, protocolo, ataques, watchdog e firmware não mudaram. Vale também para o analógico do sequestro, que usa o mesmo componente.
 - Hardware: a corrente com servo e motores juntos é a mesma da diagonal (pico de ≈ 540 mA visto na bancada). Sem o diferencial eletrônico, a roda de dentro pode arrastar na curva fechada; não testado no chão.
 
+## 10. `.env` do servidor no repositório (22/11/2026)
+
+- **Decisão do usuário:** `apps/server/.env` passa a ser versionado para que um clone novo rode sem copiar o arquivo de outra máquina. O `.gitignore` continua ignorando qualquer outro `.env`.
+- **Por que é aceitável:** o repositório `hijack-web` é privado e os segredos (`ADMIN_SECRET`, `DEVICE_SECRET_CAR_A`, `DEVICE_SECRET_CAR_B`) só valem no servidor da demonstração, numa LAN isolada (hotspot).
+- **Limite:** se o repositório ficar público, trocar os três segredos (gravando o novo `DEVICE_SECRET_CAR_A` no carrinho pelo portal) e tirar o `.env` do git.
