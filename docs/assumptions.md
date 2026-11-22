@@ -169,5 +169,6 @@ Pedido do usuário: com o analógico todo para o lado o motor desligava e o carr
 ## 10. `.env` do servidor no repositório (22/11/2026)
 
 - **Decisão do usuário:** `apps/server/.env` passa a ser versionado para que um clone novo rode sem copiar o arquivo de outra máquina. O `.gitignore` continua ignorando qualquer outro `.env`.
-- **Por que é aceitável:** o repositório `hijack-web` é privado e os segredos (`ADMIN_SECRET`, `DEVICE_SECRET_CAR_A`, `DEVICE_SECRET_CAR_B`) só valem no servidor da demonstração, numa LAN isolada (hotspot).
-- **Limite:** se o repositório ficar público, trocar os três segredos (gravando o novo `DEVICE_SECRET_CAR_A` no carrinho pelo portal) e tirar o `.env` do git.
+- **Repositório público (22/11/2026, decisão do usuário):** `hijack` e `hijack-web` foram tornados públicos com o `.env` versionado. O usuário foi avisado de que os segredos (`ADMIN_SECRET`, `DEVICE_SECRET_CAR_A`, `DEVICE_SECRET_CAR_B`) ficam visíveis para qualquer pessoa e permanecem no histórico do git.
+- **Por que é aceitável:** os segredos só valem no servidor da demonstração, numa LAN isolada (hotspot); quem não está nessa rede não alcança o servidor nem o carrinho.
+- **Limite:** quem estiver na mesma rede e ler o repositório pode entrar no `/admin` ou se passar pelo carrinho. Se isso importar, trocar os três segredos fora do git e gravar o novo `DEVICE_SECRET_CAR_A` no carrinho pelo portal.

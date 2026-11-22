@@ -16,7 +16,7 @@ Demonstração acadêmica de segurança em sistemas ciberfísicos numa **LAN iso
 bun install
 ```
 
-O `apps/server/.env` já vem no repositório (privado), com os segredos usados no carrinho. Para outra instalação, edite os valores:
+O `apps/server/.env` já vem no repositório (público), com os segredos usados no carrinho; eles só valem na rede da demonstração. Para outra instalação, edite os valores:
 
 | Variável | Para quê |
 |---|---|
@@ -106,7 +106,7 @@ Para os E2E pela primeira vez: `cd apps/web && bunx playwright install chromium`
 ## Checklist de segurança da demonstração
 
 - [ ] Rede isolada, sem acesso externo à porta do servidor.
-- [ ] `ADMIN_SECRET` e `DEVICE_SECRET_*` diferentes dos exemplos; se o repositório deixar de ser privado, trocá-los e tirar o `.env` do git.
+- [ ] `ADMIN_SECRET` e `DEVICE_SECRET_*` diferentes dos exemplos; o `.env` é público no git, então eles só protegem dentro da LAN isolada.
 - [ ] Senhas dos carrinhos resetadas para `1234` antes de começar (vulnerabilidade proposital).
 - [ ] Carrinhos físicos testados com rodas suspensas (`../esp32/docs/testing-hardware.md`).
 - [ ] Operador com `/admin` aberto e o botão **STOP ALL** à vista.
